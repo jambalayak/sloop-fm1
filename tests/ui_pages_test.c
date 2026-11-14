@@ -858,13 +858,13 @@ int main(int argc, char **argv)
             check(ok, "theme (2.7): checked (CRC, the strongest step and the accent standing out from the background, a "
                       "printable name); a first-beta THM1 taken with an accent");
             ui.menu = 1; ui.menu_sel = MI_COLOR; ui.force = 1; frame();
-            settings.palette = 4; theme_on = 0; palette_set(4);
+            settings.palette = NPALETTES - 1u; theme_on = 0; palette_set(NPALETTES - 1u);   /* (the last built-in: FREAK, the PLAITS port) */
             encs[panel.enc[EN_K1]] = 1; frame();      /* no theme: MONO -> GREEN, as ever */
             ok = settings.palette == 0u && !theme_on;
-            settings.palette = 4; palette_set(4);
+            settings.palette = NPALETTES - 1u; palette_set(NPALETTES - 1u);
             theme = th; theme_valid = 1;
             encs[panel.enc[EN_K1]] = 1; frame();      /* MONO -> SUNSET */
-            ok &= theme_on && settings.palette == 4u && pal[0] == th.c[0] && pal[4] == th.c[4] && C_BLACK == th.bg &&
+            ok &= theme_on && settings.palette == NPALETTES - 1u && pal[0] == th.c[0] && pal[4] == th.c[4] && C_BLACK == th.bg &&
                   TE_COL[0] == th.trk[0] && TE_COL[3] == th.trk[3] && TE_MID[1] == rgb565_scale(th.trk[1], 2, 3) &&
                   (lights_word() >> 30 & 1u) && !strcmp(mi_value(MI_COLOR, &(uint16_t){0}), "SUNSET") && C_WHITE == th.hi;
             ui.force = 1; frame(); ppm("menu-theme");
@@ -1221,8 +1221,10 @@ int main(int argc, char **argv)
             check(lit > 300u, "FILTER page: the graph strip shows it");
         }
         TSEL->p[P_TFLT] = 0;
+        SEL(5);
+        check(!strcmp(PT(), "REV/CHO"), "SELECT on FX: on to REV/CHO");
         SEL(9);
-        check(!strcmp(PT(), "REV/CHO"), "SELECT on FX: on to the last page, REV/CHO");
+        check(!strcmp(PT(), "GRAIN 2"), "SELECT on FX: on to the last page, GRAIN 2 (the PLAITS port's grain cloud)");
         tap(B_EDIT); SEL(-9);
         check(!strcmp(PT(), "EDIT 1"), "SELECT on EDIT: back to the first page");
         SEL(9);

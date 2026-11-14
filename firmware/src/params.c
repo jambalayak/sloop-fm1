@@ -65,7 +65,7 @@ static const char *const N_SLDIV[] = {"1/8", "1/16", "1/32", "8T", "16T", "32T"}
 static const char *const N_CHORD[] = {"OFF", "TRIAD", "7TH", "9TH", "SUS4", "POWER"};   /* seq.c CHORD_DEG */
 static const char *const N_ROLL[] = {"1/8", "1/16", "1/32", "32T", "1/64"};   /* seq.c ROLL_DEN */
 static const char *const N_ENGNAME[] = {"ANALOG", "DIGITAL", "PHASE", "LOFI", "SAMPLE", "VOICE", "TRIO", "WHEEL", "GRAIN",
-                                        "FM6", "PHYS", "NOISE",
+                                        "FM6", "PHYS", "NOISE", "PLAITS",
 #if FELUCCA_SLICE
                                              "SLICE",
 #endif
@@ -203,6 +203,11 @@ static const param_desc_t GP[G_COUNT] = {
     [G_CLKOUT] = PE("CLOCK", N_CLKOUT, 0),       /* 2.7, GLO > MIDI 3: MIDI clock and START / STOP out on USB (seq.c) */
     [G_RMCH] = PE("REMOTE", N_MCH, 0),           /* 2.7, GLO > MIDI 3: the buttons over MIDI (CC 102..115, seq.c remote_cc) */        /* 2.7, GLO > MIDI 3: MIDI notes -> drum sounds (seq.c midi_drum_lane) */            /* 2.7, GLO > MIDI 3: the punch-in FX's channel (seq.c midi_fx) */
     [G_BEND] = PD("BEND", F_SEMI, 1, 12, 2),      /* 2.6, GLO > MIDI 2: MIDI pitch bend's range (a setting of the FM-1) */
+    [G_GMIX] = PD("MIX", F_PCT, 0, 127, 0),       /* GRAIN: the cloud's level (0 = off) */
+    [G_GDENS] = PD("DENS", F_PCT, 0, 127, 64),    /* grains overlapping: 0.5 .. 4.5 */
+    [G_GSIZE] = PD("SIZE", F_PCT, 0, 127, 50),    /* 18 ms .. 450 ms */
+    [G_GPITCH] = PD("PITCH", F_SEMI, -12, 12, 0), /* the grains' transposition */
+    [G_GPOS] = PD("POS", F_PCT, 0, 127, 40),      /* how far back in the delay line the grains start */
     [G_FXFADE] = PD("FADE", F_INT, 0, 15, 0),     /* 2.7.2: the punch-in FX fade (FX layer SELECT), 0 off .. 15 (punch.c) */
 };
 
@@ -407,6 +412,8 @@ static const page_t PAGES[] = {
     {"INSERT 2", FAM_FX, SC_TRACK, GR_INS, {P_IMIX, 0xFF, 0xFF, 0xFF}},  /* .. its dry / wet; the drum track too */
     {"DLY", FAM_FX, SC_GLOBAL, GR_NONE, {G_DTIME, G_DFDBK, G_DCOLOR, G_DMIX}},
     {"REV/CHO", FAM_FX, SC_GLOBAL, GR_NONE, {G_RSIZE, G_RDAMP, G_CRATE, G_CDEPTH}},
+    {"GRAIN", FAM_FX, SC_GLOBAL, GR_NONE, {G_GMIX, G_GDENS, G_GSIZE, G_GPITCH}},   /* PLAITS port: the grain cloud (fx.c) */
+    {"GRAIN 2", FAM_FX, SC_GLOBAL, GR_NONE, {G_GPOS, 0xFF, 0xFF, 0xFF}},
     {"SEL", FAM_SCL, SC_TRACK, GR_SCALE, {P_ROOT, P_SCALE, P_QUANT, P_CHORD}},
     {"SEL 2", FAM_SCL, SC_TRACK, GR_SCALE, {P_TRANS, P_STRUM, P_VLEAD, 0xFF}},   /* (2.4: the chords played) */
     {"EDIT 1", FAM_EDIT, SC_ENGINE, GR_NONE, {P_E0, P_E1, P_E2, P_E3}},

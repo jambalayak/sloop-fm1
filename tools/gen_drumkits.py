@@ -364,6 +364,23 @@ KITS = [
         RIDE=S(None, 320, src="cym", nlev=90, ndec=2400, filt=("bp", 6500, .35), hpf=3500, click=16),
         TOMLO=S("sine", 110, 3, 30, 6, 400, 106, 1.5, 40, 20, "white", 16, 0, 40, ("lp", 2000, .1)),
         TOMHI=S("sine", 160, 3, 30, 6, 340, 104, 1.5, 40, 20, "white", 16, 0, 40, ("lp", 2500, .1)))),
+    # -- (the MIPS port) a small Korg-Volca-Beats-style kit: six analogue-style voices (kick, snare, two toms,
+    # closed / open hat) and four PCM-style hits (clap, claves, agogo, crash); original sounds, not Korg's
+    ("VOLCA", "ANALOG BOX", 0, kit(K808,
+        KICK=S("sine", 55, 20, 28, 6, 360, 124, click=48, drive=40),
+        KICK2=S("sine", 48, 14, 44, 30, 800, 124, click=30, drive=56),
+        SNARE=S("tri", 200, 5, 12, 0, 95, 90, 1.7, 70, 28, "white", 112, 0, 160, ("hp", 1900, .18), drive=30),
+        SNARE2=S("tri", 240, 6, 10, 0, 70, 84, 1.6, 60, 36, "white", 108, 0, 120, ("bp", 5600, .3), drive=20),
+        CLAP=dict(nlev=124, ndec=210, filt=("bp", 1250, .42), hpf=800),
+        CHH=S(None, 215, src="metal", nlev=116, ndec=36, filt=("bp", 9800, .4), hpf=7200, click=10),
+        OHH=S(None, 215, src="metal", nlev=112, nhold=14, ndec=330, filt=("bp", 9400, .4), hpf=6800),
+        TOMLO=S("sine", 105, 9, 50, 8, 360, 118, 1.5, 34, 18, "white", 20, 0, 30, ("lp", 2400, .1), drive=16),
+        TOMHI=S("sine", 160, 9, 50, 8, 320, 116, 1.5, 34, 18, "white", 20, 0, 30, ("lp", 2800, .1), drive=16),
+        CRASH=S(None, 215, src="cym", nlev=110, nhold=10, ndec=1500, filt=("hp", 4400, .2)),
+        RIDE=S(None, 262, src="metal", nlev=100, ndec=1000, filt=("bp", 5400, .55), hpf=3200, click=12),
+        CONGA=S("bell", 880, 0, 5, 6, 330, 108, filt=("bp", 2400, .5, "all")),           # agogo, low
+        COWBELL=S("bell", 1180, 0, 5, 6, 290, 108, filt=("bp", 3000, .5, "all")),        # agogo, high
+        CLAVE=S("sine", 2400, 0, 5, 0, 55, 108, click=16))),
 ]
 
 

@@ -49,6 +49,9 @@ static const palette_t PALETTES[] = {
     {"CYAN", {RGB(0, 30, 50), RGB(0, 62, 96), RGB(16, 112, 160), RGB(56, 172, 222), RGB(140, 222, 255)}},
     {"RED", {RGB(52, 8, 8), RGB(100, 18, 14), RGB(170, 36, 26), RGB(226, 64, 48), RGB(255, 112, 92)}},
     {"MONO", {RGB(40, 40, 40), RGB(80, 80, 80), RGB(130, 130, 130), RGB(186, 186, 186), RGB(226, 226, 226)}},
+    /* (the PLAITS port) FREAK: charcoal with a hot orange-red accent, after the look of a MicroFreak's panel and its
+     * orange-red display; appended last, so a saved palette number keeps meaning what it did */
+    {"FREAK", {RGB(44, 24, 20), RGB(96, 40, 28), RGB(168, 62, 36), RGB(240, 98, 50), RGB(255, 178, 142)}},
 };
 #define NPALETTES (sizeof(PALETTES) / sizeof(PALETTES[0]))
 static uint16_t pal[5];

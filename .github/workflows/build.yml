@@ -1,0 +1,33 @@
+name: Build FM-1 firmware
+on:
+  workflow_dispatch:
+  push:
+    branches: [plaits-port]
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip build-essential xz-utils curl
+          pip3 install Pillow
+      - name: JieLi toolchain
+        run: tools/get_toolchain.sh
+      - name: JieLi AC79 SDK
+        run: git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$HOME/fw-AC79_AIoT_SDK"
+      - name: Build
+        run: ./build.sh 2>&1 | tee build.log
+      - name: Show sizes
+        if: always()
+        run: ls -l build/felucca.bin build/loader/ota.bin build/felucca.fwsc || tail -60 build.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sloop-plaits
+          path: |
+            build/felucca.fwsc
+            build/felucca.bin
+            build/loader/ota.bin
+            build.log

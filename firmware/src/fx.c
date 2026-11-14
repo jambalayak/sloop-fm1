@@ -21,6 +21,39 @@ static struct {
     uint16_t line_i[4], ap_i[2];
     int32_t line_lp[4];
 } fx;
+/* GRAIN (PLAITS port): a Beads-style cloud of four grains reading the delay line (dly_buf: no RAM of its own, the delay
+ * send feeds it). Each grain: a start (samples back from the write head), a rate (Q8), a length, a pan and a parabolic
+ * window; they start every len / overlap samples at a random place near POS. MIX 0: nothing runs, nothing changes. */
+#define GR_N 4u
+static struct { uint32_t pos, age, len, inv; int32_t inc, pl, pr; uint8_t on; } grn[GR_N];
+static uint32_t grn_rng = 0x2545F491u, grn_wait;
+/* 2^(n / 12) in Q8, n = 0..12 */
+static const uint16_t GR_SEMI[13] = {256, 271, 287, 304, 323, 342, 362, 384, 406, 431, 456, 483, 512};
+static void grain_spawn(void)
+{
+    uint32_t k, len = 800u + (uint32_t)song.g[G_GSIZE] * 140u, back, jit;
+    int32_t st = song.g[G_GPITCH], r;
+    for (k = 0; k < GR_N && grn[k].on; k++)
+        ;
+    if (k == GR_N)
+        return;
+    r = st >= 0 ? (int32_t)GR_SEMI[st > 12 ? 12 : st] : (int32_t)(65536u / GR_SEMI[(-st) > 12 ? 12 : -st]);
+    grn_rng = grn_rng * 1664525u + 1013904223u;
+    jit = (grn_rng >> 16) & 0x3FFu;                                    /* 0 .. 1023 samples of scatter */
+    back = 1500u + (uint32_t)song.g[G_GPOS] * 440u + jit;
+    if (r > 256 && back < len * (uint32_t)(r - 256) / 256u + 600u)    /* (an up-pitched grain must not overtake the write head) */
+        back = len * (uint32_t)(r - 256) / 256u + 600u;
+    if (back > DLY_LEN - len - 2000u)
+        back = DLY_LEN - len - 2000u;
+    grn[k].pos = (fx.dly_w - back) << 8;
+    grn[k].inc = r;
+    grn[k].age = 0;
+    grn[k].len = len;
+    grn[k].inv = (1u << 30) / len;
+    grn[k].pl = 16384 + (int32_t)((grn_rng >> 8) & 0x3FFFu) - 8192 + 8192;   /* left 16384 .. 32767 / right: the rest */
+    grn[k].pr = 32767 + 16384 - grn[k].pl;
+    grn[k].on = 1;
+}
 static volatile uint8_t rev_frz;         /* punch-in FREEZE (punch.c): the reverb holds, no loss, no damping */
 static int32_t rev_l[CTL], rev_r[CTL];   /* the reverb's own return of this block (FREEZE plays it) */
 
@@ -227,8 +260,22 @@ static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t
         ma = (REV_MOD << 8) + ((m0 * REV_MOD) >> 7), mb = (REV_MOD << 8) + ((m1 * REV_MOD) >> 7);
         dca = (ca1 - ca0) >> CTL_LOG2, dcb = (cb1 - cb0) >> CTL_LOG2;
     }
+    int32_t gmix = song.g[G_GMIX] * 258;
+    if (!gmix) {
+        for (k = 0; k < GR_N; k++)
+            grn[k].on = 0;
+        grn_wait = 0;
+    } else {                                                           /* the next grain starts when len / overlap has passed */
+        uint32_t len = 800u + (uint32_t)song.g[G_GSIZE] * 140u, ov = 128u + (uint32_t)song.g[G_GDENS] * 4u;   /* overlap Q8: 0.5 .. 4.5 */
+        uint32_t gap = len * 256u / ov;
+        if (grn_wait <= n) {
+            grain_spawn();
+            grn_wait += gap;
+        }
+        grn_wait -= n < grn_wait ? n : grn_wait;
+    }
     for (i = 0; i < n; i++) {
-        int32_t yl, yr, x, a, o0, o1, o2, o3;
+        int32_t yl, yr, x, a, o0, o1, o2, o3, gl = 0, gr = 0;
         /* chorus: two modulated short delays, 5..15 ms, the LFO half a turn apart: left and right move apart */
         cho_buf[fx.cho_w & (CHO_LEN - 1u)] = (int16_t)clamp(cho_in[i] >> 1, -32768, 32767);
         {
@@ -297,6 +344,23 @@ static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t
             if (++fx.line_i[1] >= REV_LINE[1]) fx.line_i[1] = 0;
             if (++fx.line_i[2] >= REV_LINE[2]) fx.line_i[2] = 0;
             if (++fx.line_i[3] >= REV_LINE[3]) fx.line_i[3] = 0;
+        }
+        if (gmix) {
+            for (k = 0; k < GR_N; k++) {
+                if (grn[k].on) {
+                    uint32_t ix = (grn[k].pos >> 8) & (DLY_LEN - 1u), fr = grn[k].pos & 255u;
+                    int32_t s0 = dly_buf[ix], s1 = dly_buf[(ix + 1u) & (DLY_LEN - 1u)];
+                    int32_t xw = (int32_t)(((uint64_t)grn[k].age * grn[k].inv) >> 15), w, sv;   /* 0 .. 32768 */
+                    w = (xw * (32768 - xw)) >> 13;                    /* 4 x (1 - x) in Q15 (peak 32768) */
+                    sv = (((s0 + (((s1 - s0) * (int32_t)fr) >> 8)) * w) >> 15) << 1;
+                    gl += mulq15(sv, grn[k].pl);
+                    gr += mulq15(sv, grn[k].pr);
+                    grn[k].pos += (uint32_t)grn[k].inc;
+                    if (++grn[k].age >= grn[k].len)
+                        grn[k].on = 0;
+                }
+            }
+            yl += mulq15(gl >> 1, gmix) , yr += mulq15(gr >> 1, gmix);
         }
         wet_l[i] = yl + o0 + o2;
         wet_r[i] = yr + o1 - o3;

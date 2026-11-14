@@ -574,5 +574,23 @@
   "CLAVE": 0.25,
   "KICK2": 4.0,
   "SNARE2": 5.75
+ },
+ "VOLCA": {
+  "KICK": 2.5,
+  "SNARE": 1.75,
+  "CLAP": 11.0,
+  "CHH": 20.5,
+  "OHH": 15.5,
+  "TOMLO": -2.75,
+  "TOMHI": -3.25,
+  "CRASH": 0.0,
+  "RIDE": 6.5,
+  "SHAKER": 1.5,
+  "CONGA": 5.0,
+  "RIM": 7.0,
+  "COWBELL": 3.25,
+  "CLAVE": 1.25,
+  "KICK2": 1.0,
+  "SNARE2": 2.25
  }
 }
