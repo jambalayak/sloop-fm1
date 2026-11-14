@@ -3,27 +3,36 @@ on:
   workflow_dispatch:
   push:
     branches: [plaits-port]
+permissions:
+  contents: read
 jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: Prerequisites
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-pip build-essential xz-utils curl
-          pip3 install Pillow
-      - name: JieLi toolchain
-        run: tools/get_toolchain.sh
-      - name: JieLi AC79 SDK
-        run: git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$HOME/fw-AC79_AIoT_SDK"
-      - name: Build
-        run: ./build.sh 2>&1 | tee build.log
-      - name: Show sizes
+          sudo apt-get install -y python3-pil git curl xz-utils
+      - name: Install JieLi compiler
+        run: |
+          sh tools/get_toolchain.sh "$HOME/.jieli"
+          echo "JIELI_TOOLCHAIN=$HOME/.jieli/toolchain" >> "$GITHUB_ENV"
+      - name: Download JieLi SDK
+        run: |
+          git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 \
+            https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git \
+            "$HOME/fw-AC79_AIoT_SDK"
+          echo "AC79_SDK=$HOME/fw-AC79_AIoT_SDK" >> "$GITHUB_ENV"
+      - name: Compile firmware
+        run: |
+          chmod +x build.sh
+          ./build.sh 2>&1 | tee build.log
+          test ${PIPESTATUS[0]} -eq 0
+        shell: bash
+      - name: Save firmware package
         if: always()
-        run: ls -l build/felucca.bin build/loader/ota.bin build/felucca.fwsc || tail -60 build.log
-      - uses: actions/upload-artifact@v4
-        if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: sloop-plaits
           path: |
@@ -31,3 +40,4 @@ jobs:
             build/felucca.bin
             build/loader/ota.bin
             build.log
+          retention-days: 14
