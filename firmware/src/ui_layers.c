@@ -717,11 +717,7 @@ UI_SMALL static void layer_screen_draw(void)
         str_cpy(sub, layer == LY_ERASE ? (song.playing ? "as it plays" : "every step") : "hold + key", sizeof sub);
         for (i = 0; i < 16u; i++) {
             uint32_t k = key_of_white(i), down = (held >> k) & 1u, present = 0, j;
-            if (is_drum(t)) {
-                str_cpy(tl[i].lab, LANE_SHORT[i], 8);
-                for (j = 0; j < trk_len(t); j++)
-                    present |= dstep_has(&t->dstep[j], i);
-            } else {
+            {
                 uint32_t n = kb_map(t, k);
                 if (n == KB_SILENT) {
                     str_cpy(tl[i].lab, "-", 8);
@@ -855,7 +851,7 @@ UI_SMALL static void layer_screen_draw(void)
         te_lower(sub + str_len(sub), N_SCALE[clamp(trk[0].p[P_SCALE], 0, NSCALES - 1)], 8);
         for (i = 0; i < 16u; i++) {
             uint32_t k = key_of_white(i), pc = (53u + k) % 12u, in = (mask >> ((pc + 12u - root) % 12u)) & 1u;
-            if (!is_drum(t) && t->p[P_CHORD]) {       /* chord mode: the chord this key plays (the i chord lit) */
+            if (t->p[P_CHORD]) {                         /* chord mode: the chord this key plays (the i chord lit) */
                 uint8_t c[4];
                 uint32_t n = kb_map(t, k), m;
                 if (n != KB_SILENT && (m = chord_notes(t, n, c)) != 0u) {
