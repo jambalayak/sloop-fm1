@@ -13,6 +13,9 @@ extern "C" {
 #define HORATIO_PLAITS_MODELS 16u
 
 void horatio_plaits_init(void);
+void horatio_plaits_block(void);
+int32_t horatio_plaits_shared_amp(void);
+int horatio_plaits_shared_done(void);
 void horatio_plaits_configure(uint32_t slot, uint32_t model, int32_t pitch_q7,
                               uint16_t harmonics, uint16_t timbre, uint16_t morph,
                               uint16_t decay, uint16_t lpg_colour, uint16_t aux_mix, uint16_t level);
