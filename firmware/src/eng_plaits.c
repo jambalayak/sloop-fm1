@@ -77,7 +77,7 @@ static int plaits_slot_used(uint32_t slot, const voice_t *except) {
     for (p = 0; p < NPART; ++p) {
         for (i = 0; i < NVOICE; ++i) {
             const voice_t *v = &trk[p].v[i];
-            if (v != except && v->active && v->s[7] == id)
+            if (v != except && trk[p].engine == ENGI_PLAITS && v->active && v->s[7] == id)
                 return 1;
         }
     }
