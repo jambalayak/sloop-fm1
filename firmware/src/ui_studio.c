@@ -37,7 +37,6 @@ UI_SMALL static void drum_black_pick(uint32_t b)          /* black key b: its so
     ui_say("SOUND ", LANE_NAME[pen_lane]);
     ui.force = 1;
 }
-UI_SMALL static void drum_hear(uint32_t lane) { (void)lane; } /* Legacy drum preview is disabled. */
 static void trk_short_name(uint32_t c, char *b);
 UI_SMALL static int on_drum_page(void) { return !ui.home && cur_page()->scope == SC_DRUM; }
 
@@ -700,7 +699,6 @@ UI_SMALL static void drum_screen_input(uint32_t pressed, uint32_t home, uint32_t
             dstep_t *st = &TDRUM->dstep[drum_cursor];
             if (k == 0) {                              /* the sound (heard: DRUM PREVIEW ON, 2.7.1) */
                 uint8_t l = (uint8_t)clamp(drum_lane + s, 0, DRUM_LANES - 1);
-                if (l != drum_lane) drum_hear(l);
                 drum_lane = l;
             }
             if (k == 1) {                              /* the step: what it holds, heard (2.7.1: DRUM PREVIEW ON) */
@@ -724,7 +722,6 @@ UI_SMALL static void drum_screen_input(uint32_t pressed, uint32_t home, uint32_t
         } else if (drum_page == 2u) {                  /* SOUND (2.7) */
             if (k == 0) {
                 uint8_t l = (uint8_t)clamp(drum_lane + s, 0, DRUM_LANES - 1);
-                if (l != drum_lane) drum_hear(l);
                 drum_lane = l;
             }
             if (k == 1 || k == 2) {                    /* TUNE, DECAY: the next hit has them (heard at once) */
