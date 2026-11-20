@@ -98,6 +98,7 @@ static void key_events_test(void)
     t->p[P_QUANT] = 0;                    /* standard chromatic mode keeps every semitone */
     fm1_in.notes = 1u << 8;                /* C# is a normal chromatic note */
     keyboard_block();
+    fprintf(stderr, "DEBUG first key: arp=%u nheld=%u held0=%u mo_w=%u sel=%u quant=%d layer=%u kb_kind=%u\\n", t->arp_phys, t->nheld, t->held[0], mo_w, song.sel, t->p[P_QUANT], layer_now(), kb_kind[8]);
     assert(t->arp_phys == 0 && t->nheld == 1 && t->held[0] == 61 && mo_w == 1);
     assert(((midi_out_q[0] >> 16) & 127u) == 61u);
     t->p[P_QUANT] = 0;                    /* key-up uses the note captured on key-down */
