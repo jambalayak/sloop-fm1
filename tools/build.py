@@ -110,6 +110,32 @@ def tc_all(*cmds):
     with ThreadPoolExecutor(len(cmds)) as ex:
         return list(ex.map(lambda c: tc(*c), cmds))
 
+def build_cxx():
+    """Compile Plaits/stmlib only for the opt-in HORATIO Plaits build."""
+    if os.environ.get("HORATIO_PLAITS", "0") != "1":
+        return []
+    eurorack = SRC / "third_party" / "eurorack"
+    if not (eurorack / "plaits" / "dsp" / "voice.h").exists():
+        raise SystemExit("HORATIO_PLAITS=1 but third_party/eurorack is missing; initialise submodules")
+    sources = [*sorted((eurorack / "plaits").rglob("*.cc")),
+               *sorted((eurorack / "stmlib").rglob("*.cc")),
+               *sorted((FW / "src").glob("*.cc")),
+               FW / "cxx" / "runtime.cc"]
+    objdir = OUT / "cxx"
+    objdir.mkdir(parents=True, exist_ok=True)
+    objects, commands = [], []
+    for source in sources:
+        name = str(source.relative_to(SRC)).replace("/", "_").replace(".cc", "")
+        obj, dep = objdir / (name + ".o"), objdir / (name + ".d")
+        objects.append(obj)
+        if not obj.exists() or not dep.exists() or source.stat().st_mtime > obj.stat().st_mtime:
+            commands.append(("cxx", *CXXFLAGS, "-MMD", "-MF", dep, "-c", source, "-o", obj))
+    if commands:
+        print("c++: compiling " + str(len(commands)) + " of " + str(len(objects)) + " Plaits/stmlib files")
+        tc_all(*commands)
+    return objects
+
+
 
 def generate():
     """generated headers (fonts, icons, tables, samples)"""
