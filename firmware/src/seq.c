@@ -1512,28 +1512,13 @@ static void ft_block(void)
 /* EDIT + key: that note / sound goes from the selected pattern. Playing: from the step playing and
  * every step the sequencer enters while the key is held (MPC style); stopped: from every step. */
 static uint8_t er_trk;
-static uint16_t er_lanes;                     /* drums: lanes held */
-/* the drum track's live mutes (SLOOP 2.6, after Felucca 1.4.1): EDIT + a black key turns the white keys from erasing
- * into muting (er_mute; back to erasing with a black key again; 2.7: it stays when EDIT is let go), and a white
- * key then mutes / unmutes its sound: the sequencer skips it (its ratchets too), the keys still play it. Performance
- * state: never saved, not undone; a project load or NEW clears it */
-static volatile uint16_t drum_mute;
-static volatile uint8_t er_mute;
 static uint32_t er_notes[4];                  /* synth: notes held (bit per MIDI note) */
 static volatile uint8_t er_flash;             /* something was erased (the UI flashes) */
 
 static int er_has(uint32_t note) { return (er_notes[(note >> 5) & 3u] >> (note & 31u)) & 1u; }
 static void erase_step(track_t *t, uint32_t idx)
 {
-    if (is_drum(t)) {
-        dstep_t *s = &t->dstep[idx];
-        uint32_t l, m = dstep_mask(s) & er_lanes;
-        for (l = 0; m; l++, m >>= 1)
-            if (m & 1u) {
-                dstep_clr(s, l);
-                er_flash = 1;
-            }
-    } else {
+    {
         step_t *s = &t->step[idx];
         uint32_t i, k = 0, lv = 0, rt = 0, cf = 0;
         if (s->time != ST_NOTE)
@@ -1570,7 +1555,7 @@ static void erase_now(track_t *t)             /* a key just went down */
             erase_step(t, i);
     }
 }
-static int erasing(const track_t *t) { return trk_index(t) == er_trk && (er_lanes || er_notes[0] || er_notes[1] || er_notes[2] || er_notes[3]); }
+static int erasing(const track_t *t) { return trk_index(t) == er_trk && (er_notes[0] || er_notes[1] || er_notes[2] || er_notes[3]); }
 
 /* ------------------------------------------------------------- arp --- */
 /* 2.6 (after Felucca 1.5, #191): where each track's held[i] came from, so the arp maps it again as it plays (arp_list:
@@ -2235,14 +2220,6 @@ static void key_down(uint32_t k)
         lk_push(layer, k, 1);
         return;
     case LY_ERASE:
-        if (is_drum(t) && punch_key(k) < 0) {        /* (2.6) a black key: erase <-> mute */
-            er_mute = (uint8_t)!er_mute;
-            return;
-        }
-        if (is_drum(t) && er_mute) {                  /* MUTE: the white key's sound off / on in the sequencer */
-            drum_mute ^= (uint16_t)(1u << lane_of_key(k));
-            return;
-        }
         kb_kind[k] = KS_ERASE;
         if (!erasing(t) || er_trk != sel)
             undo_erase_sess = (undo_sess += 4u) | 2u;  /* a new erase: one undo */
@@ -2251,11 +2228,7 @@ static void key_down(uint32_t k)
             er_notes[0] = er_notes[1] = er_notes[2] = er_notes[3] = 0;
             er_trk = (uint8_t)sel;
         }
-        if (is_drum(t)) {
-            kb_nt[k][0] = (uint8_t)lane_of_key(k);
-            kb_n[k] = 1;
-            er_lanes |= (uint16_t)(1u << kb_nt[k][0]);
-        } else {
+        {
             uint32_t n = kb_map(t, k);
             if (t->p[P_QUANT] == 2 && kb_black_index(k) >= 0) {
                 kb_n[k] = (uint8_t)kb_black_chord(t, k, kb_nt[k]);
@@ -2349,11 +2322,8 @@ static void key_up(uint32_t k)
         chord_revoice(kb_trk[k]);
         return;
     case KS_ERASE:
-        if (is_drum(t))
-            er_lanes &= (uint16_t)~(1u << kb_nt[k][0]);
-        else
-            for (i = 0; i < kb_n[k]; i++)
-                er_notes[(kb_nt[k][i] >> 5) & 3u] &= ~(1u << (kb_nt[k][i] & 31u));
+        for (i = 0; i < kb_n[k]; i++)
+            er_notes[(kb_nt[k][i] >> 5) & 3u] &= ~(1u << (kb_nt[k][i] & 31u));
         return;
     case KS_ROLL:
         for (i = 0; i < NROLL; i++)
