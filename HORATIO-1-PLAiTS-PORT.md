@@ -312,3 +312,23 @@ Implementation sequence:
 CTL-1 is a reference for interaction and FM-1 conventions, not a wholesale
 firmware dependency. Preserve its licensing notices if any code is adapted;
 prefer a clean implementation using HORATIO-1's existing scale/chord routines.
+
+
+### Selectable keyboard mapping — first implementation pass
+
+- Reused the existing per-track QNT parameter rather than adding a new
+  serialized parameter: CHROM (standard semitone layout), SNAP (existing
+  scale-quantized chromatic layout), and SCALE+CHORDS.
+- In SCALE+CHORDS, white keys continue to play individual scale notes and
+  black keys now trigger three-note diatonic triads, following the CTL-1
+  interaction pattern with a clean-room implementation using SLOOP scale masks.
+- Each physical key stores the exact notes it started. Existing key-up handling
+  releases those stored notes and sends the matching MIDI note-offs, even if
+  root, scale, octave, or mapping changes while the key is held.
+- The existing CHORD / CHORD+ voicing mode remains available in the other
+  keyboard mappings; SCALE+CHORDS uses its dedicated black-key triads instead.
+- Added host regression coverage for chromatic notes, scale white keys, all
+  black-key chord positions, and independent chord key-up/MIDI note-offs.
+- This is the first implementation pass. It must pass the new host test and
+  firmware build before being treated as validated; the installed FM-1 has not
+  been updated.
