@@ -93,17 +93,20 @@ static void key_events_test(void)
     mo_w = mo_r = 0;
     t->p[P_QUANT] = 2;
     t->p[P_SCALE] = 2;                      /* C minor: E key plays Eb */
-    t->p[P_AMODE] = 1;
-    song.playing = song.rec = 1;
+    t->p[P_AMODE] = 0;
+    song.playing = song.rec = 0;
     t->p[P_QUANT] = 0;                    /* standard chromatic mode keeps every semitone */
     fm1_in.notes = 1u << 8;                /* C# is a normal chromatic note */
     keyboard_block();
-    assert(t->arp_phys == 1 && t->nheld == 1 && t->held[0] == 61 && mo_w == 1);
+    assert(t->arp_phys == 0 && t->nheld == 1 && t->held[0] == 61 && mo_w == 1);
     assert(((midi_out_q[0] >> 16) & 127u) == 61u);
     t->p[P_QUANT] = 0;                    /* key-up uses the note captured on key-down */
     fm1_in.notes = 0;
     keyboard_block();
-    assert(mo_w == 0);
+    assert(mo_w == 2 && ((midi_out_q[1] >> 8) & 255u) == 0x80u);
+    mo_w = mo_r = 0;
+    t->p[P_AMODE] = 1;
+    song.playing = song.rec = 1;
     t->p[P_QUANT] = 2;
     fm1_in.notes = 1u << 11;              /* E white key plays Eb in C minor */
     keyboard_block();
