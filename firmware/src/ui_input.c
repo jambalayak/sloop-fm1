@@ -472,7 +472,11 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
             if (total)
                 preset_go((uint32_t)(((int32_t)cur + steps % (int32_t)total + (int32_t)total) % (int32_t)total));
         } else if (slot == 1u) {
+#ifdef HORATIO_PLAITS
+            select_engine(TSEL->eng_req == ENGI_SAMPLE ? ENGI_PLAITS : ENGI_SAMPLE);
+#else
             select_engine((TSEL->eng_req + (steps > 0 ? 1u : NENGINES - 1u)) % NENGINES);
+#endif
         } else if (slot == 3u) {          /* (2.7) KNOB 4: FAV, right adds the sound, left removes it */
             fav_toggle(steps > 0);
         }
