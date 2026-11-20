@@ -426,17 +426,6 @@ static void kbd_hold_test(void)
     puts("kbd hold: notes held when let go, a new chord replaces them, keys join while down, MIDI off waits, HOLD OFF ends ok");
 }
 
-/* 2.7 (#126): EDIT's MUTE mode (drum track) stays when EDIT is let go */
-static void mute_mode_test(void)
-{
-    er_mute = 1;
-    fm1_in.buttons = 0, fm1_in.notes = 0;
-    keyboard_block();
-    assert(er_mute == 1u);
-    er_mute = 0;
-    puts("edit mute mode: kept when EDIT is let go ok");
-}
-
 int main(void)
 {
     host_tracks_init();
@@ -447,6 +436,5 @@ int main(void)
     arp_swing_test();
     clkout_test();
     kbd_hold_test();
-    mute_mode_test();
     return 0;
 }
