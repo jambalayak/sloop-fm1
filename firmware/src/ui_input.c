@@ -467,13 +467,13 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
         return;
     }
     if (pg->graph == GR_BROWSE) {                         /* KNOB 1: one preset, KNOB 2: the next / previous engine */
-        if (slot == 0u && !is_drum(TSEL)) {
+        if (slot == 0u) {
             uint32_t total, cur = preset_pos(&total);
             if (total)
                 preset_go((uint32_t)(((int32_t)cur + steps % (int32_t)total + (int32_t)total) % (int32_t)total));
-        } else if (slot == 1u && !is_drum(TSEL)) {
+        } else if (slot == 1u) {
             select_engine((TSEL->eng_req + (steps > 0 ? 1u : NENGINES - 1u)) % NENGINES);
-        } else if (slot == 3u && !is_drum(TSEL)) {          /* (2.7) KNOB 4: FAV, right adds the sound, left removes it */
+        } else if (slot == 3u) {          /* (2.7) KNOB 4: FAV, right adds the sound, left removes it */
             fav_toggle(steps > 0);
         }
         return;
@@ -592,9 +592,9 @@ UI_SMALL static void midi_entry(void)                              /* (top of ui
         mono_hint = 0;
     }
     track_t *t = TSEL;
-    int on_page = mi_ok && song.seq_mode && cur_page()->scope == SC_STEP && !is_drum(t) && !song.rec && !rec_wait && !ft_on;
+    int on_page = mi_ok && song.seq_mode && cur_page()->scope == SC_STEP && !song.rec && !rec_wait && !ft_on;
     int rec_arm = song.rec || rec_wait || ft_on;          /* (2.6) recording, armed or a free take: on which track */
-    uint32_t rec_trk = ft_on ? ft_trk % NTRK : song.sel % NTRK;
+    uint32_t rec_trk = ft_on ? ft_trk % NPART : song.sel % NPART;
     static uint8_t rh_st, rh_trk;                         /* its hint: 0 off, 1 not said yet, 2 said (or not needed) */
     if (!rec_arm)
         rh_st = 0;
@@ -664,7 +664,7 @@ UI_SMALL static void seq_entry(uint32_t pressed)
     step_t *st = &t->step[ui.cursor];
     uint32_t k;
     mi_ok = 1;                                            /* (next frame, midi_entry may write) */
-    if (is_drum(t) || song.rec || rec_wait || ft_on)
+    if (song.rec || rec_wait || ft_on)
         return;
     for (k = 0; k < 27u; k++) {
         uint32_t note;
