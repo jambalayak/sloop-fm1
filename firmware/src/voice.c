@@ -298,7 +298,9 @@ static void voice_start(track_t *t, voice_t *v, uint32_t note, uint32_t vel, int
     const engine_t *e = ENGINES[t->engine];
     int sounding = v->active && v->stage != 0;
     uint32_t ph0 = v->ph[0], ph1 = v->ph[1], ph2 = v->ph[2];
+#ifndef HORATIO_PLAITS
     int32_t s0 = v->s[0], s1 = v->s[1], s4 = v->s[4], s5 = v->s[5], s6 = v->s[6], s7 = v->s[7];
+#endif
     if (sounding && eng_sampled(e)) {                   /* (2.8.3) fade it out first, then this note from silence */
         v->note = (uint8_t)note;                        /* (the same note again finds it: voice_alloc) */
         v->pend_note = (uint8_t)note;
