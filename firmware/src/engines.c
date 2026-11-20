@@ -25,7 +25,8 @@ static uint32_t uni_turns(uint32_t r, int32_t p16, int32_t d16)
 
 #ifdef HORATIO_PLAITS
 #include "eng_plaits.c"
-static const engine_t *const ENGINES[NENGINES] = {&ENG_PLAITS};
+#include "eng_sample.c" /* pitched sample playback remains available; the kit set is omitted by gen_samples.py */
+static const engine_t *const ENGINES[NENGINES] = {&ENG_PLAITS, &ENG_SAMPLE};
 static int phys_render_draws(const track_t *t, int32_t model) {
     (void)t;
     (void)model;
