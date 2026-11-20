@@ -231,27 +231,34 @@ until those measurements and audio tests pass.
 
 ## Measured Plaits voice footprint — 20 November 2026
 
-The build-only probe now measures the exact target-toolchain object layout:
+The build-only probe first measured the full 24-model upstream voice at
+8,876 B. HORATIO-1 only needs the 16 original Plaits models, so the build
+patch now removes the newer eight engine2 classes and their registrations.
+The target-toolchain measurement after that reduction is:
 
-- `sizeof(plaits::Voice)`: **8,876 B**.
+- `sizeof(plaits::Voice)`: **3,732 B** (down from 8,876 B).
 - `sizeof(stmlib::BufferAllocator)`: **16 B**.
 - `sizeof(plaits::Voice::Frame)`: **4 B**.
-- One planned voice state (Voice + allocator + 24-frame FIFO + 16 KiB arena): **25,372 B**.
+- One conservative voice state (Voice + allocator + 24-frame FIFO + 16 KiB
+  arena): **20,228 B**.
+- Four voices: **14,928 B** for the Voice objects and **65,984 B** for their
+  allocators, FIFOs and 16 KiB arenas (**80,912 B total**).
 
-Four voices therefore need 35,504 B for the four `plaits::Voice` objects and
-65,984 B for their allocators, FIFOs and 16 KiB arenas (101,488 B total).
 The current reference build has 43,124 B of `.data + .bss` headroom and
 10,164 B of `.pool` headroom. Keeping the four `Voice` objects in `.bss`
-leaves about 7.6 KiB there; the 65,984 B of per-voice arenas and small state
-need another 55,820 B of `.pool`.
+fits comfortably. The 65,984 B of per-voice arenas and small state need
+another 55,820 B of `.pool`.
 
-This gives a concrete memory route rather than a guess: remove the old
-three-part engine arena when the legacy engine bank is retired, and shorten
-the power-of-two delay buffer from 65,536 to 32,768 samples. The latter
-releases 65,536 B while retaining a **0.74 s** tempo delay at 44.1 kHz; chorus,
-reverb, distortion and the planned compact granular effect remain separate.
-The final linker report must verify the actual layout before this is enabled.
-No Plaits DSP has been added to the installable image yet.
+This gives a concrete memory route: remove the old three-part engine arena
+when the legacy engine bank is retired, and shorten the power-of-two delay
+buffer from 65,536 to 32,768 samples. The latter releases 65,536 B while
+retaining a **0.74 s** tempo delay at 44.1 kHz; chorus, reverb, distortion
+and the planned compact granular effect remain separate. The final linker
+report must verify the actual layout before this is enabled.
+
+The C++ check now compiles 35 Plaits/stmlib objects, excluding the engine2
+sources. This validates the reduced 16-model source set and object layout;
+Plaits DSP is still not linked into the installable firmware image.
 
 ## Engine integration constraint
 
