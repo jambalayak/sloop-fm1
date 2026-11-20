@@ -236,3 +236,67 @@ without advancing the envelope separately for each note. The integration
 must also map SLOOP's global four-voice allocation to those four DSP slots
 and preserve click-free voice stealing. This is a design requirement, not
 yet implemented.
+
+
+## Scale-aware keyboard and sequence transposition — approved design
+
+CTL-1 is a useful FM-1 reference for scale-aware keyboard interaction, but
+HORATIO-1 should keep its SLOOP sequencer and project format rather than
+replace them with CTL-1's application. The current SLOOP `seq.c` already has
+a scale table, root/scale quantisation, white-key scale-degree mapping and
+diatonic chord generation. It currently has 15 scale masks and chord-mode
+black-key modifier behaviour; this is not yet the requested CTL-1-style
+white-note / black-chord keyboard map.
+
+Target behaviour:
+
+- Manual root-note and scale selection, available from the performance and
+  sequencer workflow.
+- In scale-keyboard mode, the 16 white keys play successive scale degrees.
+- The 11 black keys each trigger the diatonic chord built on the corresponding
+  scale degree. Chord voicing is capped at four notes to match the instrument's
+  four-note performance limit.
+- Keep a clearly accessible chromatic mode and preserve MIDI note input/output.
+- Keep existing chord-quality/voicing options where they fit; avoid making
+  black-key chord triggers behave as chord modifiers at the same time.
+- The keyboard display should show the selected root and scale tones, with a
+  restrained neon/vaporwave visual treatment while retaining readable labels.
+
+Sequence key/scale transformation:
+
+- Provide two distinct operations: (1) semitone transpose, which moves every
+  stored note by a fixed interval and preserves intervals; (2) scale remap,
+  which maps each note's scale degree from the source root/scale into a chosen
+  destination root/scale.
+- Preview the destination root and scale before applying. Apply/Cancel must
+  leave the original pattern untouched until Apply.
+- Preserve step positions, lengths/ties, velocity, accents, slides, ratchets,
+  microtiming, fill conditions and parameter locks. Only note pitches change.
+- Handle notes outside the source scale deterministically (nearest scale
+  degree, with ties resolved downward); preserve octave/register as far as
+  MIDI 0..127 allows. Report or preview any notes clipped at the MIDI limits.
+- Operate on the selected synth track only; do not transform drum lanes.
+- Do not silently change the track's live root/scale settings when transforming
+  stored notes. The user chooses whether to also set the track's playback
+  root/scale.
+- Preserve old project-file compatibility; do not change the serialized step
+  structure merely to add this feature.
+
+Implementation sequence:
+
+1. Add and host-test pure scale-degree mapping helpers (including negative
+   octaves, non-diatonic source notes, and MIDI boundaries).
+2. Add the white-key / black-key chord keyboard mode, reusing existing
+   scale masks and chord builder where possible; ensure key-up releases all
+   notes started by a chord key and never leaves MIDI notes hanging.
+3. Add a previewable, undo-safe sequence transform for semitone transpose and
+   scale remap; verify that all non-pitch step metadata is byte-for-byte
+   unchanged.
+4. Add compact UI controls and keyboard feedback; test all 15 existing scales,
+   chord voicings, MIDI input/output, recording, ties and multi-part playback.
+5. Build and test the Harbour-compatible package before enabling the feature
+   in a release.
+
+CTL-1 is a reference for interaction and FM-1 conventions, not a wholesale
+firmware dependency. Preserve its licensing notices if any code is adapted;
+prefer a clean implementation using HORATIO-1's existing scale/chord routines.
