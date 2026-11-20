@@ -229,6 +229,30 @@ measure four voices and the shared-envelope mixer before changing the
 existing track/voice allocator. Do not enable the adapter in release builds
 until those measurements and audio tests pass.
 
+## Measured Plaits voice footprint — 20 November 2026
+
+The build-only probe now measures the exact target-toolchain object layout:
+
+- `sizeof(plaits::Voice)`: **8,876 B**.
+- `sizeof(stmlib::BufferAllocator)`: **16 B**.
+- `sizeof(plaits::Voice::Frame)`: **4 B**.
+- One planned voice state (Voice + allocator + 24-frame FIFO + 16 KiB arena): **25,372 B**.
+
+Four voices therefore need 35,504 B for the four `plaits::Voice` objects and
+65,984 B for their allocators, FIFOs and 16 KiB arenas (101,488 B total).
+The current reference build has 43,124 B of `.data + .bss` headroom and
+10,164 B of `.pool` headroom. Keeping the four `Voice` objects in `.bss`
+leaves about 7.6 KiB there; the 65,984 B of per-voice arenas and small state
+need another 55,820 B of `.pool`.
+
+This gives a concrete memory route rather than a guess: remove the old
+three-part engine arena when the legacy engine bank is retired, and shorten
+the power-of-two delay buffer from 65,536 to 32,768 samples. The latter
+releases 65,536 B while retaining a **0.74 s** tempo delay at 44.1 kHz; chorus,
+reverb, distortion and the planned compact granular effect remain separate.
+The final linker report must verify the actual layout before this is enabled.
+No Plaits DSP has been added to the installable image yet.
+
 ## Engine integration constraint
 
 SLOOP's existing engine interface calls `render()` once for each active
