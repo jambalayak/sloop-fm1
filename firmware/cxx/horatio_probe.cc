@@ -11,7 +11,7 @@ struct HoratioProbeSlot {
     uint8_t arena[16384] __attribute__((aligned(8)));
     uint32_t rng;
     int32_t pitch_q7;
-    uint16_t harmonics, timbre, morph, decay, lpg_colour, aux_mix;
+    uint16_t harmonics, timbre, morph, decay, lpg_colour, aux_mix, level;
     uint8_t model, gate, retrigger_low_pending, fifo_pos, fifo_count;
 };
 
