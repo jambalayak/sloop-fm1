@@ -89,6 +89,14 @@ the standard Plaits set. HORATIO-1's intended preset list should be mapped
 explicitly to the upstream Plaits models rather than copied from GATOR's
 extended model numbering.
 
+
+A successful GATOR 48 kHz CI build (17 October 2026) reports a 273,240-byte
+firmware image, 16,008 bytes of `.data + .bss`, and 84,780 bytes used from
+the 344,064-byte pool, with no soft-floating-point routines linked. This
+confirms the single-precision FPU path works on the target. These are GATOR
+measurements for its **single-voice** app, not HORATIO-1 measurements; they
+must not be presented as the RAM cost of a polyphonic Plaits engine.
+
 ### What this changes for HORATIO-1
 
 The C++/FPU risk is no longer an unknown: the FM-1 can run Plaits when the C++
