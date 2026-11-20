@@ -37,6 +37,7 @@ static void fm1_irq_on(void) {}
 #include "cpu1_host.c"                  /* the second core on the host: CORES=1 inline, CORES=2 a thread */
 #include "../firmware/src/engines.c"
 #include "../firmware/src/drums.c"
+#include "../firmware/src/metronome.c"
 #include "../firmware/src/params.c"
 #include "../firmware/src/voice.c"
 #include "../firmware/src/slicer.c"
