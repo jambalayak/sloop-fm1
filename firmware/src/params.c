@@ -458,13 +458,18 @@ static int page_for_drum(const page_t *pg)
 /* a page the buttons and SELECT reach on the selected track: EDIT > FILTER (TYPE) on ANALOG only */
 static int page_shown(const page_t *pg)
 {
+    /* HORATIO-1 has no drum editor or drum configuration pages. Keep the
+     * legacy descriptors and IDs for project/editor compatibility. */
+    if (pg->scope == SC_DRUM || (pg->scope == SC_GLOBAL && pg->id[0] == G_DRCH))
+        return 0;
     return pg->id[0] != P_FTYPE || (!is_drum(TSEL) && TSEL->eng_req % NENGINES == 0u);
 }
 
 static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **valp)
 {
     uint32_t id = pg->id[slot];
-    if (id == 0xFFu || (is_drum(TSEL) && (!page_for_drum(pg) || (pg->scope == SC_GLOBAL && id == G_INITSND)))) {
+    if (id == 0xFFu || (pg->scope == SC_GLOBAL && (id == G_DRCH || id == G_DRMAP)) ||
+        (is_drum(TSEL) && (!page_for_drum(pg) || (pg->scope == SC_GLOBAL && id == G_INITSND)))) {
         *valp = 0;
         return 0;
     }
