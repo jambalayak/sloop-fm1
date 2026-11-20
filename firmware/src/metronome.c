@@ -25,7 +25,7 @@ static void click_render(int32_t *ml, int32_t *mr, uint32_t n)
     int32_t g;
     if (!click.env)
         return;
-    g = (int32_t)((int64_t)click.gain * song.g[G_DRLVL] / 100);
+    g = (int32_t)((int64_t)click.gain * song.g[G_CLICKLVL] / 100);
     for (i = 0; i < n; i++) {
         int32_t v = (int32_t)(((int64_t)sine_i(click.ph) * (click.env >> 15) >> 15) * g >> 15);
         ml[i] += v;

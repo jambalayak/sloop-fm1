@@ -2991,7 +2991,7 @@ static void __attribute__((noinline)) midi_cc(track_t *t, uint32_t cc, uint32_t 
     if (d) {
     } else if (is_drum(t)) {
         if (id == P_LEVEL || id == P_REV || id == P_DLY) {
-            id = id == P_LEVEL ? G_DRLVL : id == P_REV ? G_DRREV : G_DRDLY;
+            id = id == P_LEVEL ? G_CLICKLVL : id == P_REV ? G_DRREV : G_DRDLY;
             d = &GP[id];
             slot = &song.g[id];
         } else if (id == P_PAN || id == P_TFLT) {
