@@ -270,12 +270,15 @@ static uint32_t kb_degree_pitch(const track_t *t, int32_t degree, int32_t oct)
 static uint32_t kb_black_chord(const track_t *t, uint32_t k, uint8_t *notes)
 {
     int degree = kb_black_index(k);
+    uint32_t i, n = 0;
     if (degree < 0)
         return 0;
-    notes[0] = (uint8_t)kb_degree_pitch(t, degree, song.octave);
-    notes[1] = (uint8_t)kb_degree_pitch(t, degree + 2, song.octave);
-    notes[2] = (uint8_t)kb_degree_pitch(t, degree + 4, song.octave);
-    return 3;
+    for (i = 0; i < 3u; i++) {
+        uint8_t note = (uint8_t)kb_degree_pitch(t, degree + (int32_t)(2u * i), song.octave);
+        if (!n || notes[n - 1u] != note)       /* high-register clipping must not double-trigger one MIDI note */
+            notes[n++] = note;
+    }
+    return n;
 }
 /* key k -> note on track t (KB_SILENT: none) */
 static uint32_t kb_map(const track_t *t, uint32_t k)
@@ -2311,7 +2314,7 @@ static void key_down(uint32_t k)
         uint32_t lane = lane_of_key(k), lvl = key_lvl();
         kb_nt[k][0] = (uint8_t)lane;
         kb_n[k] = 1;
-        if (layer == LY_ROLL) {
+        if (layer == LY_ROLL && black < 0) {
             kb_kind[k] = KS_ROLL;
             roll_start(k, t, lane, lvl);
             return;
