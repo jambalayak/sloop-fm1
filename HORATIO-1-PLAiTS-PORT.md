@@ -203,3 +203,19 @@ polyphonic voices:
 This is the intended musical behaviour. It is not yet implemented in the
 firmware. The four-instance Plaits allocator and shared memory cost must be
 measured before the engine can be enabled.
+
+## Toolchain checkpoint — 20 November 2026
+
+The opt-in Plaits C++ compile check now passes in GitHub Actions on the FM-1
+JieLi toolchain. It compiles the pinned Plaits DSP sources and the required
+stmlib DSP utilities, while excluding the upstream STM32 drivers and
+bootloader. The normal SLOOP firmware build and .fwsc packaging also pass
+with this integration groundwork present.
+
+This checkpoint validates compilation only. It does not mean Plaits is
+linked into the installable HORATIO-1 image or that the paraphonic engine is
+implemented. The next engineering stage is to add a small C-compatible
+HORATIO adapter, measure the RAM and flash cost of one Plaits voice, then
+measure four voices and the shared-envelope mixer before changing the
+existing track/voice allocator. Do not enable the adapter in release builds
+until those measurements and audio tests pass.
