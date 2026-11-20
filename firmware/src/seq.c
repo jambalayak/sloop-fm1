@@ -1840,7 +1840,6 @@ static void arm_start(track_t *t)
     }
 }
 
-static void drum_input(uint32_t lane, uint32_t lvl, uint32_t rat, int rec);
 /* SLOOP 2.7, GLO > MIDI 3 > DR MAP: the drum sound a MIDI note plays. GM: the General MIDI note of each sound (the nearest
  * one for the others, drums.c lane_of_note), as before; 1-16: 16 notes in a row are the 16 sounds in order, from note 36
  * (KICK, KICK 2, SNARE, CLAP, HAT…) and again every 16 notes, so any keyboard or row of pads plays them all */
@@ -2003,20 +2002,6 @@ static void input_off_now(track_t *t, uint32_t note)
         trk_note_off(t, note);                      /* it too: it ends with the pattern's note, not with the key */
 }
 
-/* a drum hit from a key, MIDI or a roll: lane, level; rat: its ratchet when recorded (rolls); rec: it
- * may be recorded (a roll records one hit a step) */
-static void drum_input(uint32_t lane, uint32_t lvl, uint32_t rat, int rec)
-{
-    track_t *t = TDRUM;
-    lane &= 15u;
-    pen_lane = (uint8_t)lane;
-    arm_start(t);
-    if (ft_on && ft_trk == TRK_DRUM)
-        ft_note_on(lane, lvl);
-    if (rec && ((song.rec >> TRK_DRUM) & 1u) && song.playing)
-        rec_hit(t, lane, lvl, rat);
-    trk_note_on(t, LANE_NOTE[lane], lvl_vel(lvl, 100));
-}
 
 /* -------------------------------------------------------------- roll --- */
 /* ARP + key: note repeat. The key plays at G_ROLL (1/8, 1/16, 1/32, 32T, 1/64) on the transport's grid
@@ -2061,13 +2046,8 @@ static void roll_hit(uint32_t r)
         rec = abs != roll[r].rec_abs;
         roll[r].rec_abs = abs;
     }
-    if (is_drum(t)) {
-        roll_rec = 1;
-        drum_input(roll[r].note, roll[r].lvl, rat, rec || !armed);
-        roll_rec = 0;
-        seq_out_on(t, LANE_NOTE[roll[r].note & 15u], lvl_vel(roll[r].lvl, 100));
-        return;
-    }
+    if (is_drum(t))
+        return;                                     /* legacy drum rolls are disabled */
     arm_start(t);
     if (roll[r].off)
         trk_note_off(t, roll[r].note);
@@ -2304,21 +2284,8 @@ static void key_down(uint32_t k)
         lk_push(KB_GRID, k, 1);
         return;
     }
-    if (is_drum(t)) {                                 /* the drum track: the key's lane */
-        uint32_t lane = lane_of_key(k), lvl = key_lvl();
-        kb_nt[k][0] = (uint8_t)lane;
-        kb_n[k] = 1;
-        if (layer == LY_ROLL && kb_black_index(k) < 0) {
-            kb_kind[k] = KS_ROLL;
-            roll_start(k, t, lane, lvl);
-            return;
-        }
-        kb_kind[k] = KS_DRUM;
-        drum_input(lane, lvl, 0, 1);
-        mc = trk_midi_ch(sel);
-        midi_out_note(mc, (uint32_t)LANE_NOTE[lane], lvl_vel(lvl, 100));
-        return;
-    }
+    if (is_drum(t))
+        return;                                     /* legacy drum keyboard input is disabled */
     {
         int scale_chords = t->p[P_QUANT] == 2 && !is_drum(t);
         int black = scale_chords ? kb_black_index(k) : -1;
