@@ -398,7 +398,11 @@ static int32_t thr_rev, thr_dly;
 static inline int32_t send_thr(int32_t s, int32_t g) { return g ? s + (((127 * 258 - s) * g) >> 15) : s; }   /* s 0..32766 */
 #define TSEL (&trk[song.sel])    /* the selected track */
 #define TDRUM (&trk[TRK_DRUM])
+#ifdef HORATIO_PLAITS
+static int is_drum(const track_t *t) { (void)t; return 0; }
+#else
 static int is_drum(const track_t *t) { return t == TDRUM; }
+#endif
 /* silent: MUTE, or another track is soloed */
 static int trk_silent(const track_t *t)
 {
