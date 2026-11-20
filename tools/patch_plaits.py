@@ -24,3 +24,63 @@ if "kSampleRate = HORATIO_FS_HZ" not in source or "kCorrectedSampleRate = HORATI
     raise SystemExit("Plaits dsp.h changed: expected sample-rate constants were not found")
 header.write_text(source)
 print("Plaits sample rate adapted to HORATIO-1: 44.1 kHz")
+
+# HORATIO-1 exposes the 16 original Plaits models. The six engine2 classes
+# are newer additions and are deliberately excluded from this instrument.
+def patch_file(path, replacements, label):
+    text = path.read_text()
+    for old, new in replacements:
+        if new in text:
+            continue
+        if text.count(old) != 1:
+            raise SystemExit(f"Plaits {label} changed: expected one patch anchor")
+        text = text.replace(old, new, 1)
+    path.write_text(text)
+
+
+voice_h = root / "third_party" / "eurorack" / "plaits" / "dsp" / "voice.h"
+voice_cc = root / "third_party" / "eurorack" / "plaits" / "dsp" / "voice.cc"
+engine2_includes = """#include "plaits/dsp/engine2/chiptune_engine.h"
+#include "plaits/dsp/engine2/phase_distortion_engine.h"
+#include "plaits/dsp/engine2/six_op_engine.h"
+#include "plaits/dsp/engine2/string_machine_engine.h"
+#include "plaits/dsp/engine2/virtual_analog_vcf_engine.h"
+#include "plaits/dsp/engine2/wave_terrain_engine.h"
+"""
+engine2_members = """  VirtualAnalogVCFEngine virtual_analog_vcf_engine_;
+  PhaseDistortionEngine phase_distortion_engine_;
+  SixOpEngine six_op_engine_;
+  WaveTerrainEngine wave_terrain_engine_;
+  StringMachineEngine string_machine_engine_;
+  ChiptuneEngine chiptune_engine_;
+"""
+engine2_register = """  engines_.RegisterInstance(&virtual_analog_vcf_engine_, false, 1.0f, 1.0f);
+  engines_.RegisterInstance(&phase_distortion_engine_, false, 0.7f, 0.7f);
+  engines_.RegisterInstance(&six_op_engine_, true, 1.0f, 1.0f);
+  engines_.RegisterInstance(&six_op_engine_, true, 1.0f, 1.0f);
+  engines_.RegisterInstance(&six_op_engine_, true, 1.0f, 1.0f);
+  engines_.RegisterInstance(&wave_terrain_engine_, false, 0.7f, 0.7f);
+  engines_.RegisterInstance(&string_machine_engine_, false, 0.8f, 0.8f);
+  engines_.RegisterInstance(&chiptune_engine_, false, 0.5f, 0.5f);
+"""
+chiptune_branch = """  } else if (engine_index == 7) {
+    if (modulations.trigger_patched && !modulations.timbre_patched) {
+      // Disable internal envelope on TIMBRE, and enable the envelope generator
+      // built into the chiptune engine.
+      internal_envelope_amplitude_timbre = 0.0f;
+      chiptune_engine_.set_envelope_shape(patch.timbre_modulation_amount);
+    } else {
+      chiptune_engine_.set_envelope_shape(ChiptuneEngine::NO_ENVELOPE);
+    }
+"""
+patch_file(voice_h, [
+    (engine2_includes, ""),
+    ("const int kMaxEngines = 24;", "const int kMaxEngines = 16;"),
+    (engine2_members, ""),
+], "voice.h")
+patch_file(voice_cc, [
+    (engine2_register, ""),
+    ("if (engine_index == 15) {", "if (engine_index == 7) {"),
+    (chiptune_branch, ""),
+], "voice.cc")
+print("Plaits model set reduced to the 16 original engines")
