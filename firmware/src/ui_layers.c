@@ -99,9 +99,7 @@ UI_SMALL static void pattern_length(track_t *t, int32_t d)       /* x2 (the patt
 UI_SMALL static void pattern_transpose(track_t *t, int32_t d)    /* every note a semitone up / down (synth parts) */
 {
     uint32_t i, j;
-    if (is_drum(t))
-        return;
-    layer_undo_mark(t);
+     layer_undo_mark(t);
     fm1_irq_off();
     for (i = 0; i < NSTEP; i++)
         for (j = 0; j < t->step[i].n && j < 4u; j++)
@@ -116,7 +114,7 @@ UI_SMALL static void pattern_transpose(track_t *t, int32_t d)    /* every note a
 static uint16_t step_pend_off;                         /* the step keys that clear their step when let go */
 UI_SMALL static int step_is_on(const track_t *t, uint32_t idx)
 {
-    return is_drum(t) ? dstep_has(&t->dstep[idx], pen_lane) : step_on(&t->step[idx]);
+    return step_on(&t->step[idx]);
 }
 UI_SMALL static void step_down(uint32_t w)
 {
@@ -134,9 +132,7 @@ UI_SMALL static void step_down(uint32_t w)
     }
     layer_undo_mark(t);
     fm1_irq_off();
-    if (is_drum(t)) {
-        dstep_set(&t->dstep[idx], pen_lane, LV_NORM, 0);
-    } else {
+    {
         step_t *s = &t->step[idx];
         uint32_t i, n = pen_n ? pen_n : 1u;
         memset(s, 0, sizeof *s);
@@ -161,25 +157,14 @@ UI_SMALL static void step_up(uint32_t w)
         return;
     layer_undo_mark(t);
     fm1_irq_off();
-    if (is_drum(t))
-        dstep_clr(&t->dstep[idx], pen_lane);
-    else
-        step_clear(&t->step[idx]);
-    if (!is_drum(t) || !dstep_mask(&t->dstep[idx])) {   /* an empty step keeps no lock, no nudge, no condition */
-        lock_del(t, idx, P_COUNT);
-        t->micro[idx] = 0;
-        step_fill_set(t, idx, FC_NORM);
-    }
+    step_clear(&t->step[idx]);
+    lock_del(t, idx, P_COUNT);
+    t->micro[idx] = 0;
+    step_fill_set(t, idx, FC_NORM);
     fm1_irq_on();
     sync_reload = 1;
 }
-/* the drum sound the SEQ layer sets (KNOB 1): heard when it changes */
-UI_SMALL static void pen_lane_move(int32_t s)
-{
-    uint8_t l = (uint8_t)clamp(pen_lane + s, 0, DRUM_LANES - 1);
-    pen_lane = l;
-}
-/* KNOB 1..4 with step keys held: their sound / note (drums: the sound's lane; synth: every note), level,
+ /* KNOB 1..4 with step keys held: their sound / note (drums: the sound's lane; synth: every note), level,
  * ratchet, nudge (1/64 of a step, - early + late). knob 4 = PRESETS: a lock of ui.lock_par on them, made at
  * the track's value, then moved */
 UI_SMALL static void steps_held_edit(uint32_t knob, int32_t s)
@@ -187,7 +172,7 @@ UI_SMALL static void steps_held_edit(uint32_t knob, int32_t s)
     track_t *t = TSEL;
     uint32_t w, i;
     /* the accelerated turn once for every step held (a second call would see no time pass: x3 on the others) */
-    int32_t sv = knob == 1u && !is_drum(t) ? accel(EN_K2, s, 126) : 0;
+    int32_t sv = knob == 1u ? accel(EN_K2, s, 126) : 0;
     int32_t sk = knob == 4u ? accel(EN_PRESET, s, lock_desc(t, ui.lock_par % P_COUNT)->max -
                                                   lock_desc(t, ui.lock_par % P_COUNT)->min) : 0;
     layer_undo_mark(t);
@@ -209,17 +194,7 @@ UI_SMALL static void steps_held_edit(uint32_t knob, int32_t s)
                 ui_message(p_lockable(id) ? "NO LOCK LEFT" : "NOT LOCKABLE");
             continue;
         }
-        if (is_drum(t)) {
-            dstep_t *d = &t->dstep[idx];
-            uint32_t lv = dstep_lvl(d, pen_lane), rt = dstep_rat(d, pen_lane);
-            if (!dstep_has(d, pen_lane))
-                continue;
-            if (knob == 1u)
-                lv = LV_UP[clamp((int32_t)lvl_rank(lv) + s, 0, 3)];
-            else
-                rt = (uint32_t)clamp((int32_t)rt + s, 0, 3);
-            dstep_set(d, pen_lane, lv, rt);
-        } else {
+        {
             step_t *st = &t->step[idx];
             if (!step_on(st))
                 continue;
@@ -248,16 +223,14 @@ UI_SMALL static void steps_held_edit(uint32_t knob, int32_t s)
     fm1_irq_on();
     sync_reload = 1;
 }
-/* ALGORITHM with step keys held: the lock parameter, through the lockable ones (the drum track: not the
- * engine parameters it has no use for), wrapping round */
+/* ALGORITHM with step keys held: the lock parameter, through the lockable ones, wrapping round */
 UI_SMALL static void lock_par_step(int32_t s)
 {
     const track_t *t = TSEL;
     uint32_t id = ui.lock_par % P_COUNT, guard = P_COUNT;
     do {
         id = (id + (uint32_t)P_COUNT + (uint32_t)(s > 0 ? 1 : -1)) % P_COUNT;
-    } while (guard-- && (!p_lockable(id) || lock_desc(t, id)->max <= lock_desc(t, id)->min ||
-                         (is_drum(t) && id > P_E0 && id <= P_E7)));
+    } while (guard-- && (!p_lockable(id) || lock_desc(t, id)->max <= lock_desc(t, id)->min));
     ui.lock_par = (uint8_t)id;
 }
 /* OCT- with step keys held: their nudge, locks and fill condition go */
@@ -342,13 +315,7 @@ UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
     }
     switch (layer) {
     case LY_STEP:
-        if (w < 0 && is_drum(TSEL)) {                   /* (2.7.1) the drum track: a black key picks the sound, unheard */
-            int32_t b = drum_black_of(k);
-            if (b >= 0)
-                drum_black_pick((uint32_t)b);
-            return;
-        }
-        if (w < 0) {                                    /* the first four black keys: pages 1..4 (OCT- / OCT+ too) */
+         if (w < 0) {                                    /* the first four black keys: pages 1..4 (OCT- / OCT+ too) */
             static const int8_t PG[12] = {-1, 0, -1, 1, -1, 2, -1, -1, 3, -1, -1, -1};
             if (k < 12u && PG[k] >= 0 && (uint32_t)PG[k] * 16u < trk_len(TSEL))
                 ui.step_page = (uint8_t)PG[k];
