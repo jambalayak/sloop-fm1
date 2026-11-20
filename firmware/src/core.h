@@ -6,8 +6,8 @@
  * pattern and the pattern parameters of its track_t). The parts share one budget of
  * NVOICE sounding voices (voice.c). */
 #include <stdint.h>
-#define NVOICE 8                 /* voices per part, and the budget shared by all parts */
-#define NPOLY 8
+#define NVOICE 4                 /* voice slots per part; four sounding voices shared across all synth parts */
+#define NPOLY 4                  /* maximum POLY/UNISON allocation per synth part */
 #define NPART 3                  /* synth parts: tracks 1..3 */
 #define NTRK 4                   /* + the drum track */
 #define TRK_DRUM 3
