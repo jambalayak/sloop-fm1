@@ -6,37 +6,6 @@
  * LAYERS (a function button held: what the 16 white keys and the knobs do now), HOLD (a hold to
  * confirm: clear, save), REC (armed / free take). Every band is drawn into the canvas only when its
  * signature changed. */
-static uint8_t drum_page, drum_cursor;   /* drum_page: 0 GRID, 1 KIT, 2 SOUND (2.7: a sound's TUNE, DECAY) */
-#define drum_lane pen_lane                 /* (2.7.1) one drum sound picked everywhere: the GRID, SOUND, the SEQ layer, a pad
-                                            * played (seq.c pen_lane) */
-/* (2.7.1) the black keys pick the drum sound on the GRID page and in the SEQ layer (the pages: OCT- / OCT+), never heard;
- * the same key again: the other sound of its pair. F#3 .. F#5: KICK / KICK 2, SNARE / SNARE 2, RIM, CLAP, HAT / PEDAL,
- * OPEN HAT, LOW TOM / HI TOM, CRASH, RIDE, SHAKER / CONGA, COWBELL */
-static const uint8_t DRUM_BLACK[11][2] = {{0, 1}, {2, 8}, {7, 7}, {3, 3}, {4, 6}, {5, 5}, {9, 10}, {11, 11}, {12, 12},
-                                          {13, 14}, {15, 15}};
-UI_SMALL static int32_t drum_black_of(uint32_t k)       /* key k: its black key 0..10, -1 a white key */
-{
-    uint32_t i;
-    for (i = 0; i < 11u; i++)
-        if (PUNCH_BLACK[i] == k)
-            return (int32_t)i;
-    return -1;
-}
-UI_SMALL static uint32_t drum_black_key(uint32_t lane)    /* the key of the black key a sound is on */
-{
-    uint32_t i;
-    for (i = 0; i < 11u; i++)
-        if (DRUM_BLACK[i][0] == lane || DRUM_BLACK[i][1] == lane)
-            return PUNCH_BLACK[i];
-    return PUNCH_BLACK[0];
-}
-UI_SMALL static void drum_black_pick(uint32_t b)          /* black key b: its sound, or the other of its pair */
-{
-    const uint8_t *g = DRUM_BLACK[b % 11u];
-    pen_lane = pen_lane == g[0] && g[1] != g[0] ? g[1] : g[0];
-    ui_say("SOUND ", LANE_NAME[pen_lane]);
-    ui.force = 1;
-}
 static void trk_short_name(uint32_t c, char *b);
 UI_SMALL static int on_drum_page(void) { return !ui.home && cur_page()->scope == SC_DRUM; }
 
@@ -44,7 +13,6 @@ UI_SMALL static int on_drum_page(void) { return !ui.home && cur_page()->scope ==
 /* TE_G1 .. TE_G4: the greys (tiles, empty steps, labels, secondary text), gfx.c (2.7: on a theme's background) */
 #define TE_RED RGB(255, 44, 52)          /* recording, erasing */
 /* TE_COL, TE_MID, TE_DIM: the tracks' colours, gfx.c (2.7: a theme may set them) */
-#define TE_DRUM TE_COL[3]
 
 UI_SMALL static void te_disc(int32_t cx, int32_t cy, int32_t r, uint16_t c)     /* filled circle */
 {
@@ -133,8 +101,6 @@ UI_SMALL static void te_dials(int32_t y0, const char *const lab[4], const char *
 UI_SMALL static void studio_open(uint32_t scope)
 {
     uint32_t i;
-    if (scope == SC_DRUM)
-        return;                                     /* HORATIO-1 has no drum editor page */
     if (scope == SC_SONG && rec_wait)
         rec_wait = 0;                                   /* (an arm does not follow into the song page) */
     for (i = 0; i < NPAGES; i++) if (PAGES[i].scope == scope) {
@@ -234,25 +200,20 @@ UI_SMALL static void swing_str(char *b, int32_t v)            /* 0 straight .. 1
 
 UI_SMALL static void studio_tracks_draw(void)
 {
-    static uint32_t head, rows[NTRK], footer;
+    static uint32_t head, rows[NPART], footer;
     uint32_t i, j;
     int32_t sect = song.playing && live_sec >= 0 ? live_sec : (int32_t)song.g[G_SLOT] - 1;   /* (2.7.2) the section playing */
     te_header("tracks", TE_G3, &head, sect);
-    for (i = 0; i < NTRK; i++) {
+    for (i = 0; i < NPART; i++) {
         track_t *t = &trk[i];
         char b[24], e[16];
         uint32_t selected = song.sel == i, len = (uint32_t)clamp(t->p[P_SLEN], 1, 64);
-        uint32_t level = i == TRK_DRUM ? song.g[G_DRLVL] : t->p[P_LEVEL];
+        uint32_t level = t->p[P_LEVEL];
         uint32_t silent = trk_silent(t) || !level, pos = t->seq_idx % len, rec = (song.rec >> i) & 1u;
         uint32_t solo = (song.solo >> i) & 1u, bank = song.playing ? pos / 16u : 0u, h;
         uint16_t col = TE_COL[i], dim = TE_DIM[i];
-        if (i == TRK_DRUM) {
-            str_cpy(b, DRUM_KIT_NAMES[drum_kit()], sizeof b);
-            te_lower(e, "drums", sizeof e);
-        } else {
-            trk_short_name(i, b);
-            te_lower(e, ENGINES[t->eng_req % NENGINES]->name, sizeof e);
-        }
+        trk_short_name(i, b);
+        te_lower(e, ENGINES[t->eng_req % NENGINES]->name, sizeof e);
         b[13] = 0;
         h = studio_hash(selected + level * 7u + silent * 997u + rec * 1999u + solo * 4999u + len * 37u +
                         song.playing * 7u + pos * 71u + bank * 13u, b);
@@ -308,7 +269,7 @@ UI_SMALL static void studio_tracks_draw(void)
         static const char *const lab[4] = {"swing", "level", "steps", "pan"};
         const char *val[4] = {v[0], v[1], v[2], v[3]};
         int32_t ratio[4];
-        uint32_t lvl = is_drum(t) ? song.g[G_DRLVL] : t->p[P_LEVEL];
+        uint32_t lvl = t->p[P_LEVEL];
         swing_str(v[0], song.g[G_SWING]);
         fmt_int(v[1], t->p[P_MUTE] ? 0 : (int32_t)lvl * 100 / 127);
         fmt_int(v[2], t->p[P_SLEN]);
@@ -321,34 +282,19 @@ UI_SMALL static void studio_tracks_draw(void)
     }
 }
 
-/* ---------------------------------------------------------------- DRUMS --- */
-static const char *const LV_NAME[4] = {"norm", "ghost", "soft", "hard"};
-UI_SMALL static uint32_t lvl_rank(uint32_t lvl);                 /* (below) ghost 0, soft 1, norm 2, hard 3 */
-UI_SMALL static uint16_t lvl_col(uint32_t lvl)                   /* a hit's colour by its level */
+/* ------------------------------------------------------- key lights --- */
+static uint8_t key_lit[27];                             /* synth notes briefly stay lit after their gates close */
+static uint8_t key_lit_trk = 0xFF;                      /* track the note lights belong to */
+UI_SMALL static void pads_tick(void)                    /* once a frame: recently started synth notes */
 {
-    return lvl == LV_GHOST ? TE_DIM[3] : lvl == LV_SOFT ? TE_MID[3] : lvl == LV_HARD ? C_WHITE : TE_DRUM;
-}
-static uint16_t pad_lit[DRUM_LANES];                   /* pads and key LEDs: frames left lit */
-static uint8_t key_lit[27];                             /* menu NOTES, a synth track: frames its key stays lit */
-static uint8_t key_lit_trk = 0xFF;                      /* (the track key_lit is for) */
-UI_SMALL static void pads_tick(void)                             /* once a frame: the hits since the last one */
-{
-    uint32_t i, hits, n[NPART][4], k, w;
+    uint32_t i, n[NPART][4], k, w;
     fm1_irq_off();
-    hits = drums.hits;
-    drums.hits = 0;
     for (i = 0; i < NPART; i++)
         for (w = 0; w < 4u; w++) {
             n[i][w] = note_hits[i][w];
             note_hits[i][w] = 0;
         }
     fm1_irq_on();
-    for (i = 0; i < DRUM_LANES; i++) {
-        if ((hits >> i) & 1u) pad_lit[i] = 6;
-        else if (pad_lit[i]) pad_lit[i]--;
-    }
-    /* a synth track: each note it started lights its key 6 frames (~0.1 s), so a short sequencer note
-     * (a 1/16 at GATE 50 %: 60..80 ms) is seen even when it ends between two frames */
     if (song.sel != key_lit_trk) {
         memset(key_lit, 0, sizeof key_lit);
         key_lit_trk = song.sel;
@@ -362,384 +308,6 @@ UI_SMALL static void pads_tick(void)                             /* once a frame
             if (note < 128u && (n[song.sel][note >> 5] >> (note & 31u)) & 1u)
                 key_lit[k] = 6;
         }
-}
-
-UI_SMALL static void drum_screen_draw(void)
-{
-    static uint32_t head, title_sig, body_sig, footer;
-    uint32_t i, j, len = (uint32_t)clamp(TDRUM->p[P_SLEN], 1, 64), kit = drum_kit(), sig, bank;
-    if (drum_cursor >= len) drum_cursor = (uint8_t)(len - 1u);
-    bank = drum_cursor / 16u;
-    {
-        char st[16], nm[9];
-        const char *style = DRUM_KIT_STYLES[kit];
-        if (kit >= DRUM_SYN) {                          /* SYN1..4: the name you gave it (editor DRUM SYNTH) */
-            memcpy(nm, dsu_kit(kit - DRUM_SYN)->name, 8);
-            nm[8] = 0;
-            if (nm[0])
-                style = nm;
-        }
-        te_lower(st, style, sizeof st);
-        st[12] = 0;
-        te_header(st, TE_DRUM, &head, -1);
-    }
-    sig = kit * 131u + drum_page * 7u + drum_lane * 977u + bank * 31u + len + (uint32_t)drum_tweaked() * 7919u;   /* title band */
-    if (ui.force || sig != title_sig) {
-        char b[8];
-        title_sig = sig;
-        cv_begin(240, 44, C_BLACK);
-        cv_rect(2, 4, 34, 34, TE_DRUM);
-        fmt_int(b, (int32_t)kit + 1);
-        cv_text(19 - text_w(&FONT_S, b) / 2, 13, &FONT_S, b, C_BLACK);
-        cv_text(44, 6, &FONT_L, DRUM_KIT_NAMES[kit], C_WHITE);
-        cv_text(194, 1, &FONT_S, "grid", drum_page == 0 ? C_WHITE : TE_G3);
-        cv_text(194, 15, &FONT_S, "kit", drum_page == 1 ? C_WHITE : TE_G3);
-        cv_text(194, 29, &FONT_S, "sound", drum_page == 2 ? C_WHITE : TE_G3);
-        cv_rect(188, 5 + (int32_t)drum_page * 14, 3, 9, TE_DRUM);
-        cv_blit(0, 40);
-    }
-    sig = drum_page + drum_lane * 7u + drum_cursor * 101u + song.playing * 71u + len * 3u + ui.sheet * 7919u +
-          (uint32_t)(TDRUM->micro[drum_cursor] + 64) * 104729u + step_fill(TDRUM, drum_cursor) * 13u;
-    for (i = 0; i < DRUM_LANES; i++) sig = sig * 5u + (uint32_t)(drum_tune[i] + 8) * 9u + (uint32_t)(drum_dec[i] + 4);
-    if (song.playing) sig = sig * 31u + TDRUM->seq_idx;
-    for (i = 0; i < DRUM_LANES; i++) sig = sig * 3u + (pad_lit[i] != 0);
-    for (i = 0; i < len; i++) {
-        const dstep_t *s = &TDRUM->dstep[i];
-        sig = sig * 31u + dstep_mask(s);
-        sig = sig * 31u + s->lvl[0] + s->lvl[1] * 7u + s->lvl[2] * 49u + s->lvl[3] * 343u;
-        sig = sig * 31u + s->rat[0] + s->rat[1] * 7u + s->rat[2] * 49u + s->rat[3] * 343u;
-    }
-    if (ui.force || sig != body_sig) {
-        body_sig = sig;
-        cv_begin(240, 100, C_BLACK);
-        if (!drum_page) {                              /* GRID: the 16 lanes x 16 steps of this bank */
-            int32_t lp = ui.sheet ? 5 : 6, ch = lp - 1;   /* (2.8.1) the lanes squeeze up to free the bottom for the sheet bar */
-            for (i = 0; i < DRUM_LANES; i++) {
-                int32_t y = (int32_t)i * lp + 2;
-                cv_rect(2, y, 6, ch, pad_lit[i] ? C_WHITE : i == drum_lane ? TE_DRUM : TE_G2);
-                for (j = 0; j < 16u; j++) {
-                    uint32_t p = bank * 16u + j;
-                    const dstep_t *s = &TDRUM->dstep[p < NSTEP ? p : 0];
-                    uint16_t c;
-                    if (p >= len) continue;
-                    c = dstep_has(s, i) ? lvl_col(dstep_lvl(s, i)) : i == drum_lane ? TE_G2 : TE_G1;
-                    if (song.playing && p == TDRUM->seq_idx && c == TE_G1) c = TE_G2;
-                    cv_rect(12 + (int32_t)j * 14, y, 12, ch, c);
-                    if (dstep_has(s, i) && dstep_rat(s, i)) {   /* a ratchet: a notch per extra hit */
-                        uint32_t r;
-                        for (r = 0; r < dstep_rat(s, i); r++)
-                            cv_rect(13 + (int32_t)j * 14 + (int32_t)r * 3, y + 1, 2, 1, C_BLACK);
-                    }
-                    if (p == drum_cursor && i == drum_lane) {
-                        cv_rect(11 + (int32_t)j * 14, y - 1, 14, 1, C_WHITE);
-                        cv_rect(11 + (int32_t)j * 14, y + ch, 14, 1, C_WHITE);
-                    }
-                }
-            }
-            if (ui.sheet) {                            /* (2.7.2) OCT+ held: the hit's sheet (2.8.1: a strip at the bottom) */
-                const dstep_t *s = &TDRUM->dstep[drum_cursor];
-                char r[4], nu[8];
-                const char *val[6] = {r, nu, FILL_N[step_fill(TDRUM, drum_cursor) % 3u], "", "", ""};
-                int8_t m = TDRUM->micro[drum_cursor];
-                str_cpy(r, dstep_has(s, drum_lane) ? "x1" : "--", 4);
-                if (dstep_has(s, drum_lane))
-                    r[1] = (char)('1' + dstep_rat(s, drum_lane));
-                fmt_int(nu, m);
-                if (m > 0) { nu[0] = '+'; fmt_int(nu + 1, m); }
-                sheet_bar(84, DSHEET_N, val, ui.sheet - 1u, TE_DIM[3]);
-            }
-        } else {                                       /* KIT: 16 pads, lit on each hit; SOUND (2.7): the one KNOB 1 picks
-                                                        * framed, a tuned or shortened / lengthened one marked */
-            for (i = 0; i < DRUM_LANES; i++) {
-                int32_t x = 2 + (int32_t)(i % 4u) * 60, y = (int32_t)(i / 4u) * 25;
-                cv_rect(x, y, 56, 23, pad_lit[i] ? TE_DRUM : TE_G1);
-                if (drum_page == 2u && i == drum_lane) {
-                    cv_rect(x, y, 56, 1, C_WHITE), cv_rect(x, y + 22, 56, 1, C_WHITE);
-                    cv_rect(x, y, 1, 23, C_WHITE), cv_rect(x + 55, y, 1, 23, C_WHITE);
-                }
-                if (drum_page == 2u && (drum_tune[i] || drum_dec[i]))
-                    cv_rect(x + 3, y + 3, 4, 4, TE_DRUM);
-                te_text_c(x + 28, y + 4, LANE_SHORT[i], pad_lit[i] ? C_BLACK : i == drum_lane ? C_WHITE : TE_G3);
-            }
-        }
-        cv_blit(0, 84);
-    }
-    {
-        static char v[4][12];
-        const char *val[4] = {v[0], v[1], v[2], v[3]};
-        static const char *const LG[4] = {"sound", "step", "hit", "level"}, *const LK[4] = {"kit", "level", "reverb", "pan"},
-                                 *const LS[4] = {"sound", "tune", "decay", "level"};
-        int32_t ratio[4];
-        if (!drum_page) {
-            const dstep_t *s = &TDRUM->dstep[drum_cursor];
-            str_cpy(v[0], LANE_SHORT[drum_lane], 8);
-            fmt_int(v[1], drum_cursor + 1);
-            str_cpy(v[2], dstep_has(s, drum_lane) ? "on" : "--", 4);
-            str_cpy(v[3], dstep_has(s, drum_lane) ? LV_NAME[dstep_lvl(s, drum_lane)] : "--", 8);
-            ratio[0] = (int32_t)drum_lane * 1000 / (DRUM_LANES - 1);
-            ratio[1] = (int32_t)drum_cursor * 1000 / (int32_t)(len > 1u ? len - 1u : 1u);
-            ratio[2] = v[2][0] == 'o' ? 1000 : 0;
-            ratio[3] = dstep_has(s, drum_lane) ? (int32_t)lvl_rank(dstep_lvl(s, drum_lane)) * 333 : 0;   /* ghost left ..
-                                                                     * hard right (2.5: it followed the stored order) */
-            te_dials(184, LG, val, ratio, 1u, &footer);
-        } else if (drum_page == 2u) {                  /* SOUND (2.7): the sound, its TUNE and DECAY, the drums' level */
-            str_cpy(v[0], LANE_SHORT[drum_lane], 8);
-            fmt_int(v[1], drum_tune[drum_lane]);
-            if (drum_tune[drum_lane] > 0) { v[1][0] = '+'; fmt_int(v[1] + 1, drum_tune[drum_lane]); }
-            fmt_int(v[2], drum_dec[drum_lane]);
-            if (drum_dec[drum_lane] > 0) { v[2][0] = '+'; fmt_int(v[2] + 1, drum_dec[drum_lane]); }
-            fmt_int(v[3], song.g[G_DRLVL] * 100 / 127);
-            ratio[0] = (int32_t)drum_lane * 1000 / (DRUM_LANES - 1);
-            ratio[1] = (drum_tune[drum_lane] - DRUM_TUNE_MIN) * 1000 / (DRUM_TUNE_MAX - DRUM_TUNE_MIN);
-            ratio[2] = (drum_dec[drum_lane] - DRUM_DEC_MIN) * 1000 / (DRUM_DEC_MAX - DRUM_DEC_MIN);
-            ratio[3] = song.g[G_DRLVL] * 1000 / 127;
-            te_dials(184, LS, val, ratio, 3u, &footer);
-        } else {
-            fmt_int(v[0], (int32_t)kit + 1);
-            fmt_int(v[1], song.g[G_DRLVL] * 100 / 127);
-            fmt_int(v[2], song.g[G_DRREV] * 100 / 127);
-            fmt_int(v[3], TDRUM->p[P_PAN]);
-            ratio[0] = (int32_t)kit * 1000 / (int32_t)(DRUM_KITS - 1u);
-            ratio[1] = song.g[G_DRLVL] * 1000 / 127;
-            ratio[2] = song.g[G_DRREV] * 1000 / 127;
-            ratio[3] = (TDRUM->p[P_PAN] + 64) * 1000 / 127;
-            te_dials(184, LK, val, ratio, 2u, &footer);
-        }
-    }
-}
-
-/* the level order of the knobs: ghost < soft < norm < hard */
-static const uint8_t LV_UP[4] = {LV_GHOST, LV_SOFT, LV_NORM, LV_HARD};
-UI_SMALL static uint32_t lvl_rank(uint32_t lvl) { return lvl == LV_GHOST ? 0u : lvl == LV_SOFT ? 1u : lvl == LV_NORM ? 2u : 3u; }
-
-/* the GRID page shown, no layer held: its keys are steps (seq.c kb_grid) */
-UI_SMALL static int grid_keys_on(void) { return on_drum_page() && !drum_page && song.sel == TRK_DRUM && !ui.menu && !ui.sheet; }
-/* a key down on the GRID page: the white keys are the 16 steps of this page of steps for the sound of
- * KNOB 1 — an empty one is set (NORM; 2.7.1: silent, for live), a set one cleared. 2.7.1: the black keys pick the sound
- * (drum_black_pick), OCT- / OCT+ the page (steps 1-16, 17-32, 33-48, 49-64), as in the SEQ layer. The cursor follows */
-UI_SMALL static void grid_key(uint32_t k)
-{
-    uint32_t len = trk_len(TDRUM), idx;
-    int32_t w = punch_key(k), b = drum_black_of(k);
-    dstep_t *st;
-    if (w < 0) {
-        if (b >= 0)
-            drum_black_pick((uint32_t)b);
-        return;
-    }
-    idx = drum_cursor / 16u * 16u + (uint32_t)w;
-    if (idx >= len)
-        return;
-    drum_cursor = (uint8_t)idx;
-    if (song.playing && arrangement_enabled) {
-        ui_message("STOP THE SONG FIRST");
-        return;
-    }
-    undo_mark(TDRUM, ui.step_sess ? ui.step_sess : (ui.step_sess = (undo_sess += 4u) | 3u));
-    st = &TDRUM->dstep[idx];
-    fm1_irq_off();
-    if (dstep_has(st, drum_lane)) {
-        dstep_clr(st, drum_lane);
-        if (!dstep_mask(st)) {                          /* an empty step keeps no lock, no nudge, no condition */
-            lock_del(TDRUM, idx, P_COUNT);
-            TDRUM->micro[idx] = 0;
-            step_fill_set(TDRUM, idx, FC_NORM);
-        }
-    } else {
-        dstep_set(st, drum_lane, LV_NORM, 0);
-        TDRUM->seq_active = 1;
-    }
-    fm1_irq_on();
-    sync_reload = 1;                                    /* (2.7.1: not heard: the pattern plays it) */
-}
-
-/* (2.7.2) the GRID's sheet (OCT+ held), as the NOTES page's: the hit of KNOB 1's sound on KNOB 2's step. RATCHET (its
- * hits in the step), NUDGE and FILL (the step's, every sound in it), MOVE (KNOB 2: a step a detent), COPY (OCT+: to the
- * next step, then MOVE moves the copy), DELETE (OCT+) */
-UI_SMALL static int drum_hit_shift(int32_t dir, int copy)   /* the hit a step on / back (copy: the next step); 0: no room */
-{
-    uint32_t len = trk_len(TDRUM), to = (uint32_t)((int32_t)drum_cursor + (copy ? 1 : dir));
-    dstep_t *st = &TDRUM->dstep[drum_cursor];
-    if (!dstep_has(st, drum_lane) || (!copy && dir < 0 && !drum_cursor) || to >= len ||
-        dstep_has(&TDRUM->dstep[to], drum_lane))
-        return 0;
-    fm1_irq_off();
-    dstep_set(&TDRUM->dstep[to], drum_lane, dstep_lvl(st, drum_lane), dstep_rat(st, drum_lane));
-    if (!copy)
-        dstep_clr(st, drum_lane);
-    fm1_irq_on();
-    drum_cursor = (uint8_t)to;
-    return 1;
-}
-UI_SMALL static void drum_sheet_knob(uint32_t k, int32_t s)
-{
-    dstep_t *st = &TDRUM->dstep[drum_cursor];
-    uint32_t row = ui.sheet - 1u;
-    if (k == 0u) {
-        ui.sheet = (uint8_t)(1 + clamp((int32_t)row + s, 0, 5));
-        ui.sheet_last = (uint8_t)(ui.sheet - 1u);          /* (2.8.1) reopen on this row next time */
-        return;
-    }
-    if (k != 1u)
-        return;
-    undo_mark(TDRUM, (undo_sess += 4u) | 3u);
-    fm1_irq_off();
-    if (row == 0u && dstep_has(st, drum_lane))
-        dstep_set(st, drum_lane, dstep_lvl(st, drum_lane), (uint32_t)clamp((int32_t)dstep_rat(st, drum_lane) + s, 0, 3));
-    else if (row == 1u)
-        TDRUM->micro[drum_cursor] = (int8_t)clamp(TDRUM->micro[drum_cursor] + s, MICRO_MIN, MICRO_MAX);
-    else if (row == 2u)
-        step_fill_set(TDRUM, drum_cursor, (uint32_t)clamp((int32_t)step_fill(TDRUM, drum_cursor) % 3 + (s > 0 ? 1 : -1), 0, 2));
-    fm1_irq_on();
-    if (row == 3u)
-        for (; s; s += s > 0 ? -1 : 1)
-            if (!drum_hit_shift(s > 0 ? 1 : -1, 0)) {
-                ui_message(dstep_has(&TDRUM->dstep[drum_cursor], drum_lane) ? "NO ROOM" : "NO HIT");
-                break;
-            }
-    sync_reload = 1;
-}
-UI_SMALL static void drum_sheet_do(void)                 /* OCT+ tapped in the sheet */
-{
-    undo_mark(TDRUM, (undo_sess += 4u) | 3u);
-    if (ui.sheet == 5u) {
-        if (drum_hit_shift(1, 1)) {
-            ui.sheet = 4;                                 /* (MOVE: KNOB 2 moves the copy) */
-            ui_message("COPIED");
-        } else {
-            ui_message(dstep_has(&TDRUM->dstep[drum_cursor], drum_lane) ? "NO ROOM" : "NO HIT");
-        }
-    } else if (ui.sheet == 6u) {
-        fm1_irq_off();
-        dstep_clr(&TDRUM->dstep[drum_cursor], drum_lane);
-        fm1_irq_on();
-        ui.sheet = 0;
-        ui_message("HIT DELETED");
-    }
-    sync_reload = 1;
-}
-
-UI_SMALL static void drum_screen_input(uint32_t pressed, uint32_t home, uint32_t notes)
-{
-    uint32_t k, b;
-    int32_t s;
-    if (song.sel != TRK_DRUM || home == 1u) {
-        go_home();
-        return;
-    }
-    if (!drum_page) {                                  /* (2.7.2) OCT+ held: the hit's sheet; tapped: the page */
-        uint32_t ev, ob = 1u << panel.btn[B_OCTDN];
-        pressed = octp_filter(pressed, &ev);
-        if (ev == 2u && !ui.sheet)
-            ui.sheet = (uint8_t)(1u + ui.sheet_last);      /* (2.8.1) reopen on the row last used */
-        else if (ev == 1u && ui.sheet)
-            drum_sheet_do();
-        else if (ev == 1u)
-            pressed |= 1u << panel.btn[B_OCTUP];
-        if (ui.sheet && (pressed & ob)) {
-            ui.sheet = 0;
-            pressed &= ~ob;
-        }
-        if (ev)
-            ui.force = 1;
-    } else {
-        ui.sheet = 0;
-    }
-    for (k = 0; k < NB; k++) if ((pressed >> panel.btn[k]) & 1u) {
-        b = k;
-        if ((b == B_OCTDN || b == B_OCTUP) && !drum_page) {   /* (2.7.1) GRID: OCT- / OCT+ the page of steps */
-            uint32_t len = trk_len(TDRUM), pages = (len + 15u) / 16u, pg = drum_cursor / 16u, idx;
-            pg = (pg + (b == B_OCTUP ? 1u : pages - 1u)) % pages;
-            idx = pg * 16u + drum_cursor % 16u;
-            drum_cursor = (uint8_t)(idx < len ? idx : len - 1u);
-            ui.force = 1;
-            continue;
-        }
-        if (b == B_PLAY) {
-            if (ft_owns_press()) ;
-            else if (!song.playing && arrangement_enabled && !arr_valid(&arrangement, arrangement_ready())) ui_message("EMPTY SECTION: REC");
-            else transport_req = song.playing ? 2 : 1;
-        } else if (b == B_SEQ || b == B_EDIT) {
-            drum_page = (uint8_t)((drum_page + 1u) % 3u);   /* GRID -> KIT -> SOUND (2.7) */
-            ui.msg_t = 0;
-            ui.force = 1;
-        } else if (b == B_SAVE) {
-            studio_open(SC_SONG);
-            return;
-        }
-    }
-    if ((s = panel_enc(EN_SELECT)) && (uint32_t)clamp((int32_t)drum_page + s, 0, 2) != drum_page) {   /* SELECT: grid <-
-                                                                     * kit -> sound (2.7), its pages */
-        drum_page = (uint8_t)clamp((int32_t)drum_page + s, 0, 2);
-        ui.msg_t = 0;
-        ui.force = 1;
-    }
-    if (drum_page == 2u && notes) {                    /* SOUND (2.7): the key played picks its sound (it is heard
-                                                        * as the keys always play it) */
-        for (k = 0; k < 32u; k++)
-            if ((notes >> k) & 1u) {
-                drum_lane = (uint8_t)lane_of_key(k);
-                ui.force = 1;
-            }
-    }
-    if ((s = panel_enc(EN_ALGO)) && !ft_on) {
-        track_select((uint32_t)clamp((int32_t)song.sel + s, 0, 3));
-        if (song.sel != TRK_DRUM) {
-            go_home();
-            return;
-        }
-    }
-    if ((s = panel_enc(EN_PRESET))) TDRUM->p[P_E0] = (int16_t)clamp(TDRUM->p[P_E0] + s, 0, DRUM_KITS - 1);
-    for (k = 0; k < 4u; k++) if ((s = panel_enc(EN_K1 + k))) {
-        ui.hot_col = (uint8_t)k;
-        ui.hot_t = 40;
-        if (!drum_page && ui.sheet) {
-            drum_sheet_knob(k, s);
-        } else if (!drum_page) {
-            dstep_t *st = &TDRUM->dstep[drum_cursor];
-            if (k == 0) {                              /* the sound (heard: DRUM PREVIEW ON, 2.7.1) */
-                uint8_t l = (uint8_t)clamp(drum_lane + s, 0, DRUM_LANES - 1);
-                drum_lane = l;
-            }
-            if (k == 1) {                              /* the step: what it holds, heard (2.7.1: DRUM PREVIEW ON) */
-                uint8_t c = (uint8_t)clamp(drum_cursor + s, 0, TDRUM->p[P_SLEN] - 1);
-                drum_cursor = c;
-            }
-            if (k >= 2) {
-                if (song.playing && arrangement_enabled) { ui_message("STOP THE SONG FIRST"); continue; }
-                undo_mark(TDRUM, ui.step_sess ? ui.step_sess : (ui.step_sess = (undo_sess += 4u) | 3u));
-                fm1_irq_off();
-                if (k == 2) {
-                    if (s > 0) dstep_set(st, drum_lane, LV_NORM, 0);
-                    else dstep_clr(st, drum_lane);
-                } else if (dstep_has(st, drum_lane)) {
-                    uint32_t r = (uint32_t)clamp((int32_t)lvl_rank(dstep_lvl(st, drum_lane)) + (s > 0 ? 1 : -1), 0, 3);
-                    dstep_set(st, drum_lane, LV_UP[r], dstep_rat(st, drum_lane));
-                }
-                fm1_irq_on();
-                sync_reload = 1;
-            }
-        } else if (drum_page == 2u) {                  /* SOUND (2.7) */
-            if (k == 0) {
-                uint8_t l = (uint8_t)clamp(drum_lane + s, 0, DRUM_LANES - 1);
-                drum_lane = l;
-            }
-            if (k == 1 || k == 2) {                    /* TUNE, DECAY: the next hit has them (heard at once) */
-                int8_t *p = k == 1 ? &drum_tune[drum_lane] : &drum_dec[drum_lane];
-                int32_t lo = k == 1 ? DRUM_TUNE_MIN : DRUM_DEC_MIN, hi = k == 1 ? DRUM_TUNE_MAX : DRUM_DEC_MAX;
-                int8_t nv = (int8_t)clamp(*p + s, lo, hi);
-                if (nv != *p) {
-                    *p = nv;
-                }
-            }
-            if (k == 3) song.g[G_DRLVL] = (int16_t)clamp(song.g[G_DRLVL] + s, 0, 127);
-        } else {
-            if (k == 0) TDRUM->p[P_E0] = (int16_t)clamp(TDRUM->p[P_E0] + s, 0, DRUM_KITS - 1);
-            if (k == 1) song.g[G_DRLVL] = (int16_t)clamp(song.g[G_DRLVL] + s, 0, 127);
-            if (k == 2) song.g[G_DRREV] = (int16_t)clamp(song.g[G_DRREV] + s, 0, 127);
-            if (k == 3) TDRUM->p[P_PAN] = (int16_t)clamp(TDRUM->p[P_PAN] + s, -64, 63);
-        }
-    }
 }
 
 /* ---------------------------------------------------------------- REC --- */
@@ -762,11 +330,10 @@ static uint8_t rec_shown;
 /* the four tracks, compact, from y0: the one that records is framed in red */
 UI_SMALL static void rec_rows(uint32_t rt, uint32_t take, uint32_t y0, uint32_t *cache)
 {
-    uint32_t sig = rt * 3u + rec_wait + take * 5u + drum_kit() * 977u + y0, i, j;
+    uint32_t sig = rt * 3u + rec_wait + take * 5u + y0, i, j;
     for (i = 0; i < NTRK; i++) {
         char b[16];
-        if (i == TRK_DRUM) str_cpy(b, DRUM_KIT_NAMES[drum_kit()], sizeof b);
-        else trk_short_name(i, b);
+        trk_short_name(i, b);
         sig = studio_hash(sig, b) + (uint32_t)trk[i].p[P_SLEN] * 31u;
         for (j = 0; j < NSTEP; j++) sig = sig * 3u + (uint32_t)trk_step_on(&trk[i], j);
     }
@@ -781,8 +348,7 @@ UI_SMALL static void rec_rows(uint32_t rt, uint32_t take, uint32_t y0, uint32_t 
         char b[16];
         if (armed) cv_rect(0, y, 240, 18, TE_RED), cv_rect(1, y + 1, 238, 16, C_BLACK);
         cv_rect(4, y + 3, 12, 12, armed ? TE_COL[i] : TE_DIM[i]);
-        if (i == TRK_DRUM) str_cpy(b, DRUM_KIT_NAMES[drum_kit()], sizeof b);
-        else trk_short_name(i, b);
+        trk_short_name(i, b);
         b[10] = 0;
         cv_text(22, y + 1, &FONT_S, b, armed ? C_WHITE : TE_G3);
         for (j = 0; j < 16u; j++) {
