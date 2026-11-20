@@ -1029,6 +1029,7 @@ UI_SMALL static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes b
         ed_b(a[1]);
         ed_step_out(&trk[a[0]], a[1]);
         break;
+#ifndef HORATIO_PLAITS
     case ED_DRUM_STEP: {                                   /* index [, on 16 bits, lvl 32 bits, rat 32 bits as 7-bit groups]
                                                             * -> index, on (3), lvl (5), rat (5): the drum track's 16 lanes */
         dstep_t *d;
@@ -1063,6 +1064,7 @@ UI_SMALL static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes b
             ed_b(rt >> (7u * i));
         break;
     }
+#endif
     case ED_TRACK_PARAM: {                                 /* track, id [, v14] -> track, id, v14 */
         track_t *t;
         if (na < 2u || a[0] >= NTRK || a[1] >= P_COUNT)
