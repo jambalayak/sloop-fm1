@@ -2953,13 +2953,11 @@ static void seq_tick(track_t *t, uint32_t adv)
         seq_ratchets(t, rel < 0 ? 0u : (uint32_t)rel, slen);
 }
 
-/* MIDI in: the track that has channel ch (0..15) as its own: the drum track's GLO > DRUMS > CH, synth track i's
- * GLO > MIDI > CHi (2.6; 1, 2, 3 as before; a channel two tracks have: the first of them), else 0 */
+/* MIDI in: synth track i owns GLO > MIDI > CHi (1, 2, 3 as before; a channel two tracks have:
+ * the first of them). Drum-channel settings in older projects are ignored. */
 static track_t *midi_own(uint32_t ch)
 {
     uint32_t i;
-    if (song.g[G_DRCH] && ch + 1u == (uint32_t)song.g[G_DRCH])
-        return TDRUM;
     for (i = 0; i < NPART; i++)
         if (ch + 1u == (uint32_t)song.g[G_CH1 + i])
             return &trk[i];
