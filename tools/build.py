@@ -150,9 +150,8 @@ def build_cxx():
     probe = objdir / "firmware_cxx_horatio_probe.o"
     symbols = tc("common/bin/objdump", "-t", probe)
     for line in symbols.splitlines():
-        fields = line.split()
-        if len(fields) >= 6 and fields[-1].startswith("horatio_probe_"):
-            print("Plaits memory probe: " + fields[-1] + " = " + str(int(fields[-2], 16)) + " bytes")
+        if "horatio_probe_" in line:
+            print("Plaits memory probe: " + line.strip())
     return objects
 
 
