@@ -53,3 +53,17 @@ The current SLOOP-derived HORATIO experiment has successfully compiled the upstr
 ## Current branch note
 
 This branch is a planning checkpoint created from `jambalayak/sloop-fm1:plaits-development`. It is not yet a Clipper source fork. The next repository-level operation is to create or obtain a writable fork of `isod89/clipper-fm1`, then move implementation work there.
+
+## Source audit completed after the pivot
+
+A read-only audit of the pinned Clipper tree confirms several important implementation details:
+
+- The upstream tree is a complete 400-entry source tree at the pinned commit, with firmware under `firmware/`, 83 host-test files under `tests/`, and the web editor/installer under `web/`.
+- The production synth profile is selected by `CLIPPER_SYNTH=1` in `firmware/src/core.h`. In that profile, the code documents tracks 2–4 and the drum machine as silent and unselected; the groovebox profile (`CLIPPER_SYNTH=0`) is retained for shared-code host tests. Drum-related source files and test fixtures still exist in the repository, so HORATIO must verify the final synth build and UI contain no accessible drum system rather than assuming the files are absent.
+- The synth profile currently defaults to `NVOICE=8`; Clipper's build instructions document 12- and 16-voice options. HORATIO's four-voice target should be an explicit build configuration, not an assumption that the default already matches.
+- Engine numbering is append-only and preset/editor protocol values depend on it. Clipper's existing MACRO engine is index 16; if engines are removed or reordered, the preset format and editor mappings need deliberate migration or a clean new HORATIO format.
+- Clipper's `engines.c` uses a shared per-part engine arena for the larger engines. Plaits' per-voice state and shared resources must be budgeted against this arena and the linker POOL region before enabling four voices.
+- The build produces `felucca.bin`, `loader/ota.bin`, and `felucca.fwsc`. Its documented build needs the JieLi pi32v2 toolchain and AC79 SDK; host tests alone cannot certify a flashable package.
+- Licensing is GPL-3.0-only for the firmware. The existing Clipper tree also identifies third-party components with separate notices (including Apache-2.0 msfa, MIT physical-model sources, and OFL font assets). HORATIO must retain applicable notices and must not bundle restricted Hügelton artwork/sample assets unless their separate terms are satisfied.
+
+This audit is based on the source at `7bc15a950a8b3fd51aec280514905448e4faaf1b`; it is not a build or hardware test.
