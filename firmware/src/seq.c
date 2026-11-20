@@ -43,7 +43,7 @@ static const uint16_t SCALE_MASK[] = {
 #define KB_SILENT 255u
 static uint32_t kb_prev;
 /* per key: what its press started, so its release ends the same (whatever the layer or track is now) */
-enum { KS_NONE, KS_NOTE, KS_DRUM, KS_ROLL, KS_ERASE, KS_FX, KS_UI, KS_MOD };   /* KS_MOD: a chord modifier (2.4) */
+enum { KS_NONE, KS_NOTE, KS_ROLL, KS_ERASE, KS_FX, KS_UI, KS_MOD };   /* KS_MOD: a chord modifier (2.4) */
 static uint8_t kb_kind[27], kb_trk[27], kb_n[27], kb_nt[27][4], kb_root[27];   /* kb_root: a chord key's note (CHORD+) */
 static int8_t kb_oct[27];                   /* the octave buttons when the key went down (arp_add: held_key, #191) */
 static uint8_t last_note = 60;
@@ -2376,12 +2376,6 @@ static void key_up(uint32_t k)
                 midi_out_note(mc, n, 0);
             }
         }
-        return;
-    case KS_DRUM:
-        if (ft_on && ft_trk == TRK_DRUM)
-            ft_note_off(kb_nt[k][0]);
-        mc = trk_midi_ch(TRK_DRUM);
-        midi_out_note(mc, (uint32_t)LANE_NOTE[kb_nt[k][0] & 15u], 0);
         return;
     default:
         return;
