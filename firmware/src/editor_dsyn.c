@@ -121,15 +121,6 @@ UI_SMALL static int ed_dsyn_handle(uint32_t cmd, const uint8_t *a, uint32_t n)
             return 0;
         ed_b(ed_dsyn_store());
         return 1;
-    case ED_DSYN_PLAY:
-        rc = n != 3u || a[0] >= DSU_N || a[1] >= DS_LANES || !a[2] ? 1u : 0u;
-        if (!rc) {
-            dsu_aud_k = a[0];
-            dsu_aud_lane = a[1];
-            dsu_aud_vel = a[2];                            /* (last: the ISR plays it, drums.c drum_audition_poll) */
-        }
-        ed_b(n ? a[0] : 127u); ed_b(n > 1u ? a[1] : 127u); ed_b(rc);
-        return 1;
     }
     return 0;
 }
