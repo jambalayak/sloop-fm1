@@ -75,11 +75,21 @@ def use_docker():
 LAST_ERR = ""                       # what the last failed toolchain call said (build_app: XIP overflowed)
 
 
+def tc_path(rel):
+    """A path inside the toolchain, including when tools run in Docker."""
+    if use_docker():
+        return "/opt/jieli/" + rel
+    return str(toolchain() / rel)
+
+
 def tc(tool, *args):
     """run a toolchain binary (pi32v2/bin/..., common/bin/...) with cwd SRC; paths relative to SRC"""
     rel = [str(Path(a).resolve().relative_to(SRC)) if isinstance(a, Path) else a for a in args]
     if tool == "cc":                # the toolchain's cc wrapper needs python3; call clang directly
         tool, rel = "pi32v2/bin/clang", ["-target", "pi32v2", *rel]
+    if tool == "cxx":
+        tool, rel = "pi32v2/bin/clang++", ["-target", "pi32v2", "-isystem",
+                                         tc_path("pi32v2/include"), *rel]
     if use_docker():
         cmd = ["docker", "run", "--rm", "--platform", "linux/amd64", "-v", f"{SRC}:/work",
                "-v", f"{toolchain()}:/opt/jieli:ro", "-w", "/work", DOCKER_IMAGE, f"/opt/jieli/{tool}", *rel]
