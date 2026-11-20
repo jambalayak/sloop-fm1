@@ -25,6 +25,7 @@
 #define UI_SMALL
 #endif
 #define PROJ_NTRK_LEGACY 4u                 /* FUN1..FUN6 have fixed historical track counts; never use live NTRK here */
+#define PROJ_MAGIC_V7 0x46554E37u              /* HORATIO-1: three synth tracks, no drum track */
 #define PROJ_MAGIC 0x46554E36u                 /* "FUN6": format 5 + the 2.6 parameters, nudge and condition in a byte */
 #define PROJ_MAGIC_V5 0x46554E35u              /* "FUN5": format 4 + per-step nudge, parameter locks, fill conditions (SLOOP 2.4) */
 #define PROJ_MAGIC_V4 0x46554E34u              /* "FUN4": four tracks, P_COUNT parameters each, 10-byte steps; read only */
@@ -65,6 +66,15 @@ typedef struct {
     proj_trk_t t[PROJ_NTRK_LEGACY];
     uint32_t sum;
 } project_t;
+/* FUN7 is the on-flash HORATIO-1 format: the same three synth-track records, no legacy drum record. */
+typedef struct {
+    uint32_t magic, size;
+    int16_t g[PROJ_NG];
+    uint8_t sel, drdly, rsv[2];
+    proj_trk_t t[NPART];
+    uint32_t sum;
+} project_v7_t;
+_Static_assert(sizeof(project_v7_t) == 2882u, "FUN7: three synth tracks, no drum track");
 static int16_t pt_get(const proj_trk_t *t, uint32_t id)   /* p[id] of a stored track */
 {
     return id < PROJ_NC6 ? t->p[id] : id < P_E0 ? (int16_t)t->x[id - PROJ_NC6] : t->e[(id - P_E0) & 7u];
@@ -244,6 +254,49 @@ UI_SMALL static void proj_trk_v2_to_v3(proj_trk_v3_t *d, const proj_trk_v2_t *s,
     memcpy(d->step, s->step, sizeof d->step);
 }
 
+/* FUN7 -> the current working representation. The legacy drum slot is initialized empty so the
+ * transition can be staged without changing the live four-track runtime in the same commit. */
+UI_SMALL static int proj_from_v7(project_t *q, const project_v7_t *v7, int n)
+{
+    uint32_t i, k;
+    if (n != (int)sizeof *v7 || v7->magic != PROJ_MAGIC_V7 || v7->size != sizeof *v7 ||
+        v7->sum != proj_hash(v7, sizeof *v7 - 4u))
+        return 0;
+    memset(q, 0, sizeof *q);
+    q->magic = PROJ_MAGIC;
+    q->size = sizeof *q;
+    memcpy(q->g, v7->g, sizeof q->g);
+    q->sel = v7->sel < NPART ? v7->sel : (NPART - 1u);
+    q->drdly = v7->drdly;
+    memcpy(q->rsv, v7->rsv, sizeof q->rsv);
+    for (i = 0; i < NPART; i++)
+        memcpy(&q->t[i], &v7->t[i], sizeof q->t[i]);
+    proj_trk_plain(&q->t[TRK_DRUM]);
+    q->t[TRK_DRUM].engine = 0;
+    q->t[TRK_DRUM].preset = 0;
+    for (k = 0; k < P_COUNT; k++) {
+        int32_t d = k == P_E0 ? DRUM_KIT_DESC.def : k >= P_E0 ? 0 : TP[k].def;
+        pt_set(&q->t[TRK_DRUM], k, d);
+    }
+    memset(q->t[TRK_DRUM].dstep, 0, sizeof q->t[TRK_DRUM].dstep);
+    q->sum = proj_sum(q);
+    return 1;
+}
+
+/* Capture the stable FUN7 disk representation from the staged four-track working model. */
+UI_SMALL static void proj_to_v7(project_v7_t *v7, const project_t *p)
+{
+    memset(v7, 0, sizeof *v7);
+    v7->magic = PROJ_MAGIC_V7;
+    v7->size = sizeof *v7;
+    memcpy(v7->g, p->g, sizeof v7->g);
+    v7->sel = p->sel < NPART ? p->sel : (NPART - 1u);
+    v7->drdly = p->drdly;
+    memcpy(v7->rsv, p->rsv, sizeof v7->rsv);
+    memcpy(v7->t, p->t, sizeof v7->t);
+    v7->sum = proj_hash(v7, sizeof *v7 - 4u);
+}
+
 /* a format 4 project (n bytes in *v4) -> slot q as format 6: the same, no nudge, no lock, no condition, no FILTER */
 UI_SMALL static int proj_from_v4(project_t *q, const project_v4_t *v4, int n)
 {
@@ -380,6 +433,8 @@ UI_SMALL static int proj_from_v1(project_t *q, const project_v1_t *v1, int n)
 /* n bytes of a stored project (any format) -> slot q as format 5; 0 = not a project */
 UI_SMALL static int proj_import(project_t *q, const void *b, int n)
 {
+    if (n == (int)sizeof(project_v7_t) && proj_from_v7(q, (const project_v7_t *)b, n))
+        return 1;
     if (n == (int)sizeof *q && proj_ok((const project_t *)b)) {
         memcpy(q, b, sizeof *q);
         return 1;
@@ -563,12 +618,18 @@ static uint8_t sec_dirty, song_dirty;           /* live sections / the song: in 
 /* slot from flash into RAM (format 5, or an old one converted) */
 static union {
     project_t v6;
+    project_v7_t v7;
     project_v5_t v5;
     project_v4_t v4;
     project_v3_t v3;
     project_v2_t v2;
     project_v1_t v1;
 } proj_tmp;
+UI_SMALL static int proj_store(uint32_t obj, const project_t *p)
+{
+    proj_to_v7(&proj_tmp.v7, p);
+    return st_save(obj, &proj_tmp.v7, sizeof proj_tmp.v7);
+}
 UI_SMALL static void *up_stage(void) { return &proj_tmp; }   /* upreset.c: a user preset bank staged for a write (sloop-lab) */
 UI_SMALL static void proj_fetch(uint32_t slot)
 {
@@ -590,7 +651,7 @@ UI_SMALL static void project_save(uint32_t slot)
     proj_capture(p);
 #if FELUCCA_FLASH
     if (flash_ok) {
-        if (st_save(OBJ_PROJECT0 + (slot & 3u), p, sizeof *p))
+        if (proj_store(OBJ_PROJECT0 + (slot & 3u), p))
             ui_message("SAVE ERROR");
         else
             ui_say("SAVED SECTION ", SEC_NAME[slot & 3u]);
@@ -721,7 +782,7 @@ UI_SMALL static void autosave_tick(void)                /* main loop */
     h = autosave_buf.sum;
     if (h == autosave_hash || !audio_quiet())
         return;
-    if (st_save(OBJ_AUTOSAVE, &autosave_buf, sizeof autosave_buf) == 0)
+    if (proj_store(OBJ_AUTOSAVE, &autosave_buf) == 0)
         autosave_hash = h;
     autosave_ms = fm1_ms;
 #endif
@@ -1097,7 +1158,7 @@ UI_SMALL static uint32_t project_restore(uint32_t slot, const void *raw, uint32_
         project_apply(&autosave_buf);
         return 0;
     }
-    if (!flash_ok || st_save(OBJ_PROJECT0 + slot, &autosave_buf, sizeof autosave_buf))
+    if (!flash_ok || proj_store(OBJ_PROJECT0 + slot, &autosave_buf))
         return 4;
     memcpy(&proj_slot[slot], &autosave_buf, sizeof proj_slot[slot]);
     sec_dirty &= (uint8_t)~(1u << slot);
@@ -1142,7 +1203,7 @@ UI_SMALL static void sections_write(void)                        /* the dirty se
 #if FELUCCA_FLASH
     if (flash_ok)
         for (i = 0; i < 4u; i++)
-            if (((sec_dirty >> i) & 1u) && st_save(OBJ_PROJECT0 + i, &proj_slot[i], sizeof proj_slot[i]) == 0)
+            if (((sec_dirty >> i) & 1u) && proj_store(OBJ_PROJECT0 + i, &proj_slot[i]) == 0)
                 sec_dirty &= (uint8_t)~(1u << i);       /* (a failed write stays dirty: tried again later) */
     if (!flash_ok)
 #endif
