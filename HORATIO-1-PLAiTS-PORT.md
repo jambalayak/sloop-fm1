@@ -83,7 +83,7 @@ The relevant approach in GATOR is:
 
 GATOR's current macro-oscillator app uses **one** `plaits::Voice` object and
 is monophonic. Its 16 KiB shared allocator and its memory measurements therefore
-must not be treated as the cost of an eight-voice HORATIO-1 implementation.
+must not be treated as the cost of a polyphonic HORATIO-1 implementation.
 GATOR exposes 24 models across three banks, including additional models beyond
 the standard Plaits set. HORATIO-1's intended preset list should be mapped
 explicitly to the upstream Plaits models rather than copied from GATOR's
@@ -103,12 +103,13 @@ The C++/FPU risk is no longer an unknown: the FM-1 can run Plaits when the C++
 DSP is compiled separately for the FPU and the platform code remains integer
 based. The remaining hard question is **polyphony and integration cost**.
 
-HORATIO-1 has three synth parts and an existing shared eight-voice budget.
-Before replacing the current engines, prototype one Plaits voice through the
-SLOOP audio path, then measure one, two, four and eight simultaneous Plaits
-voices for CPU, static RAM, allocator use and flash. Also test model switching,
-note stealing, retriggering and sustained notes. Do not allocate one full
-Plaits voice per track without those measurements.
+HORATIO-1 targets **four simultaneous voices total**, shared across its three
+synth parts (not four voices per part). The firmware voice-slot and POLY limits
+are now set to four. Before replacing the current engines, prototype one Plaits
+voice through the SLOOP audio path, then measure one, two and four simultaneous
+Plaits voices for CPU, static RAM, allocator use and flash. Also test model
+switching, note stealing, retriggering and sustained notes. The intended design
+is a shared four-voice Plaits pool, not a separate four-voice pool for each track.
 
 GATOR is GPL-3.0-only and Plaits/stmlib remain MIT-licensed. If any GATOR
 adapter code is copied or adapted, retain its GPL notices and record the
@@ -117,6 +118,7 @@ source and changes; retain the MIT notices for Plaits/stmlib files as well.
 ## HORATIO-1 design intent
 
 - Plaits synthesis models should be exposed as browsable HORATIO-1 presets.
+- Target four-voice polyphony total, shared across the three synth parts.
 - The separate Volca-inspired drum concept was removed from the project.
 - Keep the SLOOP sequencer, effects, package identity and Harbour-compatible
   `.fwsc` format until replacements have been proven compatible.
