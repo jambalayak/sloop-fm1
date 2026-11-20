@@ -1014,7 +1014,7 @@ UI_SMALL static void preset_go(uint32_t n)                    /* load list index
  * LEVEL and REV (GLO > DRUMS), PAN and LEN */
 UI_SMALL static const param_desc_t *home_param(uint32_t k, int16_t **vp)
 {
-    static const uint8_t DRUM_HOME[4][2] = {{1, G_DRLVL}, {1, G_DRREV}, {0, P_PAN}, {0, P_SLEN}};
+    static const uint8_t DRUM_HOME[4][2] = {{1, G_CLICKLVL}, {1, G_DRREV}, {0, P_PAN}, {0, P_SLEN}};
     uint32_t id;
     if (is_drum(TSEL)) {
         id = DRUM_HOME[k & 3u][1];
