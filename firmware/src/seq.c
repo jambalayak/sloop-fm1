@@ -1937,10 +1937,8 @@ static void kh_release(track_t *t)                  /* every held note ends */
 }
 static void input_on(track_t *t, uint32_t note, uint32_t vel)
 {
-    if (is_drum(t)) {                             /* (a GM note on the drum track: its lane) */
-        drum_input(midi_drum_lane(note), vel_lvl(vel), 0, 1);
-        return;
-    }
+    if (is_drum(t))
+        return;                                     /* legacy fourth track: no drum input */
     last_note = (uint8_t)note;
     {   /* (2.6) played again under the pedal: the note-off it waited with first (the arp's key count, a recording's
          * note end), then this one held by its key */
@@ -1985,11 +1983,8 @@ static void input_on(track_t *t, uint32_t note, uint32_t vel)
 
 static void input_off(track_t *t, uint32_t note)
 {
-    if (is_drum(t)) {
-        if (ft_on && ft_trk == TRK_DRUM)
-            ft_note_off(midi_drum_lane(note));
-        return;
-    }
+    if (is_drum(t))
+        return;                                     /* legacy fourth track: no drum input */
     if (kh_on(t) && kh_has(t, note)) {             /* (2.7) KBD HOLD: it goes on sounding */
         if (kh_phys[trk_index(t) % NTRK])
             kh_phys[trk_index(t) % NTRK]--;
