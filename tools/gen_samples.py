@@ -60,6 +60,10 @@ SET_PRESETS = {
     "SCRCH": ("SCRATCH", [0, 0, 0, 0, 127, 0, 8, 0], (0, 127, 127, 18), 0, (0, 0, 0, 0), ()),
     "PERC": ("GM KIT", [0, 0, 0, 0, 127, 0, 0, 0], (0, 127, 127, 60), 0, (0, 0, 0, 6), ()),
 }
+if os.environ.get("HORATIO_PLAITS") == "1":
+    # Keep the legacy slot number but ship no percussion data or preset.
+    SET_PRESETS["PERC"] = ("RETIRED", [0, 0, 0, 0, 127, 0, 0, 0],
+                          (0, 127, 127, 60), 0, (0, 0, 0, 0), ())
 # more presets on a set: (set, name, E[], env, mono, sends, more)
 EXTRA_PRESETS = [
     ("PIANO", "DUSTY PNO", [0, 0, 34, 0, 96, 0, 24, 0], (0, 98, 0, 52), 0, (0, 8, 10, 22), ()),
@@ -406,7 +410,7 @@ class Builder:
             if i is not None:
                 L.append(preset(i, self.kinds.get(setname, "wave"), *rest))
         L.append("};")
-        names = ", ".join(f'"{n}"' for n, _, _ in named)
+        names = ", ".join(f'"{("RETIRED" if os.environ.get("HORATIO_PLAITS") == "1" and n == "PERC" else n)}"' for n, _, _ in named)
         L.append("#define SMP_SET_NAMES_INIT " + names)
         L.append("static const char *const SMP_SET_NAMES[] = {" + names + "};")
         L += self.break_header()
@@ -468,7 +472,12 @@ def main(out):
         for name, kind in CC0_SETS:
             if kind != "kit":                       # the CC0 KIT feeds the GM kit
                 b.cc0_set(name, kind)
-    b.gm_kit(have_cc0)
+    if os.environ.get("HORATIO_PLAITS") == "1":
+        # Preserve PERC's old set index (and therefore user-slot indices) as an empty placeholder.
+        b.sets.append(("PERC", len(b.zones), 0))
+        b.kinds["PERC"] = "kit"
+    else:
+        b.gm_kit(have_cc0)
     if os.environ.get("FELUCCA_SLICE") == "1":       # SLICE's BREAK: only when that engine is built
         b.slice_break()                             # last: the sets' offsets stay as they were
     text = b.header()
