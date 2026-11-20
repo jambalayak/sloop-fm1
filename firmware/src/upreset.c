@@ -321,7 +321,9 @@ UI_SMALL static int up_load_to(track_t *t, uint32_t k)       /* user preset k in
         t->p[i] = v[i];
     t->preset = 0;
     fm1_irq_on();
+#ifndef HORATIO_PLAITS
     fm6_track_loaded(t);                                /* FM6: a user preset holds the PTCH and the macros */
+#endif
     t->user = (uint8_t)(k + 1u);
     if (t == TSEL)
         sync_reload = 1;
