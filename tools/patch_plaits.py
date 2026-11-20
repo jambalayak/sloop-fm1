@@ -30,8 +30,10 @@ print("Plaits sample rate adapted to HORATIO-1: 44.1 kHz")
 def patch_file(path, replacements, label):
     text = path.read_text()
     for old, new in replacements:
-        if new in text:
-            continue
+        if old not in text:
+            if not new or new in text:
+                continue
+            raise SystemExit(f"Plaits {label} changed: expected one patch anchor")
         if text.count(old) != 1:
             raise SystemExit(f"Plaits {label} changed: expected one patch anchor")
         text = text.replace(old, new, 1)
