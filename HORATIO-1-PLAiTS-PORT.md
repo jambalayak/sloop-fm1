@@ -181,3 +181,25 @@ Implementation order:
 6. Build and test the final `.fwsc` in Harbor before treating it as a release.
 
 No Plaits DSP source has yet been integrated by this decision record alone.
+
+
+## Approved paraphonic performance design
+
+The four-note mode is paraphonic, not four independently enveloped
+polyphonic voices:
+
+- Maintain a four-note held-note stack with predictable note priority.
+- Each active pitch is rendered by its own Plaits DSP voice so each note has
+  its own oscillator/engine pitch and timbral state.
+- All four DSP voices receive the same shared gate and common amplitude
+  envelope. Adding or removing one note while other notes remain held does
+  not retrigger the common envelope; releasing the final held note releases
+  all notes together.
+- A new note beyond the four-note limit replaces the oldest held note.
+- Voice stealing and note-stack changes must be click-free.
+- The shared envelope, note stack, and four DSP instances are one instrument
+  resource, not four independently gated SLOOP tracks.
+
+This is the intended musical behaviour. It is not yet implemented in the
+firmware. The four-instance Plaits allocator and shared memory cost must be
+measured before the engine can be enabled.
