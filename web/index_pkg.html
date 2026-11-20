@@ -59,12 +59,12 @@
   <!--STUDIO_GUIDE-->
   <!--BANNER-->
   <h1>Firmware for the M-VAVE FM-1</h1>
-  <p class="lead">A groovebox you play live: four tracks — three synths and a drum machine — 12 synth engines (with six-operator FM and DX7 patches), 153 sounds, 37 drum kits from 808 to techno, amapiano and ambient, your own samples and drum kits, 27 punch-in effects. House, techno, hip-hop, drum &amp; bass, synthwave, lo-fi, ambient: make what you want. No factory patterns, nothing to load: everything you hear, you play.</p>
+  <p class="lead">HORATIO-1 is a synth-focused instrument project for the M-VAVE FM-1, built on the SLOOP and Felucca foundations. The current source has 12 existing synth engines, three synth parts, a live sequencer and 27 performance effects. Mutable Instruments Plaits integration is in development and is not yet included in an installable HORATIO-1 firmware build.</p>
   <div class="tiles">
-    <div class="tile" style="--c: var(--blue)"><b>153</b><span>sounds, 12 engines, your samples</span></div>
-    <div class="tile" style="--c: var(--green)"><b>37</b><span>drum kits, 909 to afro, + your own</span></div>
+    <div class="tile" style="--c: var(--blue)"><b>3</b><span>synth parts</span></div>
+    <div class="tile" style="--c: var(--green)"><b>12</b><span>current synth engines</span></div>
     <div class="tile" style="--c: var(--yellow)"><b>27</b><span>punch-in fx: hold fx + key</span></div>
-    <div class="tile" style="--c: var(--orange)"><b>rec</b><span>no click: the loop follows you</span></div>
+    <div class="tile" style="--c: var(--orange)"><b>Plaits</b><span>integration in development</span></div>
   </div>
   <p data-t="intro"></p>
   <p data-t="warn"></p>
@@ -225,7 +225,7 @@ window.addEventListener("beforeunload", (e) => { if (writing) { e.preventDefault
       if (h !== meta.sha256) { sayK("badpkg"); log(`sha256 ${h}, expected ${meta.sha256}`); return; }
     }
     image = logicalImage(pkg);
-    say(`SLOOP ${meta.version}`);
+    say(`HORATIO-1 · development build ${meta.version}`);
     lockAll(writing);
   } catch (e) { sayK("loadfail", e.message); }
 })();
