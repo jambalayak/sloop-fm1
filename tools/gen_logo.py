@@ -158,20 +158,19 @@ def svg_word(ox, oy):
 def svg(kind):
     if kind == "h":
         W, H = 760, 260
-        body = svg_icon(10, 10) + svg_word(270, H / 2 - 36)
+        body = svg_icon(10, 10) + ['<text x="270" y="158" fill="#F2F2F2" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="700" letter-spacing="1.5">HORATIO-1</text>']
     else:
         W, H = 240, 240
         body = svg_icon(0, 0)
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" '
-            f'aria-label="SLOOP">\n<rect width="{W}" height="{H}" fill="#000"/>\n' + "\n".join(body) + "\n</svg>\n")
+            f'aria-label="HORATIO-1">\n<rect width="{W}" height="{H}" fill="#000"/>\n' + "\n".join(body) + "\n</svg>\n")
 
 
 # ---- firmware splash ---------------------------------------------------------------------------
 SPLASH_W, SPLASH_H = 240, 188
-# the scale: the icon (240), the gap (22), the wordmark's x-height (72), the p's descender (36) and its round
-# end (6): 376 units in SPLASH_H rows. At 0.56 (before 2.4) the p's tail ran past row 188 and was cut
+# The compact HORATIO-1 pixel wordmark fits below the icon on the FM-1 splash.
 SPLASH_K = 0.5
-assert (262 + 72 + 36 + 6) * SPLASH_K <= SPLASH_H, "the wordmark's p must fit the splash"
+assert (262 + 72 + 6) * SPLASH_K <= SPLASH_H, "the HORATIO-1 wordmark must fit the splash"
 
 
 def rgb565(c):
