@@ -2388,40 +2388,9 @@ static void key_up(uint32_t k)
     }
 }
 
-/* the UI asks to hear drum sounds (a sound or a step picked with a knob, a step set from a key):
- * aud_lanes the lanes, each at its level aud_lvl (2 bits a lane), played here, in the audio context */
-static volatile uint32_t aud_lanes, aud_lvl;
-static void audition_req(uint32_t lanes, uint32_t lvls)
-{
-    fm1_irq_off();
-    aud_lvl = lvls;
-    aud_lanes = lanes & 0xFFFFu;
-    fm1_irq_on();
-}
-static void audition_lane(uint32_t lane) { audition_req(1u << (lane & 15u), 0u); }   /* (LV_NORM = 0) */
-static void audition_step(const dstep_t *s)            /* every sound of a drum step, at its level */
-{
-    uint32_t m = dstep_mask(s), lv = 0, l;
-    for (l = 0; l < 16u; l++)
-        if ((m >> l) & 1u)
-            lv |= dstep_lvl(s, l) << (2u * l);
-    audition_req(m, lv);
-}
-static void audition_block(void)
-{
-    uint32_t m = aud_lanes, lv = aud_lvl, l;
-    if (!m)
-        return;
-    aud_lanes = 0;
-    for (l = 0; m; l++, m >>= 1)
-        if (m & 1u)
-            trk_note_on(TDRUM, LANE_NOTE[l], lvl_vel((lv >> (2u * l)) & 3u, 100));
-}
-
 static void keyboard_block(void)
 {
     uint32_t cur = fm1_in.notes, ch = cur ^ kb_prev, k, r;
-    audition_block();
     /* (2.7: MUTE mode stays when EDIT is let go, until a black key again: the mutes at hand, live; 2.6 went back to
      * erasing) */
     if (!(layer_buttons() & ly_bit[LY_ROLL]))         /* ARP up (and not locked): the rolls end (the keys stay silent) */
