@@ -233,21 +233,20 @@ until those measurements and audio tests pass.
 
 The build-only probe first measured the full 24-model upstream voice at
 8,876 B. HORATIO-1 only needs the 16 original Plaits models, so the build
-patch now removes the newer eight engine2 classes and their registrations.
-The target-toolchain measurement after that reduction is:
+patch removes the newer eight engine2 classes and their registrations. The
+target-toolchain measurements for the reduced adapter are:
 
-- `sizeof(plaits::Voice)`: **3,732 B** (down from 8,876 B).
-- `sizeof(stmlib::BufferAllocator)`: **16 B**.
-- `sizeof(plaits::Voice::Frame)`: **4 B**.
-- One conservative voice state (Voice + allocator + 24-frame FIFO + 16 KiB
-  arena): **20,228 B**.
-- Four voices: **14,928 B** for the Voice objects and **65,984 B** for their
-  allocators, FIFOs and 16 KiB arenas (**80,912 B total**).
+- `sizeof(plaits::Voice)`: **3,732 B**.
+- Four aligned Voice objects: **14,944 B** in `.bss`.
+- One complete adapter slot (allocator storage, 12-frame FIFO, 16 KiB arena
+  and control metadata): **16,480 B**.
+- Four slots: **65,920 B** in `.pool`.
+- Total four-voice static memory: **80,864 B**, plus 33 B for the small
+  pointer/initialisation table.
 
 The current reference build has 43,124 B of `.data + .bss` headroom and
-10,164 B of `.pool` headroom. Keeping the four `Voice` objects in `.bss`
-fits comfortably. The 65,984 B of per-voice arenas and small state need
-another 55,820 B of `.pool`.
+10,164 B of `.pool` headroom. The four aligned Voice objects fit in main
+RAM. The four working slots need another 55,756 B of `.pool`.
 
 This gives a concrete memory route: remove the old three-part engine arena
 when the legacy engine bank is retired, and shorten the power-of-two delay
@@ -256,9 +255,13 @@ retaining a **0.74 s** tempo delay at 44.1 kHz; chorus, reverb, distortion
 and the planned compact granular effect remain separate. The final linker
 report must verify the actual layout before this is enabled.
 
-The C++ check now compiles 35 Plaits/stmlib objects, excluding the engine2
-sources. This validates the reduced 16-model source set and object layout;
-Plaits DSP is still not linked into the installable firmware image.
+The C++ check compiles 36 objects, excluding the engine2 sources. The
+fixed-memory adapter compiles, but is not yet connected to SLOOP's engine
+table or sequencer and is not linked into the installable firmware.
+
+The adapter currently saves/restores stmlib's global random state per voice.
+Until that state is made core-local, Plaits rendering must stay on core 0;
+the dual-core scheduler must not dispatch Plaits parts to core 1.
 
 ## Engine integration constraint
 
