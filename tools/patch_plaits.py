@@ -85,4 +85,14 @@ patch_file(voice_cc, [
     ("if (engine_index == 15) {", "if (engine_index == 7) {"),
     (chiptune_branch, ""),
 ], "voice.cc")
+
+vh = voice_h.read_text()
+vc = voice_cc.read_text()
+if ("engine2/" in vh or "kMaxEngines = 24" in vh or
+        "kMaxEngines = 16" not in vh or "chiptune_engine_" in vh or
+        "virtual_analog_vcf_engine_" in vh):
+    raise SystemExit("Plaits voice.h pruning did not leave exactly the 16 original models")
+if ("chiptune_engine_" in vc or "phase_distortion_engine_" in vc or
+        "if (engine_index == 15)" in vc):
+    raise SystemExit("Plaits voice.cc still contains an engine2 registration or branch")
 print("Plaits model set reduced to the 16 original engines")
