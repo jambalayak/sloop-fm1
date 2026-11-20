@@ -2046,8 +2046,6 @@ static void roll_hit(uint32_t r)
         rec = abs != roll[r].rec_abs;
         roll[r].rec_abs = abs;
     }
-    if (is_drum(t))
-        return;                                     /* legacy drum rolls are disabled */
     arm_start(t);
     if (roll[r].off)
         trk_note_off(t, roll[r].note);
@@ -2091,8 +2089,6 @@ static void roll_end(uint32_t r)
         trk_note_off(&trk[roll[r].trk % NTRK], roll[r].note);
         seq_out_off(&trk[roll[r].trk % NTRK], roll[r].note);
     }
-    if (roll[r].on && roll[r].trk == TRK_DRUM)
-        seq_out_off(&trk[TRK_DRUM], LANE_NOTE[roll[r].note & 15u]);
     roll[r].on = 0;
 }
 
