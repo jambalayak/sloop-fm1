@@ -31,6 +31,11 @@ static const engine_t *const ENGINES[NENGINES] = {
     &ENG_PLAITS, &ENG_PLAITS, &ENG_PLAITS, &ENG_PLAITS, &ENG_PLAITS,
     &ENG_PLAITS, &ENG_PLAITS
 };
+static int16_t preset_trim(uint32_t e, uint32_t pi) {
+    (void)e;
+    (void)pi;
+    return 0;
+}
 #else
 static void *eng_arena_of(const track_t *t, uint32_t eng);
 #include "eng_analog.c"
