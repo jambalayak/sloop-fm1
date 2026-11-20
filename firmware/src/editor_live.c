@@ -64,7 +64,9 @@ UI_SMALL static void ed_live(const uint8_t *a, uint32_t na)
         case 7:                                         /* ERASE */
             if (na >= (a[0] == 6u ? 5u : 4u) && a[1] < NTRK) {
                 track_t *t = &trk[a[1]];
-                uint32_t nt = is_drum(t) ? a[2] & 15u : a[2] & 127u, down = a[a[0] == 6u ? 4 : 3] & 1u;
+                uint32_t nt = a[2] & 127u, down = a[a[0] == 6u ? 4 : 3] & 1u;
+                if (is_drum(t))
+                    break;                              /* legacy drum editor events are ignored */
                 fm1_irq_off();
                 if (a[0] == 6u) {
                     for (i = 0; i < NROLL; i++)
@@ -76,20 +78,13 @@ UI_SMALL static void ed_live(const uint8_t *a, uint32_t na)
                     if (!erasing(t) || er_trk != a[1])
                         undo_erase_sess = (undo_sess += 4u) | 2u;
                     if (er_trk != a[1]) {
-                        er_lanes = 0;
                         er_notes[0] = er_notes[1] = er_notes[2] = er_notes[3] = 0;
                         er_trk = (uint8_t)a[1];
                     }
-                    if (is_drum(t))
-                        er_lanes |= (uint16_t)(1u << nt);
-                    else
-                        er_notes[nt >> 5] |= 1u << (nt & 31u);
+                    er_notes[nt >> 5] |= 1u << (nt & 31u);
                     erase_now(t);
                 } else if (er_trk == a[1]) {
-                    if (is_drum(t))
-                        er_lanes &= (uint16_t)~(1u << nt);
-                    else
-                        er_notes[nt >> 5] &= ~(1u << (nt & 31u));
+                    er_notes[nt >> 5] &= ~(1u << (nt & 31u));
                 }
                 fm1_irq_on();
             }
