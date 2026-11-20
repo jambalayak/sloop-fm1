@@ -1222,7 +1222,7 @@ UI_SMALL static void persist_flush_now(void)
 #if FELUCCA_FLASH
     if (flash_ok && !arrangement_clock.running) {     /* (a song playing: the tracks hold a section) */
         proj_capture(&autosave_buf);
-        if (autosave_buf.sum != autosave_hash && st_save(OBJ_AUTOSAVE, &autosave_buf, sizeof autosave_buf) == 0)
+        if (autosave_buf.sum != autosave_hash && proj_store(OBJ_AUTOSAVE, &autosave_buf) == 0)
             autosave_hash = autosave_buf.sum;
     }
 #endif
