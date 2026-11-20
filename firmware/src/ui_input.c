@@ -1070,7 +1070,7 @@ UI_SMALL static void ui_input(void)
             song.seq_mode = 0;
         }
     }
-    kb_grid = (uint8_t)grid_keys_on();                  /* (seq.c: the keys are the grid's steps) */
+    kb_grid = 0;                                      /* dedicated drum grid removed */
     if (ui.menu) {                                      /* HOME / REC taps do nothing here */
         punch.hold = 0;
         thr_req = 0;
