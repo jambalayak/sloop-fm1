@@ -302,7 +302,7 @@ UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
 {
     int32_t w = punch_key(k);
     if (layer >= LY_COUNT)
-        return;                                         /* (KB_GRID: the DRUMS grid page's, ui_studio.c) */
+        return;                                         /* Reserved for non-layer panel events. */
     if (!down) {
         if (w >= 0) {
             ui.step_held &= (uint16_t)~(1u << w);
@@ -488,18 +488,11 @@ UI_SMALL static void layer_knobs(uint32_t layer)
                 song.g[G_ROLL] = (int16_t)clamp(song.g[G_ROLL] + s, 0, 4);
             break;
         case LY_STEP:
-            if (ui.step_held) {                         /* SOUND / NOTE  LEVEL  RATCHET  NUDGE */
-                if (k == 0u && is_drum(t))
-                    pen_lane_move(s);
-                else
-                    steps_held_edit(k, s);
+            if (ui.step_held) {                         /* NOTE  VEL  RATCHET  NUDGE */
+                steps_held_edit(k, s);
             } else if (k == 0u) {
-                if (is_drum(t)) {
-                    pen_lane_move(s);
-                } else {
-                    pen_note[0] = (uint8_t)clamp(pen_note[0] + s, 0, 127);
-                    pen_n = 1;
-                }
+                pen_note[0] = (uint8_t)clamp(pen_note[0] + s, 0, 127);
+                pen_n = 1;
             } else if (k == 1u) {
                 t->p[P_SDIV] = (int16_t)clamp(t->p[P_SDIV] + s, 0, (int32_t)NDIV_STEP - 1);   /* (up to 2BAR) */
             } else if (k == 2u) {
@@ -512,17 +505,15 @@ UI_SMALL static void layer_knobs(uint32_t layer)
             break;
         case LY_SCALE:
             if (k == 0u) {
-                if (!is_drum(t))
-                    t->p[P_CHORD] = (int16_t)clamp(t->p[P_CHORD] + s, 0, 5);
+                t->p[P_CHORD] = (int16_t)clamp(t->p[P_CHORD] + s, 0, 5);
             } else if (k == 1u) {
                 uint32_t i;
                 int16_t v = (int16_t)clamp(trk[0].p[P_SCALE] + s, 0, NSCALES - 1);
                 for (i = 0; i < NPART; i++)
                     trk[i].p[P_SCALE] = v;
             } else if (k == 2u) {
-                if (!is_drum(t))
-                    t->p[P_QUANT] = (int16_t)clamp(t->p[P_QUANT] + s, 0, 2);
-            } else if (!is_drum(t)) {
+                t->p[P_QUANT] = (int16_t)clamp(t->p[P_QUANT] + s, 0, 2);
+            } else {
                 t->p[P_TRANS] = (int16_t)clamp(t->p[P_TRANS] + s, -24, 24);
             }
             break;
@@ -749,10 +740,10 @@ UI_SMALL static void layer_screen_draw(void)
             tl[i].top = present && !down ? (layer == LY_ERASE ? TE_RED : col) : 0;
         }
         if (layer == LY_ERASE) {
-            lab[0] = "shift", lab[1] = "length", lab[2] = is_drum(t) ? "" : "transp";
+            lab[0] = "shift", lab[1] = "length", lab[2] = "transp";
             str_cpy(v[0], "<  >", 8);
             fmt_int(v[1], t->p[P_SLEN]);
-            str_cpy(v[2], is_drum(t) ? "" : "-  +", 8);
+            str_cpy(v[2], "-  +", 8);
             str_cpy(sub, undo.valid ? (undo.undone ? "oct+ redo" : "oct- undo") : sub, sizeof sub);
         } else {
             lab[0] = "rate";
@@ -769,14 +760,7 @@ UI_SMALL static void layer_screen_draw(void)
                 tl[i].bg = C_BLACK;
                 continue;
             }
-            if (is_drum(t)) {
-                const dstep_t *d = &t->dstep[idx];
-                on = dstep_has(d, pen_lane);
-                if (on) {
-                    lv = dstep_lvl(d, pen_lane);
-                    rt = dstep_rat(d, pen_lane);
-                }
-            } else {
+            {
                 const step_t *st = &t->step[idx];
                 on = step_on(st);
                 if (on) {
@@ -806,26 +790,20 @@ UI_SMALL static void layer_screen_draw(void)
             p[2] = (char)('0' + (len + 15u) / 16u);
             str_cpy(sub, "page ", sizeof sub);
             str_cpy(sub + 5, p, 4);
-            if (is_drum(t))
-                str_cpy(sub + 8, "  oct: page", sizeof sub - 8u);   /* (2.7.1: the black keys are the sounds) */
-        } else if (is_drum(t)) {
-            str_cpy(sub, "black keys: sound", sizeof sub);
         }
-        lab[0] = is_drum(t) ? "sound" : "note";
-        if (is_drum(t))
-            str_cpy(v[0], LANE_SHORT[pen_lane], 8);
-        else
-            note_name(v[0], pen_note[0]);
-        ratio[0] = is_drum(t) ? pen_lane * 1000 / 15 : pen_note[0] * 1000 / 127;
+        }
+        lab[0] = "note";
+        note_name(v[0], pen_note[0]);
+        ratio[0] = pen_note[0] * 1000 / 127;
         if (ui.step_held) {                             /* the first step held: its nudge; the title: its lock */
             uint32_t id = ui.lock_par % P_COUNT, w, idx;
             int k;
             for (w = 0; w < 16u && !((ui.step_held >> w) & 1u); w++)
                 ;
             idx = (page * 16u + w) % NSTEP;
-            lab[1] = is_drum(t) ? "level" : "vel", lab[2] = "ratchet", lab[3] = "nudge";
+            lab[1] = "vel", lab[2] = "ratchet", lab[3] = "nudge";
             str_cpy(v[1], "-  +", 8);
-            if (!is_drum(t)) {                          /* (2.6) the first held step's velocity */
+            {                                             /* the first held step's velocity */
                 const step_t *st = &t->step[idx];
                 if (step_on(st)) {
                     fmt_int(v[1], (int32_t)step_vel_shown(st));
@@ -901,9 +879,7 @@ UI_SMALL static void layer_screen_draw(void)
         te_lower(v[1], N_SCALE[clamp(trk[0].p[P_SCALE], 0, NSCALES - 1)], 8);
         te_lower(v[2], N_QUANT[clamp(t->p[P_QUANT], 0, 2)], 8);
         fmt_int(v[3], t->p[P_TRANS]);
-        if (is_drum(t))
-            v[0][0] = v[2][0] = v[3][0] = 0;
-        ratio[0] = t->p[P_CHORD] * 200;
+         ratio[0] = t->p[P_CHORD] * 200;
         ratio[1] = trk[0].p[P_SCALE] * 1000 / (NSCALES - 1);
         ratio[2] = t->p[P_QUANT] * 500;
         ratio[3] = (t->p[P_TRANS] + 24) * 1000 / 48;
