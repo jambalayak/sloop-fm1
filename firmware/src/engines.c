@@ -5,7 +5,6 @@
 /* SLOOP 2.5: the big per-part state of GRAIN, FM6 and PHYS shares one arena per synth part (a part plays one
  * engine at a time: on a switch the old engine fades out, its voices end, then the new one starts, voice.c
  * engine_block). The first engine to ask for it after another one gets it cleared, as at power-on. */
-static void *eng_arena_of(const track_t *t, uint32_t eng);
 static inline int32_t voice_amp(int32_t s, const vmod_t *m, uint32_t i) { return mulq15(mulq15(s, amp_at(m, i)), VOICE_FS); }
 static inline int32_t soft_knee(int32_t y, int32_t k)   /* linear up to k, then only the peaks saturate */
 {
@@ -24,6 +23,16 @@ static uint32_t uni_turns(uint32_t r, int32_t p16, int32_t d16)
     return b ? (uint32_t)(((uint64_t)r * pitch_inc((uint32_t)clamp(p16 + d16, 0, 2047))) / b) : r;
 }
 
+#ifdef HORATIO_PLAITS
+#include "eng_plaits.c"
+static const engine_t *const ENGINES[NENGINES] = {&ENG_PLAITS};
+static int phys_render_draws(const track_t *t, int32_t model) {
+    (void)t;
+    (void)model;
+    return 0;
+}
+#else
+static void *eng_arena_of(const track_t *t, uint32_t eng);
 #include "eng_analog.c"
 #include "eng_digital.c"
 #include "eng_phase.c"
@@ -107,3 +116,5 @@ static int16_t preset_trim(uint32_t e, uint32_t pi)
 {
     return e < PT_ENGINES && pi < PT_MAX ? PRESET_TRIM[e][pi] : 0;
 }
+
+#endif /* HORATIO_PLAITS */
