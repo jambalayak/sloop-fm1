@@ -45,7 +45,7 @@ CXXFLAGS = ["-mcpu=r3", "-mfprev1", "-O2", "-std=gnu++11", "-DTEST",
             "-fno-threadsafe-statics", "-fno-use-cxa-atexit", "-nostdinc++",
             "-ffunction-sections", "-fdata-sections", "-Wall",
             "-Wno-unused-function", "-Wno-unused-variable",
-            "-Ifirmware/cxx", "-Ifirmware/src", "-Ithird_party/eurorack"]
+            "-Ifirmware/cxx", "-Ifirmware/src", "-Ithird_party", "-Ithird_party/eurorack"]
 LINE = re.compile(r"^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2} )+)\s*\t(.*)$")
 
 # SDK files of AC79NN_SDK_V1.2.1_2023-12-13 (the tested version)
@@ -125,9 +125,14 @@ def build_cxx():
         raise SystemExit(patch.stdout + patch.stderr)
     if patch.stdout:
         print(patch.stdout.strip())
-    sources = [*sorted((eurorack / "plaits").rglob("*.cc")),
-               *sorted((eurorack / "stmlib").rglob("*.cc")),
-               *sorted((FW / "src").glob("*.cc")),
+    stmlib = SRC / "third_party" / "stmlib"
+    if not (stmlib / "stmlib.h").exists():
+        raise SystemExit("HORATIO Plaits stmlib dependency is missing")
+    # Only compile synthesis DSP, never the upstream STM32 drivers or bootloader.
+    sources = [*sorted((eurorack / "plaits" / "dsp").rglob("*.cc")),
+               eurorack / "plaits" / "resources.cc",
+               stmlib / "dsp" / "units.cc",
+               stmlib / "utils" / "random.cc",
                FW / "cxx" / "runtime.cc"]
     objdir = OUT / "cxx"
     objdir.mkdir(parents=True, exist_ok=True)
