@@ -27,11 +27,6 @@ static uint32_t uni_turns(uint32_t r, int32_t p16, int32_t d16)
 #include "eng_plaits.c"
 #include "eng_sample.c" /* pitched sample playback remains available; the kit set is omitted by gen_samples.py */
 static const engine_t *const ENGINES[NENGINES] = {&ENG_PLAITS, &ENG_SAMPLE};
-static int phys_render_draws(const track_t *t, int32_t model) {
-    (void)t;
-    (void)model;
-    return 0;
-}
 #else
 static void *eng_arena_of(const track_t *t, uint32_t eng);
 #include "eng_analog.c"
