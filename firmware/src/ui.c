@@ -679,7 +679,7 @@ UI_SMALL static void apply_preset_to(track_t *t, uint32_t pi)
 UI_SMALL static void set_engine_of(track_t *t, uint32_t ei)
 {
 #ifdef HORATIO_PLAITS
-    ei = ei == ENGI_SAMPLE ? ENGI_SAMPLE : ENGI_PLAITS;
+    ei = ENGI_PLAITS;
 #else
     ei %= NENGINES;
 #endif
