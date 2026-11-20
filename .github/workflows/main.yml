@@ -3,6 +3,9 @@ name: Build SLOOP firmware
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - plaits-development
 
 permissions:
   contents: read
