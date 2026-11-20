@@ -2314,7 +2314,7 @@ static void key_down(uint32_t k)
         uint32_t lane = lane_of_key(k), lvl = key_lvl();
         kb_nt[k][0] = (uint8_t)lane;
         kb_n[k] = 1;
-        if (layer == LY_ROLL && black < 0) {
+        if (layer == LY_ROLL && kb_black_index(k) < 0) {
             kb_kind[k] = KS_ROLL;
             roll_start(k, t, lane, lvl);
             return;
