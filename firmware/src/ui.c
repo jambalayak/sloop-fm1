@@ -676,14 +676,19 @@ UI_SMALL static void apply_preset_to(track_t *t, uint32_t pi)
  * its values or the new one with its own (voice.c engine_block), never one with the other's */
 UI_SMALL static void set_engine_of(track_t *t, uint32_t ei)
 {
-    const engine_t *e = ENGINES[ei % NENGINES];
+#ifdef HORATIO_PLAITS
+    ei = ei == ENGI_SAMPLE ? ENGI_SAMPLE : ENGI_PLAITS;
+#else
+    ei %= NENGINES;
+#endif
+    const engine_t *e = ENGINES[ei];
     uint32_t i;
     if (is_drum(t))
         return;
     fm1_irq_off();
     locks_restore(t);                                 /* (a lock in force: its base first, then the new sound) */
     sound_change(t);                                  /* (2.6: the sound as it is, before anything new is written) */
-    t->eng_req = (uint8_t)(ei % NENGINES);
+    t->eng_req = (uint8_t)ei;
     for (i = 0; i < 8u; i++)
         t->p[P_E0 + i] = e->edit[i].def;
     apply_preset_to(t, 0);
