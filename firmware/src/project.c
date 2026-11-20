@@ -719,7 +719,7 @@ UI_SMALL static void project_apply(const project_t *p)
         ex_off[k] = 0;                                  /* (2.7.1) MIDI EXPRESSION: full again, as after CC 121 */
     fm1_irq_off();                                      /* the audio ISR must not see half a project */
     proj_apply(p, 1);
-    song.sel = (uint8_t)(p->sel < NTRK ? p->sel : 0u);
+    song.sel = (uint8_t)(p->sel < NPART ? p->sel : 0u);
     fm1_irq_on();
     for (k = 0; k < NPART; k++)                         /* a format 1 project: the default sounds of tracks 2, 3 */
         if (p->t[k].preset == 0xFFu) {
@@ -808,7 +808,7 @@ UI_SMALL static void autosave_resume(void)              /* power-on: the project
     }
     drch_seed = 0;
     proj_apply(q, 1);
-    song.sel = (uint8_t)(q->sel < NTRK ? q->sel : 0u);
+    song.sel = (uint8_t)(q->sel < NPART ? q->sel : 0u);
     proj_foreign_parts(q);                         /* (2.8.4) Clipper's working project: its own sounds, default */
     for (n = 0; n < NPART; n++)
         trk[n].engine = trk[n].eng_req;        /* (nothing sounds yet: no fade) */
