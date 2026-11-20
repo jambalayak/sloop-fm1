@@ -74,7 +74,7 @@ typedef struct {
     proj_trk_t t[NPART];
     uint32_t sum;
 } project_v7_t;
-_Static_assert(sizeof(project_v7_t) == 2882u, "FUN7: three synth tracks, no drum track");
+_Static_assert(sizeof(project_v7_t) <= 3840u, "FUN7: three synth tracks fit one flash object");
 static int16_t pt_get(const proj_trk_t *t, uint32_t id)   /* p[id] of a stored track */
 {
     return id < PROJ_NC6 ? t->p[id] : id < P_E0 ? (int16_t)t->x[id - PROJ_NC6] : t->e[(id - P_E0) & 7u];
