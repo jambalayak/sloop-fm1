@@ -338,7 +338,7 @@ typedef struct {
     uint8_t seed;                                       /* (2.6) bit per channel: the LP's state from its next sample */
     int32_t z[4][2];                                    /* the SVF states, per channel */
 } djf_t;
-static djf_t djf, tflt[NTRK];
+static djf_t djf, tflt[NPART];
 
 /* (2.7.2) the track filter's SVF resonance (tsvf_coef's reso) for the FILTER RESO setting: 40 (clean, as the filter
  * always was) at 0, up to 110 at 10 (a strong but still stable peak; tflt_run leaves 4x headroom for it). The master
@@ -676,7 +676,7 @@ static void mix_part_run(track_t *t, uint32_t n, mixacc_t *mx, int32_t *b)
         slicer_track(t, b, n);                          /* slicer.c: before the level, pan and sends */
         {
             tsvf_t fc;                                  /* the track's FILTER (P_TFLT), after the SLICER */
-            djf_t *f = &tflt[(uint32_t)(t - trk) % NTRK];
+            djf_t *f = &tflt[(uint32_t)(t - trk) % NPART];
             if (djf_block(f, t->p[P_TFLT], &fc, tflt_reso()))
                 tflt_run(f, &fc, b, n, 0);
         }
