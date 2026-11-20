@@ -680,9 +680,10 @@ static void engine_block(track_t *t)
             v->stage = 0;
             v->env = v->env_out = 0;
         }
+#ifndef HORATIO_PLAITS
         if (t->xf_on && t->eng_req == ENGI_FM6 && ((fm6_pend >> ((uint32_t)(t - trk) % NPART)) & 1u))
-            return;                                     /* (2.6) FM6: the new notes wait for the preset's patch
-                                                         * (eng_fm6.c fm6_poll, main loop): not a note of the old */
+            return;                                     /* FM6 notes wait for the patch bank load. */
+#endif
         t->engine = t->eng_req % NENGINES;
         t->xf_on = 0;
         t->pold = 0;
