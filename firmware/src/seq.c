@@ -75,9 +75,12 @@ static volatile uint8_t arp_keep_req;    /* (2.7) bit per track: a sound loaded 
 
 static uint32_t trk_index(const track_t *t) { return (uint32_t)(t - trk); }
 
-static uint32_t trk_midi_ch(uint32_t i)    /* MIDI channel 0..15 of track i (keys -> MIDI out); 2.6: GLO > MIDI */
-{                                          /* (2.6: OFF is OFF, in and out: 0xFF, nothing sent) */
-    int32_t c = i < NPART ? song.g[G_CH1 + i] : song.g[G_DRCH];
+static uint32_t trk_midi_ch(uint32_t i)    /* MIDI channel 0..15 of synth track i (keys -> MIDI out) */
+{
+    int32_t c;
+    if (i >= NPART)
+        return 0xFFu;                              /* no dedicated drum track or drum MIDI channel */
+    c = song.g[G_CH1 + i];
     return c >= 1 && c <= 16 ? (uint32_t)c - 1u : 0xFFu;
 }
 /* a note on (vel > 0) / off to MIDI OUT on channel ch (trk_midi_ch: 0xFF, the track's MIDI OFF: nothing) */
