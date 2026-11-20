@@ -451,21 +451,15 @@ static void mono_remove(track_t *t, uint32_t note)
  * by the UI with the IRQ off */
 static volatile uint32_t note_hits[NPART][4];
 /* the visualiser (ui_vis.c): the tracks a note started on (bit per track), each one's last note, a kick */
-static volatile uint8_t vis_hit, vis_kick_hit, vis_note[NTRK];
+static volatile uint8_t vis_hit, vis_note[NTRK];
 
 static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
 {
     uint32_t any = 0, i, mode = (uint32_t)t->p[P_VOICE];
-    if (trk_silent(t))
-        return;                                         /* MUTE, or another track soloed */
+    if (is_drum(t) || trk_silent(t))
+        return;                                         /* legacy drum slot is intentionally silent */
     vis_hit |= (uint8_t)(1u << ((uint32_t)(t - trk) & 3u));
     vis_note[(uint32_t)(t - trk) & 3u] = (uint8_t)note;
-    if (is_drum(t)) {                                   /* the drum track: GM drums (drums.c) */
-        if (note == 35u || note == 36u)
-            vis_kick_hit = 1;
-        drum_on(note, vel);
-        return;
-    }
     if ((uint32_t)(t - trk) < NPART && note < 128u)
         note_hits[t - trk][note >> 5] |= 1u << (note & 31u);
     if (t->xf_on || t->eng_req != t->engine || t->pold) {   /* engine switch / preset under way: after the fade */
