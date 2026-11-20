@@ -98,7 +98,7 @@ static void key_events_test(void)
     t->p[P_QUANT] = 0;                    /* standard chromatic mode keeps every semitone */
     fm1_in.notes = 1u << 8;                /* C# is a normal chromatic note */
     keyboard_block();
-    assert(t->arp_phys == 0 && !(live_held[0][1] & (1u << 29)) == 0 && mo_w == 1);
+    assert(t->arp_phys == 0 && (live_held[0][1] & (1u << 29)) != 0u && mo_w == 1);
     assert(((midi_out_q[0] >> 16) & 127u) == 61u);
     t->p[P_QUANT] = 0;                    /* key-up uses the note captured on key-down */
     fm1_in.notes = 0;
