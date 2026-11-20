@@ -8,7 +8,7 @@
 static uint32_t vage;                                   /* voice ages: one clock for every part */
 /* engines that play recorded material (a position, not a phase): no phases kept or spread */
 #ifdef HORATIO_PLAITS
-static int eng_sampled(const engine_t *e) { return e == &ENG_SAMPLE; }
+static int eng_sampled(const engine_t *e) { (void)e; return 0; }
 #else
 #if FELUCCA_SLICE
 static int eng_sampled(const engine_t *e) { return e == &ENG_SAMPLE || e == &ENG_SLICE; }
@@ -374,11 +374,8 @@ static void voice_start(track_t *t, voice_t *v, uint32_t note, uint32_t vel, int
 static void unison_spread(track_t *t, voice_t *v, uint32_t r)
 {
 #ifdef HORATIO_PLAITS
-    const engine_t *e = ENGINES[t->engine];
-    if (e == &ENG_SAMPLE)
-        sample_spread(t, v, r);
-    else
-        v->ph[0] += r; /* Plaits has its own per-slot oscillator phase. */
+    (void)t;
+    v->ph[0] += r; /* Plaits has its own per-slot oscillator phase. */
 #else
     const engine_t *e = ENGINES[t->engine];
     /* (after Clipper 1.2) each engine moves all its oscillators (and reseeds its noise): ph[0] alone left the others in
