@@ -434,16 +434,18 @@ UI_SMALL static const uint8_t *ed_bk_obj(uint32_t id, uint32_t *len)   /* 0 = no
             *len = sizeof *bk;
         return bk ? (const uint8_t *)bk : (const uint8_t *)&up_rec_none;
     }
+#ifndef HORATIO_PLAITS
     if (id == 8u) {                                       /* the FM6 patch bank, in flash (XIP) */
         if (fm6_bank_cur >= 0)
             *len = sizeof(fm6_bank_t);
         return (const uint8_t *)fm6_bank_flash(fm6_bank_cur < 0 ? 0u : (uint32_t)fm6_bank_cur);
     }
-    if (id == 9u) {                                       /* SLOOP 2.5: the SYN drum kits (drum_synth.c dsu) */
+    if (id == 9u) {                                       /* legacy SYN drum kits */
         (void)dsu_kit(0);
         *len = sizeof dsu;
         return (const uint8_t *)&dsu;
     }
+#endif
     if (id == 10u) {                                      /* SLOOP 2.6: the MIDI part (the MIDI LEARN map, GLO > MIDI's
                                                          * channels): listed only while it is not the default (a backup
                                                          * without it stays one an older editor reads; its restore leaves
@@ -494,6 +496,7 @@ UI_SMALL static uint32_t ed_bk_commit(void)
         up_gen++;
         return 0;
     }
+#ifndef HORATIO_PLAITS
     if (id == 8u) {                                       /* the FM6 patch bank (n 0: empty) */
         if (ed_flash_busy())
             return 3;
@@ -521,6 +524,7 @@ UI_SMALL static uint32_t ed_bk_commit(void)
         persist_saved = p;
         return 0;
     }
+#endif
     if (id == 10u) {                                      /* SLOOP 2.6: the MIDI part, written with the settings */
         persist_t p;
         if (ed_flash_busy())
@@ -682,10 +686,12 @@ UI_SMALL static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes b
         ed_send();
         return;
     }
+#ifndef HORATIO_PLAITS
     if (ed_fm6_handle(cmd, a, na)) {                       /* v9: FM6 patches */
         ed_send();
         return;
     }
+#endif
     switch (cmd) {
     case ED_LIVE:                                          /* v12: the LIVE page */
         if (na < 1u)
