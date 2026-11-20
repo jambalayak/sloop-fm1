@@ -473,7 +473,7 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
                 preset_go((uint32_t)(((int32_t)cur + steps % (int32_t)total + (int32_t)total) % (int32_t)total));
         } else if (slot == 1u) {
 #ifdef HORATIO_PLAITS
-            select_engine(TSEL->eng_req == ENGI_SAMPLE ? ENGI_PLAITS : ENGI_SAMPLE);
+            select_engine(ENGI_PLAITS);
 #else
             select_engine((TSEL->eng_req + (steps > 0 ? 1u : NENGINES - 1u)) % NENGINES);
 #endif
