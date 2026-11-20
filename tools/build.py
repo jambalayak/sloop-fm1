@@ -37,7 +37,7 @@ APP_SLOT = fm1pkg_make.APP_SLOT
 LOADER_LOAD = 0x01C0A800
 LOADER_NAME = b"usb_hid_ota.bin"    # the file name the SPL looks for
 DOCKER_IMAGE = os.environ.get("JIELI_DOCKER_IMAGE", "debian:bookworm-slim")
-CFLAGS = ["-Os", "-ffunction-sections", "-fno-builtin", "-Wall", "-Wno-unused-function"]
+CFLAGS = ["-Os", "-ffunction-sections", "-fdata-sections", "-fno-builtin", "-Wall", "-Wno-unused-function"]
 # Plaits is C++ and uses the AC79 single-precision FPU. Opt-in until the
 # HORATIO adapter is present and its flash/RAM budget is verified.
 CXXFLAGS = ["-mcpu=r3", "-mfprev1", "-O2", "-std=gnu++11", "-DTEST",
@@ -260,7 +260,7 @@ def build_app():
            ("cc", *flags, "-c", FW / "src" / "felucca.c", "-o", OUT / "felucca.o"))
     cxx_objs = build_cxx()
     elf = OUT / "felucca.elf"
-    link = ["pi32v2/bin/ld", "-T", FW / "app.ld", OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o",
+    link = ["pi32v2/bin/ld", *(["--gc-sections"] if cxx_objs else []), "-T", FW / "app.ld", OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o",
             OUT / "fm1_cpu1.o", OUT / "felucca.o", *cxx_objs]
     if cxx_objs:
         link += ["--start-group", tc_path("pi32v2/lib/r3/libm.a"),
