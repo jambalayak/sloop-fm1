@@ -55,12 +55,6 @@ UI_SMALL static int play_led(void)
 UI_SMALL static uint32_t keys_sounding(const track_t *t)
 {
     uint32_t i, m = 0;
-    if (is_drum(t)) {
-        for (i = 0; i < DRUM_LANES; i++)
-            if (pad_lit[i])
-                m |= 1u << key_of_white(i);
-        return m;
-    }
     for (i = 0; i < NVOICE; i++) {
         const voice_t *v = &t->v[i];
         if (v->active && v->gate && v->stage <= 2) {
@@ -95,19 +89,6 @@ UI_SMALL static uint32_t scale_keys(uint32_t root_only)   /* SEL: the keys in th
     return m;
 }
 
-UI_SMALL static uint32_t erase_lanes(const track_t *t)   /* EDIT erase, drum track: the sounds the pattern holds */
-{
-    uint32_t i, m = 0;
-    if (is_drum(t))
-        for (i = 0; i < trk_len(t); i++) {
-            uint32_t l, d = dstep_mask(&t->dstep[i]);
-            for (l = 0; d; l++, d >>= 1)
-                if (d & 1u)
-                    m |= 1u << key_of_white(l);
-        }
-    return m;
-}
-
 UI_SMALL static uint32_t keys_lit(void)
 {
     uint32_t m = 0, i, blink = (fm1_ms / 125u) & 1u;
@@ -121,14 +102,12 @@ UI_SMALL static uint32_t keys_lit(void)
             uint32_t idx = ui.step_page * 16u + i, on;
             if (idx >= len)
                 continue;
-            on = is_drum(t) ? dstep_has(&t->dstep[idx], pen_lane) : step_on(&t->step[idx]);
+            on = step_on(&t->step[idx]);
             if (song.playing && idx == t->seq_idx)
                 on = !on || blink;
             if (on)
                 m |= 1u << key_of_white(i);
         }
-        if (is_drum(t))
-            m |= 1u << drum_black_key(pen_lane);       /* (2.7.1) the black key of the sound the steps are for */
         return m | fm1_in.notes;
     }
     case LY_SCALE:                                 /* the keys in the scale; the root blinks */
@@ -150,26 +129,12 @@ UI_SMALL static uint32_t keys_lit(void)
             m |= 1u << key_of_white(15);
         return m;
     case LY_ERASE:                                 /* the sounds the pattern holds (NOTES: dim, the hits lit) */
-        return (lights_notes ? 0u : erase_lanes(t)) | fm1_in.notes | (lights_notes ? keys_sounding(t) : 0u);
+        return fm1_in.notes | (lights_notes ? keys_sounding(t) : 0u);
     default:                                       /* playing, ARP roll, SAVE song, every page and the menu */
         break;
     }
-    if (kb_grid) {                                 /* the DRUMS grid page: the sound's steps of this page */
-        uint32_t len = trk_len(TDRUM), b0 = drum_cursor / 16u * 16u;
-        for (i = 0; i < 16u; i++) {
-            uint32_t idx = b0 + i, on;
-            if (idx >= len)
-                continue;
-            on = dstep_has(&TDRUM->dstep[idx], drum_lane);
-            if (song.playing && idx == TDRUM->seq_idx)
-                on = !on || blink;
-            if (on)
-                m |= 1u << key_of_white(i);
-        }
-        return m | fm1_in.notes | 1u << drum_black_key(drum_lane);   /* (2.7.1) its sound's black key */
-    }
     m = fm1_in.notes;
-    if (is_drum(t) || lights_notes)                /* the drum track: each hit lights its key; NOTES: the synths too */
+    if (lights_notes)
         m |= keys_sounding(t);
     return m;
 }
@@ -188,8 +153,6 @@ UI_SMALL static uint32_t keys_notes_dim(void)
         return keys_sounding(TSEL);
     case LY_SCALE:
         return scale_keys(0);
-    case LY_ERASE:
-        return erase_lanes(TSEL);
     default:
         return 0u;
     }
@@ -199,7 +162,7 @@ UI_SMALL static uint32_t keys_notes_dim(void)
  * 1, 5, 9, 13) while a layer is held, and on the drum track (its 16 sounds, 4 x 4 as on KIT) */
 UI_SMALL static uint32_t keys_guide(void)
 {
-    if (ui.layer == LY_PLAY && !is_drum(TSEL))
+    if (ui.layer == LY_PLAY)
         return 0u;
     return 1u << key_of_white(0) | 1u << key_of_white(4) | 1u << key_of_white(8) | 1u << key_of_white(12);
 }
