@@ -167,7 +167,6 @@ static uint32_t layer_now(void)
 /* the DRUMS grid page shown (the UI sets it every frame): with no layer, the keys are its steps (KB_GRID
  * events of lk_q, ui_studio.c grid_key) and play nothing */
 #define KB_GRID LY_COUNT
-static volatile uint8_t kb_grid;
 /* the keys of the layers the UI handles (steps, key, mix): key k down / up, in order */
 #define LKQ 16u
 static volatile uint16_t lk_q[LKQ];
@@ -2227,12 +2226,6 @@ static void key_down(uint32_t k)
         return;
     default:
         break;
-    }
-    if (is_drum(t) && layer == LY_PLAY && kb_grid) {   /* the DRUMS grid page: a step key */
-        kb_kind[k] = KS_UI;
-        kb_nt[k][0] = (uint8_t)KB_GRID;
-        lk_push(KB_GRID, k, 1);
-        return;
     }
     if (is_drum(t))
         return;                                     /* legacy drum keyboard input is disabled */
