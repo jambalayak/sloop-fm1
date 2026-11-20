@@ -151,3 +151,33 @@ retained; preserve the sequencer, preset/project format where possible, and
 useful existing effects. The delay buffer and slicer buffers are further
 possible RAM savings, but should not be shortened or removed without a design
 decision.
+
+
+## Approved HORATIO-1 redesign
+
+The instrument redesign is approved with these product decisions:
+
+- One Plaits-based synth engine with all 16 standard Plaits models exposed as its
+  preset/model choices (not 16 separate engines).
+- Four simultaneous Plaits voices total, shared across the three synth parts.
+- No separate drum part or drum sounds.
+- Retire the legacy SLOOP engine bank and sample-playback engine/sample bank as
+  the Plaits engine takes over.
+- Retain the three-part sequencer, MIDI performance workflow, project/preset
+  workflow where compatibility permits, and useful existing effects.
+- Keep the current SLOOP-based build as a known-good reference until each
+  replacement stage builds and passes its checks.
+
+Implementation order:
+1. Introduce a HORATIO-1 build profile and remove legacy sample/drum payloads
+   without breaking the current package format.
+2. Port Plaits through the proven FM-1 C++/FPU route, starting with one voice
+   and a small fixed allocator; measure flash, RAM and CPU on the FM-1 target.
+3. Add the remaining Plaits models and expose the 16 model choices as presets.
+4. Expand the shared Plaits allocator to four total voices and verify voice
+   stealing, retriggering, and multi-part operation.
+5. Remove obsolete legacy engine, sample and drum UI/protocol paths; preserve
+   project conversion and sequencer/effect behavior where feasible.
+6. Build and test the final `.fwsc` in Harbor before treating it as a release.
+
+No Plaits DSP source has yet been integrated by this decision record alone.
