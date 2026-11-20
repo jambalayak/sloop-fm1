@@ -755,9 +755,8 @@ UI_SMALL static void layer_screen_draw(void)
     case LY_ERASE:
     case LY_ROLL: {                                     /* the keys' sounds: lit = held */
         uint32_t held = fm1_in.notes;
-        int mute = layer == LY_ERASE && is_drum(t) && er_mute;   /* (2.6) EDIT + a black key: the mutes */
         col = layer == LY_ERASE ? TE_RED : col;
-        str_cpy(sub, mute ? "mute: key = sound" : layer == LY_ERASE ? (song.playing ? "as it plays" : "every step") : "hold + key", sizeof sub);
+        str_cpy(sub, layer == LY_ERASE ? (song.playing ? "as it plays" : "every step") : "hold + key", sizeof sub);
         for (i = 0; i < 16u; i++) {
             uint32_t k = key_of_white(i), down = (held >> k) & 1u, present = 0, j;
             if (is_drum(t)) {
@@ -781,24 +780,13 @@ UI_SMALL static void layer_screen_draw(void)
             tl[i].bg = down ? (layer == LY_ERASE ? TE_RED : C_WHITE) : TE_G1;
             tl[i].fg = down ? C_BLACK : present ? C_WHITE : TE_G3;
             tl[i].top = present && !down ? (layer == LY_ERASE ? TE_RED : col) : 0;
-            if (mute) {                                 /* MUTE: a muted sound white on red, "off" */
-                uint32_t off = (drum_mute >> i) & 1u;
-                tl[i].bg = off ? TE_RED : TE_G1;
-                tl[i].fg = off ? C_WHITE : present ? C_WHITE : TE_G3;
-                tl[i].top = 0;
-                if (off)
-                    str_cpy(tl[i].lab, "off", 8);
-            }
         }
-        if (layer == LY_ERASE && is_drum(t) && !mute && !undo.valid)
-            str_cpy(sub, "black key: mute", sizeof sub);
         if (layer == LY_ERASE) {
             lab[0] = "shift", lab[1] = "length", lab[2] = is_drum(t) ? "" : "transp";
             str_cpy(v[0], "<  >", 8);
             fmt_int(v[1], t->p[P_SLEN]);
             str_cpy(v[2], is_drum(t) ? "" : "-  +", 8);
-            if (!mute)
-                str_cpy(sub, undo.valid ? (undo.undone ? "oct+ redo" : "oct- undo") : sub, sizeof sub);
+            str_cpy(sub, undo.valid ? (undo.undone ? "oct+ redo" : "oct- undo") : sub, sizeof sub);
         } else {
             lab[0] = "rate";
             str_cpy(v[0], N_ROLL[clamp(song.g[G_ROLL], 0, 4)], 8);
