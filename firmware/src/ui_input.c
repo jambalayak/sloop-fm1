@@ -487,7 +487,6 @@ UI_SMALL static void project_new(void)
     TDRUM->p[P_E0] = DRUM_DEFAULT_KIT;
     memset(drum_tune, 0, sizeof drum_tune);             /* (2.7) every drum sound as the kit has it */
     memset(drum_dec, 0, sizeof drum_dec);
-    drum_mute = 0;                                      /* (2.6: the live mutes) */
     for (i = 0; i < G_COUNT; i++)
         if (i != G_SLOT && i != G_DRCH && i != G_SYNC && i != G_MIDI && i != G_ROUTE && (i < G_CH1 || i > G_CHOTH) &&
             i != G_BEND && i != G_FXCH && i != G_DRMAP && i != G_RMCH && i != G_CLKOUT && i != G_FXFADE)                                                                     /* (the
