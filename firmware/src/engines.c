@@ -24,6 +24,7 @@ static uint32_t uni_turns(uint32_t r, int32_t p16, int32_t d16)
 }
 
 #ifdef HORATIO_PLAITS
+#include "eng_sample.c" /* retained only for legacy drum/sample data structures during migration */
 #include "eng_plaits.c"
 static const engine_t *const ENGINES[NENGINES] = {&ENG_PLAITS};
 static int16_t preset_trim(uint32_t e, uint32_t pi) {
