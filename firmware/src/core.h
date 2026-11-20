@@ -22,7 +22,7 @@ enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
 #ifdef HORATIO_PLAITS
 /* Keep SLOOP's engine numbers stable for project and user-preset imports:
  * Plaits replaces every retired synth engine; pitched SAMPLE stays at legacy index 4. */
-#define NENGINES (12 + FELUCCA_SLICE)
+#define NENGINES 12u
 #define ENGI_PLAITS 0u
 #define ENGI_SAMPLE 4u
 #else
