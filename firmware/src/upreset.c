@@ -312,7 +312,11 @@ UI_SMALL static int up_load_to(track_t *t, uint32_t k)       /* user preset k in
         arp_keep_req |= (uint8_t)(1u << trk_index(t));  /* (2.7: its notes too) */
     panic_req |= (uint8_t)(1u << trk_index(t));
     fm1_irq_off();                                      /* the audio ISR must not see half a sound */
+#ifdef HORATIO_PLAITS
+    t->eng_req = r->engine == ENGI_SAMPLE ? ENGI_SAMPLE : ENGI_PLAITS;
+#else
     t->eng_req = r->engine;
+#endif
     for (i = 0; i < P_COUNT; i++)
         t->p[i] = v[i];
     t->preset = 0;
