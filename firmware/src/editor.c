@@ -669,7 +669,9 @@ UI_SMALL static int ed_backup(uint32_t cmd, const uint8_t *a, uint32_t na)   /* 
 }
 #endif
 
+#ifndef HORATIO_PLAITS
 #include "editor_fm6.c"                               /* v9: the FM6 patches (68..71) */
+#endif
 /* Legacy DSYN editor commands (72..76) are reserved and unsupported. */
 
 #include "editor_live.c"                              /* v12: the LIVE page (77) */
