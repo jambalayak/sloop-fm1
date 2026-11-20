@@ -1860,10 +1860,6 @@ static void remote_cc(uint32_t k, uint32_t value)
         remote_up |= bit;
     }
 }
-static uint32_t midi_drum_lane(uint32_t note)
-{
-    return song.g[G_DRMAP] ? (note + 128u - 36u) % 16u : lane_of_note(note);
-}
 static const uint8_t *in_chord;                    /* input_on's note is note in_chord_i of in_chord (CHORD+) */
 static uint32_t in_chord_n, in_chord_i;
 /* SLOOP 2.6: the sustain pedal (MIDI CC 64, on the track its channel plays): while it is down, a synth track's notes let
@@ -3573,10 +3569,9 @@ static void events_block(uint32_t n)
             if (!t)
                 continue;                                 /* (GLO > MIDI > OTHER = OFF: a channel no track has) */
         }
-        if (is_drum(t)) {
-            if (st == 0x90u && d2)
-                drum_input(midi_drum_lane(d1), vel_lvl(d2), 0, 1);
-        } else if (st == 0x90u && d2) {
+        if (is_drum(t))
+            continue;                                 /* legacy fourth track: ignore incoming MIDI notes */
+        if (st == 0x90u && d2) {
             if (t == TSEL) {                          /* the SEQ layer's pen: this note, or the chord held (2.6) */
                 if (!(mi_pen[0] | mi_pen[1] | mi_pen[2] | mi_pen[3]) || pen_n >= 4u)
                     pen_n = 0;
