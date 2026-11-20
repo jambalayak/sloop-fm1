@@ -326,32 +326,7 @@ static int32_t gain_next(track_t *t)                    /* the track's mute gain
     return 32767 - t->att;
 }
 
-/* ---- DUCK: every kick (the drum track's KICK / KICK 2) dips the synth parts, which come back over an
- * eighth note: depth G_DUCK, the curve (1 - t / T)^2. drum_on sets drums.kick. */
-static struct {
-    uint32_t t;                                         /* units since the kick */
-    int32_t g0, g1;                                     /* the parts' gain at the block start, end (Q15) */
-} duck = {0xFFFFFFFFu, 32767, 32767};
-
-static void duck_block(uint32_t adv)
-{
-    int32_t depth = song.g[G_DUCK] * 258, x;
-    uint32_t len = BEAT_U / 2u;
-    duck.g0 = duck.g1;
-    if (drums.kick) {
-        drums.kick = 0;
-        duck.t = 0;
-    }
-    if (!depth || duck.t >= len) {
-        duck.g1 = 32767;
-        return;
-    }
-    x = 32767 - (int32_t)((duck.t << 10) / (len >> 5));      /* 1 - t / T, Q15 (t < len < 2^21) */
-    if (x < 0)
-        x = 0;
-    duck.g1 = 32767 - mulq15(depth, mulq15(x, x));
-    duck.t = duck.t + adv < duck.t ? 0xFFFFFFFFu : duck.t + adv;
-}
+/* Kick-triggered sidechain ducking is intentionally absent in HORATIO-1: there is no drum engine. */
 
 /* ---- the DJ filter: v < 0 a low-pass closing, > 0 a high-pass opening, 0 off. The cutoff glides
  * to the knob (no zipper); at 0 it opens fully, then the filter is bypassed. On the master (G_FILT)
@@ -690,7 +665,7 @@ static void mix_part_run(track_t *t, uint32_t n, mixacc_t *mx, int32_t *b)
         int32_t c = t->p[P_CHOR] * 258, d = send_thr(t->p[P_DLY] * 258, thr_dly), r = send_thr(t->p[P_REV] * 258, thr_rev);
         int32_t pk = t->peak;
         int32_t xmax = c > d ? c : d;
-        int32_t ga = mulq15(g0, duck.g0), gb = mulq15(g1, duck.g1);   /* mute x duck, ramped over the block */
+        int32_t ga = g0, gb = g1;                    /* mute / solo fade only */
         xmax = 0x7FFFFFFF / ((xmax > r ? xmax : r) | 1);   /* sends: loud chords at a high LEVEL */
         track_dist(t, b, n);
         if (t->p[P_ITYPE] | t->ins_run) {
@@ -1111,8 +1086,6 @@ static void texture_mix(int32_t *l, int32_t *r, uint32_t n)
     k1 = mulq15(lvl * lvl * 2, mv);                     /* LEVEL^2 (x 2: Q15 of 4096 at 127 .. ) x MOVE */
     for (i = 0; i < n; i++) {
         int32_t g = g0 + (((g1 - g0) * (int32_t)i) >> CTL_LOG2), gk = mulq15(g, k1);
-        if (song.g[G_TXDUCK])
-            gk = mulq15(gk, duck.g0 + (((duck.g1 - duck.g0) * (int32_t)i) >> CTL_LOG2));
         l[i] += (tl[i] * (gk >> 4)) >> 11;              /* x LEVEL^2 / 16384: (x * gk / 32768) at full */
         r[i] += (tr[i] * (gk >> 4)) >> 11;
     }
@@ -1133,7 +1106,6 @@ static void mix_block(int32_t *out, uint32_t n)
         thr_dly = (q & 2u) ? (thr_dly + 1928 > 32767 ? 32767 : thr_dly + 1928) : (thr_dly > 1928 ? thr_dly - 1928 : 0);
     }
     events_block(n);
-    duck_block(n * (uint32_t)song.g[G_BPM]);
     c1 = cpu1_on() ? units_split() : 0;                 /* core 1's units this block */
     if (c1) {
         for (i = 0; i < n; i++)
