@@ -178,6 +178,8 @@ static void black_key_chord_test(void)
             assert(notes[0] <= notes[1] && notes[1] <= notes[2]);
         }
     }
+    assert(kb_black_chord(t, 1, notes) == 3u); /* restore the first triad after the range checks */
+    assert(notes[0] == 60u && notes[1] == 63u && notes[2] == 67u);
     fm1_in.notes = 1u << 1;                 /* first black key: C minor triad */
     keyboard_block();
     assert((live_held[0][1] & ((1u << 28) | (1u << 31))) == ((1u << 28) | (1u << 31)) && (live_held[0][2] & (1u << 3)) != 0u);
