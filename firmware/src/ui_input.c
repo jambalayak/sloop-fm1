@@ -848,12 +848,8 @@ UI_SMALL static int layers_input(uint32_t note_edges, uint32_t *pressed, uint32_
         while (lk_r != lk_w) {                            /* a key let go after its layer: its release only */
             uint32_t e = lk_q[lk_r % LKQ];
             lk_r++;
-            if ((e >> 8) == KB_GRID) {                    /* the DRUMS grid page: a step key */
-                if (((e >> 7) & 1u) && grid_keys_on())
-                    grid_key(e & 31u);
-            } else if (!((e >> 7) & 1u)) {
+            if (!((e >> 7) & 1u))
                 layer_key(e >> 8, e & 31u, 0);
-            }
         }
         if (ui.layer != LY_PLAY) {
             ly_quiet_t = fm1_ms | 1u;                     /* a layer shown lets go: KNOB 1..4 quiet a while (#39) */
