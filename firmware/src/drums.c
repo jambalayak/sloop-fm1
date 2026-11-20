@@ -237,20 +237,6 @@ static void __attribute__((noinline)) drum_synth_on(uint32_t note, uint32_t vel,
         ds_on(&drums.ds[i], snd, crush, note, vel, tweak ? drum_tune[ln] * 16 : 0, tweak ? (uint32_t)(drum_dec[ln] + 4) : 4u);
     }
 }
-/* the editor's audition (editor_dsyn.c DSYN_PLAY): queued, played by the audio ISR (drum_audition_poll) */
-static volatile uint8_t dsu_aud_k, dsu_aud_lane, dsu_aud_vel;
-static void drum_audition_poll(void)
-{
-    uint32_t vel = dsu_aud_vel;
-    if (!vel)
-        return;
-    dsu_aud_vel = 0;
-    {
-        const dsu_kit_t *u = dsu_kit(dsu_aud_k);
-        drum_synth_on(DS_LANE_NOTE[dsu_aud_lane % DS_LANES], vel, DRUM_SYN + dsu_aud_k % DSU_N, u->s, u->crush, 0);   /* (as designed) */
-    }
-}
-
 static void drum_on(uint32_t note, uint32_t vel)
 {
     int32_t si = drum_set();
