@@ -964,24 +964,6 @@ UI_SMALL static void rec_note(track_t *t, uint32_t note, uint32_t vel, uint32_t 
         t->rh_note[t->rh_n++] = (uint8_t)note;      /* a chord: held until its last key is up */
 }
 
-/* live recording into the drum track: lane, level, ratchet */
-static uint8_t roll_rec;                         /* (2.7) a roll's hit is being recorded (roll_hit) */
-static void rec_hit(track_t *t, uint32_t lane, uint32_t lvl, uint32_t rat)
-{
-    uint32_t later, abs = rec_target(t, &later), idx = abs % trk_len(t);
-    int was_empty = !(t->dstep[idx % NSTEP].on[0] | t->dstep[idx % NSTEP].on[1]);
-    undo_mark(t, UNDO_REC(t));
-    dstep_set(&t->dstep[idx], lane, lvl, rat);
-    if (!roll_rec)                                  /* (a roll's hits stay on its grid) */
-        rec_micro_set(t, idx, was_empty);
-    t->seq_active = 1;
-    if (later) {
-        if (t->rskip_abs != abs)
-            t->rskip_lanes = 0;
-        t->rskip_abs = abs;
-        t->rskip_lanes |= (uint16_t)(1u << lane);
-    }
-}
 
 /* the sequencer enters step idx (before playing it): a recorded note still held ties into it */
 /* (2.8.3) POLY: the notes held go on through a step that has notes of its own (an overdub over a recorded melody):
