@@ -95,15 +95,17 @@ static void key_events_test(void)
     t->p[P_SCALE] = 2;                      /* C minor: E key plays Eb */
     t->p[P_AMODE] = 1;
     song.playing = song.rec = 1;
-    fm1_in.notes = 1u << 8;                /* C# is silent */
+    t->p[P_QUANT] = 0;                    /* standard chromatic mode keeps every semitone */
+    fm1_in.notes = 1u << 8;                /* C# is a normal chromatic note */
     keyboard_block();
-    assert(t->arp_phys == 0 && t->nheld == 0 && t->step[0].n == 0 && mo_w == 0);
-    t->p[P_QUANT] = 0;                    /* releasing a muted key stays silent */
+    assert(t->arp_phys == 1 && t->nheld == 1 && t->held[0] == 61 && mo_w == 1);
+    assert(((midi_out_q[0] >> 16) & 127u) == 61u);
+    t->p[P_QUANT] = 0;                    /* key-up uses the note captured on key-down */
     fm1_in.notes = 0;
     keyboard_block();
     assert(mo_w == 0);
     t->p[P_QUANT] = 2;
-    fm1_in.notes = (1u << 11) | (1u << 10); /* E and D#: only Eb sounds/records */
+    fm1_in.notes = 1u << 11;              /* E white key plays Eb in C minor */
     keyboard_block();
     assert(t->arp_phys == 1 && t->nheld == 1 && t->held[0] == 63);
     assert(t->step[0].n == 0);             /* ARP on: what it plays is recorded, not the key */
@@ -130,7 +132,7 @@ static void key_events_test(void)
     fm1_in.notes = 0;
     keyboard_block();
     assert(t->arp_phys == 0 && t->nheld == 0 && mo_w == before + 1);
-    puts("scales: silent keys, arp, live recording, MIDI out and held-note changes ok");
+    puts("scales: chromatic mode, scale white keys, arp, live recording, MIDI out and held-note changes ok");
 }
 
 
@@ -146,6 +148,47 @@ static void arp_seq(track_t *t, int mode, uint32_t n, uint8_t *out)
         t->arp_idx++;
         out[i] = (uint8_t)list[arp_pick(t, list, len)];
     }
+}
+
+
+static void black_key_chord_test(void)
+{
+    track_t *t = &trk[0];
+    uint32_t k, i, before;
+    uint8_t notes[4];
+    memset(trk, 0, sizeof trk);
+    memset(&song, 0, sizeof song);
+    host_tracks_init();
+    kb_prev = 0;
+    usb.config = 1;
+    mo_w = mo_r = 0;
+    t->p[P_QUANT] = 2;
+    t->p[P_SCALE] = 2;                      /* C minor */
+    t->p[P_ROOT] = 0;
+    song.octave = 0;
+    assert(kb_black_chord(t, 1, notes) == 3u);
+    assert(notes[0] == 60u && notes[1] == 63u && notes[2] == 67u);
+    for (k = 0; k < 27u; k++) {
+        int black = kb_black_index(k);
+        if (black >= 0) {
+            assert(kb_black_chord(t, k, notes) == 3u);
+            assert(notes[0] <= notes[1] && notes[1] <= notes[2]);
+        }
+    }
+    fm1_in.notes = 1u << 1;                 /* first black key: C minor triad */
+    keyboard_block();
+    assert(t->nheld == 3u && t->held[0] == 60u && t->held[1] == 63u && t->held[2] == 67u);
+    assert(mo_w == 3u);
+    before = mo_w;
+    fm1_in.notes = 0;
+    keyboard_block();
+    assert(t->nheld == 0u && mo_w == before + 3u);
+    for (i = 0; i < 3u; i++) {
+        assert(((midi_out_q[i] >> 16) & 127u) == notes[i]);
+        assert(((midi_out_q[i + 3u] >> 16) & 127u) == notes[i]);
+        assert(((midi_out_q[i + 3u] >> 8) & 255u) == 0x80u);
+    }
+    puts("scales: black-key triads, independent key-up and MIDI note-offs ok");
 }
 
 static void arp_modes_test(void)
@@ -394,6 +437,7 @@ int main(void)
     host_tracks_init();
     mapping_test();
     key_events_test();
+    black_key_chord_test();
     arp_modes_test();
     arp_swing_test();
     clkout_test();
