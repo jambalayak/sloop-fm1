@@ -2,6 +2,9 @@
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* Effects: per-track DIST insert, then sends into three shared buses (chorus, tempo delay, reverb).
  * Stereo dry mix; the chorus and the reverb come back in stereo, the delay in the middle. */
+#ifdef HORATIO_PLAITS
+#include "horatio_plaits.h"
+#endif
 #define DLY_LEN 65536u           /* 1.49 s: 1/4 down to 41 BPM, 1/8 dotted down to 31, 1/4 dotted down to 61 (clamped below) */
 #define CHO_LEN 2048u
 static int16_t dly_buf[DLY_LEN] __attribute__((section(".pool")));
@@ -825,6 +828,11 @@ static void cpu1_units_job(uint32_t arg)                /* core 1's job: the uni
 /* the units core 1 renders this block: synth parts selected for the second core, less parts that must stay here */
 static uint32_t units_split(void)
 {
+#ifdef HORATIO_PLAITS
+    /* stmlib::Random is process-global; keep all Plaits rendering on core 0
+     * until its RNG state is made core-local. */
+    return 0u;
+#else
     uint32_t mask = cpu1_units < 0 ? (1u << (NPART - 1u)) : (uint32_t)cpu1_units & U_ALL, k, nform = 0;
     if (!mask)
         return 0;
@@ -845,6 +853,7 @@ static uint32_t units_split(void)
             mask &= ~(1u << k);
     }
     return mask;
+#endif
 }
 
 static int32_t master_cur = -1;                        /* the volume knob, ramped per sample (no zipper) */
@@ -1106,6 +1115,9 @@ static void mix_block(int32_t *out, uint32_t n)
         thr_dly = (q & 2u) ? (thr_dly + 1928 > 32767 ? 32767 : thr_dly + 1928) : (thr_dly > 1928 ? thr_dly - 1928 : 0);
     }
     events_block(n);
+#ifdef HORATIO_PLAITS
+    horatio_plaits_block();
+#endif
     c1 = cpu1_on() ? units_split() : 0;                 /* core 1's units this block */
     if (c1) {
         for (i = 0; i < n; i++)
