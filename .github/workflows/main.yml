@@ -1,5 +1,5 @@
 
-name: Build SLOOP firmware
+name: Build HORATIO-1 firmware and SLOOP reference
 
 on:
   workflow_dispatch:
@@ -18,7 +18,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      - name: Download SLOOP source
+      - name: Checkout firmware source
         uses: actions/checkout@v4
         with:
           submodules: true
@@ -53,10 +53,23 @@ jobs:
           cc -O2 -w -Ibuild/gen -Ifirmware/src -o build/scale_test tests/scale_test.c -lm
           build/scale_test
 
-      - name: Save firmware package
+      - name: Save SLOOP reference package
         uses: actions/upload-artifact@v4
         with:
-          name: sloop-firmware
+          name: sloop-reference-firmware
+          path: build/felucca.fwsc
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Compile HORATIO-1 firmware
+        run: |
+          rm -rf build
+          HORATIO_PLAITS=1 ./build.sh
+
+      - name: Save HORATIO-1 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: horatio-1-firmware
           path: build/felucca.fwsc
           if-no-files-found: error
           retention-days: 14
