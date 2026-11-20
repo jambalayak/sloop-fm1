@@ -63,9 +63,9 @@ def app_files(out, version, fw_name):
     for f in ICONS:
         shutil.copy(HERE / f, app / f)
     manifest = {
-        "name": "SLOOP", "short_name": "SLOOP", "id": "editor/", "start_url": "editor/", "scope": "./",
+        "name": "HORATIO-1", "short_name": "HORATIO-1", "id": "editor/", "start_url": "editor/", "scope": "./",
         "display": "standalone", "background_color": "#000000", "theme_color": "#000000",
-        "description": "SLOOP for the M-VAVE FM-1: the editor and the installer, also without internet",
+        "description": "HORATIO-1 synth-focused firmware project for the M-VAVE FM-1: editor and installer",
         "icons": [{"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
                   {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
                   {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}],
