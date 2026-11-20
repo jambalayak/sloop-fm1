@@ -3446,7 +3446,7 @@ static void events_block(uint32_t n)
     if (pr)
         arp_keep_req = 0;
     keyboard_block();
-    drum_audition_poll();                             /* (the editor's DRUM SYNTH page) */
+    /* HORATIO-1 has no drum synth audition page or drum audition path. */
     strum_block(n);                                   /* (voice.c: the strummed notes due) */
     while (mi_r != mi_w) {                            /* USB-MIDI (and TRS) in */
         uint32_t pkt = midi_in_q[mi_r % MQ], st = (pkt >> 8) & 0xF0u, ch = (pkt >> 8) & 0x0Fu;
