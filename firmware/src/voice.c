@@ -8,7 +8,7 @@
 static uint32_t vage;                                   /* voice ages: one clock for every part */
 /* engines that play recorded material (a position, not a phase): no phases kept or spread */
 #ifdef HORATIO_PLAITS
-static int eng_sampled(const engine_t *e) { (void)e; return 0; }
+static int eng_sampled(const engine_t *e) { return e == &ENG_SAMPLE; }
 #else
 #if FELUCCA_SLICE
 static int eng_sampled(const engine_t *e) { return e == &ENG_SAMPLE || e == &ENG_SLICE; }
@@ -327,7 +327,7 @@ static void voice_start(track_t *t, voice_t *v, uint32_t note, uint32_t vel, int
     }                                                   /* sounding: the attack starts from the current level */
     e->note_on(t, v);
 #ifdef HORATIO_PLAITS
-    if (sounding) {
+    if (sounding && !eng_sampled(e)) {
         v->ph[0] = ph0;
         v->ph[1] = ph1;
         v->ph[2] = ph2;
@@ -372,8 +372,11 @@ static void voice_start(track_t *t, voice_t *v, uint32_t note, uint32_t vel, int
 static void unison_spread(track_t *t, voice_t *v, uint32_t r)
 {
 #ifdef HORATIO_PLAITS
-    (void)t;
-    v->ph[0] += r; /* Plaits has its own per-slot oscillator phase. */
+    const engine_t *e = ENGINES[t->engine];
+    if (e == &ENG_SAMPLE)
+        sample_spread(t, v, r);
+    else
+        v->ph[0] += r; /* Plaits has its own per-slot oscillator phase. */
 #else
     const engine_t *e = ENGINES[t->engine];
     /* (after Clipper 1.2) each engine moves all its oscillators (and reseeds its noise): ph[0] alone left the others in
@@ -796,7 +799,7 @@ void horatio_plaits_block(void) {
     for (p = 0; p < NPART; ++p) {
         for (i = 0; i < NVOICE; ++i) {
             voice_t *v = &trk[p].v[i];
-            if (v->active && v->gate) {
+            if (v->active && v->gate && ENGINES[trk[p].engine] == &ENG_PLAITS) {
                 gate = 1;
                 if (!first) first = &trk[p];
             }
@@ -846,7 +849,8 @@ void horatio_plaits_block(void) {
         for (i = 0; i < NVOICE; ++i) {
             const voice_t *v = &trk[p].v[i];
             uint32_t id = (uint32_t)v->s[7];
-            if (v->active && id >= 1u && id <= HORATIO_PLAITS_VOICES)
+            if (v->active && ENGINES[trk[p].engine] == &ENG_PLAITS &&
+                id >= 1u && id <= HORATIO_PLAITS_VOICES)
                 horatio_plaits_gate(id - 1u, gate);
         }
     }
