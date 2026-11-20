@@ -206,16 +206,12 @@ UI_SMALL static void steps_held_edit(uint32_t knob, int32_t s)
                 continue;
             }
             for (i = 0; i < st->n; i++) {
-                uint32_t sh = 2u * i, lv = (st->lvl >> sh) & 3u, rt = (st->rat >> sh) & 3u;
+                uint32_t sh = 2u * i, rt = (st->rat >> sh) & 3u;
                 if (knob == 0u) {
                     st->note[i] = (uint8_t)clamp(st->note[i] + s, 0, 127);
                     continue;
                 }
-                if (knob == 1u)
-                    lv = LV_UP[clamp((int32_t)lvl_rank(lv) + s, 0, 3)];
-                else
-                    rt = (uint32_t)clamp((int32_t)rt + s, 0, 3);
-                st->lvl = (uint8_t)((st->lvl & ~(3u << sh)) | lv << sh);
+                rt = (uint32_t)clamp((int32_t)rt + s, 0, 3);
                 st->rat = (uint8_t)((st->rat & ~(3u << sh)) | rt << sh);
             }
         }
@@ -679,7 +675,7 @@ UI_SMALL static void layer_screen_draw(void)
     sub[7] = 0;
     switch (layer) {
     case LY_FX:                                         /* the 27 punch-in effects: 16 white keys, 11 black */
-        col = TE_DRUM;
+        col = TE_G3;
         str_cpy(sub, thr_req == 3u ? "rev + echo throw" : thr_req == 2u ? "echo throw" : thr_req ? "rev throw" : "hold + key",
                 sizeof sub);
         for (i = 0; i < PUNCH_NFX; i++) {
