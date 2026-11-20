@@ -609,7 +609,9 @@ static void proj_apply(const project_t *p, int all)
                 for (j = 0; j < 4u; j++)
                     st->note[j] &= 127u;
             }
+#ifndef HORATIO_PLAITS
         fm6_track_loaded(t);                            /* FM6: the project keeps PTCH, not the patch: its slot's */
+#endif
     }
 }
 
@@ -921,9 +923,13 @@ UI_SMALL static void persist_boot(void)                    /* before settings_in
                     sec_dirty |= (uint8_t)(1u << i);
             }
     }
-    dsu_boot();                                    /* SLOOP 2.5: the SYN kits (after the settings) */
+#ifndef HORATIO_PLAITS
+    dsu_boot();                                    /* legacy SYN kits (after the settings) */
+#endif
     up_boot();                                     /* user presets */
+#ifndef HORATIO_PLAITS
     fm6_bank_boot();                               /* the FM6 patch bank (fm6_bank.c) */
+#endif
 #endif
 }
 
