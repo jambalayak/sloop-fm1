@@ -25,12 +25,7 @@ static uint32_t uni_turns(uint32_t r, int32_t p16, int32_t d16)
 
 #ifdef HORATIO_PLAITS
 #include "eng_plaits.c"
-#include "eng_sample.c" /* pitched sample playback remains available; the kit set is omitted by gen_samples.py */
-static const engine_t *const ENGINES[NENGINES] = {
-    &ENG_PLAITS, &ENG_PLAITS, &ENG_PLAITS, &ENG_PLAITS, &ENG_SAMPLE,
-    &ENG_PLAITS, &ENG_PLAITS, &ENG_PLAITS, &ENG_PLAITS, &ENG_PLAITS,
-    &ENG_PLAITS, &ENG_PLAITS
-};
+static const engine_t *const ENGINES[NENGINES] = {&ENG_PLAITS};
 static int16_t preset_trim(uint32_t e, uint32_t pi) {
     (void)e;
     (void)pi;
