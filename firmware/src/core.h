@@ -20,9 +20,11 @@ enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
  * presets store the engine index as a byte, and no shipped SLOOP was built with SLICE, so its number is stored
  * nowhere: FM6 may take 9 and SLICE moves up (engines.c ENGINES[], params.c N_ENGNAME follow this order) */
 #ifdef HORATIO_PLAITS
-#define NENGINES 2u
+/* Keep SLOOP's engine numbers stable for project and user-preset imports:
+ * Plaits replaces every retired synth engine; pitched SAMPLE stays at legacy index 4. */
+#define NENGINES (12 + FELUCCA_SLICE)
 #define ENGI_PLAITS 0u
-#define ENGI_SAMPLE 1u
+#define ENGI_SAMPLE 4u
 #else
 #define NENGINES (12 + FELUCCA_SLICE)
 #endif
