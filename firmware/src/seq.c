@@ -2206,7 +2206,6 @@ static void key_down(uint32_t k)
         if (!erasing(t) || er_trk != sel)
             undo_erase_sess = (undo_sess += 4u) | 2u;  /* a new erase: one undo */
         if (er_trk != sel) {
-            er_lanes = 0;
             er_notes[0] = er_notes[1] = er_notes[2] = er_notes[3] = 0;
             er_trk = (uint8_t)sel;
         }
