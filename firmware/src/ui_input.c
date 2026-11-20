@@ -65,9 +65,16 @@ UI_SMALL static uint32_t keys_sounding(const track_t *t)
         const voice_t *v = &t->v[i];
         if (v->active && v->gate && v->stage <= 2) {
             uint32_t k, note = v->note;
-            for (k = 0; k < 27u; k++)
+            for (k = 0; k < 27u; k++) {
+                uint32_t j;
                 if (kb_map(t, k) == note)
                     m |= 1u << k;
+                /* Scale-mode black keys own three notes, so reverse-map their stored key note list too. */
+                if (kb_kind[k] == KS_NOTE && kb_trk[k] == (uint8_t)(t - trk))
+                    for (j = 0; j < kb_n[k]; j++)
+                        if (kb_nt[k][j] == note)
+                            m |= 1u << k;
+            }
         }
     }
     if (t == TSEL)                                 /* + the notes just started, a few frames (pads_tick) */
