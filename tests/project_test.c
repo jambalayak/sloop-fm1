@@ -116,6 +116,7 @@ int main(void)
     static project_v4_t v4;
     static project_t q, q2;
     static project_v5_t v5;
+    static project_v7_t v7;
     static union {
         project_t v6;
         project_v5_t v5;
@@ -313,6 +314,21 @@ int main(void)
                  q2.t[0].lock[1].val == 100 && q2.t[2].lock[23].step == 63 && q2.t[2].p[P_TFLT] == -30 &&
                  pt_get(&q2.t[1], P_ITYPE) == 4 && pt_get(&q2.t[1], P_IMIX) == 90 && pt_get(&q2.t[TRK_DRUM], P_ITYPE) == 2 &&
                  pt_get(&q2.t[0], P_LSYNC) == 5 && pt_get(&q2.t[0], P_ESYNC) == 1 && pt_get(&q2.t[0], P_FTYPE) == 2);
+
+    /* FUN7: three-track disk image, with the legacy fourth track omitted. */
+    proj_to_v7(&v7, &q);
+    ok = v7.magic == PROJ_MAGIC_V7 && v7.size == sizeof v7 && v7.sum == proj_hash(&v7, sizeof v7 - 4u) &&
+         sizeof v7 == 2882u && v7.sel == NPART - 1u &&
+         !memcmp(v7.t, q.t, sizeof v7.t);
+    bad += check("FUN7: exact three-track image, valid checksum, selected drum track clamped to synth track 3", ok);
+    ok = proj_import(&q2, &v7, (int)sizeof v7) && proj_ok(&q2) && q2.sel == NPART - 1u &&
+         !memcmp(q2.t, v7.t, sizeof v7.t) && dstep_mask(&q2.t[TRK_DRUM].dstep[0]) == 0u &&
+         q2.t[TRK_DRUM].engine == 0u && q2.t[TRK_DRUM].preset == 0u;
+    bad += check("FUN7 -> working project: all three synth tracks preserved, legacy drum slot empty", ok);
+    v7.sum ^= 1u;
+    bad += check("FUN7 with a bad checksum: refused", !proj_import(&q2, &v7, (int)sizeof v7));
+    v7.sum ^= 1u;
+    bad += check("FUN7 with a wrong length: refused", !proj_import(&q2, &v7, (int)sizeof v7 - 1));
 
     /* damaged / wrong size */
     v2.t[1].p[3]++;
