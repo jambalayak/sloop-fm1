@@ -1,22 +1,20 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* Voice allocation, envelopes, LFO and per-track rendering. Runs in the
- * audio ISR.
- *
- * Each synth part has its own NVOICE voices (so MONO / LEGATO / UNISON keep using
- * v[0..]), but only NVOICE of all the parts' voices sound at once: a part that starts
- * a voice while the budget is full takes one from any part (voice_victim): the oldest
- * released voice, else the oldest extra UNISON voice, else the oldest held voice of a
- * POLY part that is not its lowest note. A voice taken from another part fades out
- * over one block (stage 4: the envelope goes to 0, the block's amplitude ramp
- * declicks it); one of the part's own is restarted in place. Extra UNISON
- * voices only start when there is room. The drum track has its own voices (drums.c). */
+ * audio ISR. The fourth track index is a legacy project-compatibility slot. */
+#ifdef HORATIO_PLAITS
+#include "horatio_plaits.h"
+#endif
 static uint32_t vage;                                   /* voice ages: one clock for every part */
 /* engines that play recorded material (a position, not a phase): no phases kept or spread */
+#ifdef HORATIO_PLAITS
+static int eng_sampled(const engine_t *e) { (void)e; return 0; }
+#else
 #if FELUCCA_SLICE
 static int eng_sampled(const engine_t *e) { return e == &ENG_SAMPLE || e == &ENG_SLICE; }
 #else
 static int eng_sampled(const engine_t *e) { return e == &ENG_SAMPLE; }
+#endif
 #endif
 static int32_t lfo_wave(track_t *t, uint32_t ph)
 {
@@ -68,7 +66,11 @@ static void track_lfo_tick(track_t *t)
 /* voices the engine may use (POLY and UNISON): its cap, else all of them */
 static uint32_t trk_nvoice(const track_t *t)
 {
+#ifdef HORATIO_PLAITS
+    uint32_t c = ENGINES[t->engine]->poly;
+#else
     uint32_t c = ENGINES[t->engine] == &ENG_PHYS ? phys_poly(t) : ENGINES[t->engine]->poly;   /* (PHYS: by MODEL) */
+#endif
     return c && c < NPOLY ? c : NPOLY;
 }
 
@@ -324,6 +326,14 @@ static void voice_start(track_t *t, voice_t *v, uint32_t note, uint32_t vel, int
         v->env_out = 0;
     }                                                   /* sounding: the attack starts from the current level */
     e->note_on(t, v);
+#ifdef HORATIO_PLAITS
+    if (sounding) {
+        v->ph[0] = ph0;
+        v->ph[1] = ph1;
+        v->ph[2] = ph2;
+        /* v->s[7] is assigned by the Plaits note allocator and must not be restored. */
+    }
+#else
     if (sounding && !eng_sampled(e)) {                 /* retrigger / steal: keep phases and filter states */
         v->ph[0] = ph0;                                 /* (resetting them clicks) */
         v->ph[1] = ph1;
@@ -354,12 +364,17 @@ static void voice_start(track_t *t, voice_t *v, uint32_t note, uint32_t vel, int
             v->s[7] = s7;
         }
     }
+#endif
 }
 
 /* a UNISON voice's start phases moved by r (Q32: a turn of its note), as if it had started that much of a period
  * sooner: in phase the voices stack, spread they sum as noise */
 static void unison_spread(track_t *t, voice_t *v, uint32_t r)
 {
+#ifdef HORATIO_PLAITS
+    (void)t;
+    v->ph[0] += r; /* Plaits has its own per-slot oscillator phase. */
+#else
     const engine_t *e = ENGINES[t->engine];
     /* (after Clipper 1.2) each engine moves all its oscillators (and reseeds its noise): ph[0] alone left the others in
      * phase (ANALOG's osc 2, TRIO's 2 and 3, DIGITAL's and FM6's operators, the subs, SAMPLE's start...) */
@@ -385,6 +400,7 @@ static void unison_spread(track_t *t, voice_t *v, uint32_t r)
 #endif
     else
         v->ph[0] += r;
+#endif
 }
 
 /* MONO / LEGATO / UNISON: one note on one voice (eight for UNISON, or the
@@ -764,6 +780,87 @@ static int32_t env_tick(track_t *t, voice_t *v)
     }
     return v->env >> 9;
 }
+#ifdef HORATIO_PLAITS
+/* One paraphonic ADSR for the four Plaits slots across all three synth parts.
+ * The first held note latches the envelope settings; adding notes does not retrigger it. */
+static int32_t horatio_shared_env_q24;
+static int32_t horatio_shared_sustain_q24;
+static uint32_t horatio_shared_env_k[3];
+static uint8_t horatio_shared_gate;
+static uint8_t horatio_shared_stage;
+
+void horatio_plaits_block(void) {
+    track_t *first = 0;
+    uint32_t p, i, slot;
+    uint8_t gate = 0;
+    for (p = 0; p < NPART; ++p) {
+        for (i = 0; i < NVOICE; ++i) {
+            voice_t *v = &trk[p].v[i];
+            if (v->active && v->gate) {
+                gate = 1;
+                if (!first) first = &trk[p];
+            }
+        }
+    }
+    if (gate && (!horatio_shared_gate || horatio_shared_stage == 3u)) {
+        if (first) {
+            const uint32_t *ek;
+            esync_coef(first);
+            ek = esync_k[(uint32_t)(first - trk) % NTRK];
+            horatio_shared_env_k[0] = ek[0];
+            horatio_shared_env_k[1] = ek[1];
+            horatio_shared_env_k[2] = ek[2];
+            horatio_shared_sustain_q24 = (int32_t)first->p[P_SUS] << 17;
+        }
+        horatio_shared_stage = 1u;
+    } else if (!gate && horatio_shared_gate) {
+        horatio_shared_stage = 3u;
+    }
+    horatio_shared_gate = gate;
+    switch (horatio_shared_stage) {
+    case 1:
+        horatio_shared_env_q24 += (int32_t)horatio_shared_env_k[0];
+        if (horatio_shared_env_q24 >= (1 << 24)) {
+            horatio_shared_env_q24 = 1 << 24;
+            horatio_shared_stage = 2u;
+        }
+        break;
+    case 2:
+        horatio_shared_env_q24 += mulq16(horatio_shared_sustain_q24 -
+                                         horatio_shared_env_q24, horatio_shared_env_k[1]);
+        break;
+    case 3:
+        horatio_shared_env_q24 -= mulq16(horatio_shared_env_q24, horatio_shared_env_k[2]);
+        if (horatio_shared_env_q24 < (1 << 12)) {
+            horatio_shared_env_q24 = 0;
+            horatio_shared_stage = 0u;
+        }
+        break;
+    default:
+        if (!gate) horatio_shared_env_q24 = 0;
+        break;
+    }
+    for (slot = 0; slot < HORATIO_PLAITS_VOICES; ++slot)
+        horatio_plaits_gate(slot, 0u);
+    for (p = 0; p < NPART; ++p) {
+        for (i = 0; i < NVOICE; ++i) {
+            const voice_t *v = &trk[p].v[i];
+            uint32_t id = (uint32_t)v->s[7];
+            if (v->active && id >= 1u && id <= HORATIO_PLAITS_VOICES)
+                horatio_plaits_gate(id - 1u, gate);
+        }
+    }
+}
+
+int32_t horatio_plaits_shared_amp(void) {
+    return horatio_shared_env_q24 >> 9;
+}
+
+int horatio_plaits_shared_done(void) {
+    return !horatio_shared_gate && !horatio_shared_env_q24;
+}
+#endif
+
 
 /* render one block of a part into out (cleared here); returns the voices rendered */
 static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
