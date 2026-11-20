@@ -234,6 +234,49 @@ static uint32_t kb_pitch(const track_t *t, uint32_t k, int32_t oct)
     }
     return (uint32_t)clamp(n + 12 * oct + t->p[P_TRANS], 0, 127);
 }
+/* FM-1 physical key indices: the 16 white keys and 11 black keys. */
+static const uint8_t KB_WHITE[16] = {0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18, 19, 21, 23, 24, 26};
+static const uint8_t KB_BLACK[11] = {1, 3, 5, 8, 10, 13, 15, 17, 20, 22, 25};
+static int kb_black_index(uint32_t k)
+{
+    uint32_t i;
+    for (i = 0; i < 11u; i++)
+        if (KB_BLACK[i] == k)
+            return (int)i;
+    return -1;
+}
+/* A zero-based scale degree, with degree zero at the selected root. */
+static uint32_t kb_degree_pitch(const track_t *t, int32_t degree, int32_t oct)
+{
+    uint32_t mask = t->p[P_SCALE] ? scale_mask(t) : SCALE_MASK[2], count = 0, i;
+    int32_t cycle, step;
+    for (i = 0; i < 12u; i++)
+        count += (mask >> i) & 1u;
+    cycle = degree / (int32_t)count;
+    step = degree % (int32_t)count;
+    if (step < 0) {
+        step += (int32_t)count;
+        cycle--;
+    }
+    for (i = 0; i < 12u; i++)
+        if (mask & (1u << i)) {
+            if (!step)
+                break;
+            step--;
+        }
+    return (uint32_t)clamp(60 + t->p[P_ROOT] + 12 * (oct + cycle) + (int32_t)i + t->p[P_TRANS], 0, 127);
+}
+/* In SCALE+CHORDS mode, every black key owns a three-note diatonic triad. */
+static uint32_t kb_black_chord(const track_t *t, uint32_t k, uint8_t *notes)
+{
+    int degree = kb_black_index(k);
+    if (degree < 0)
+        return 0;
+    notes[0] = (uint8_t)kb_degree_pitch(t, degree, song.octave);
+    notes[1] = (uint8_t)kb_degree_pitch(t, degree + 2, song.octave);
+    notes[2] = (uint8_t)kb_degree_pitch(t, degree + 4, song.octave);
+    return 3;
+}
 /* key k -> note on track t (KB_SILENT: none) */
 static uint32_t kb_map(const track_t *t, uint32_t k)
 {
@@ -2241,11 +2284,15 @@ static void key_down(uint32_t k)
             er_lanes |= (uint16_t)(1u << kb_nt[k][0]);
         } else {
             uint32_t n = kb_map(t, k);
-            if (n == KB_SILENT)
-                return;
-            kb_n[k] = (uint8_t)(t->p[P_CHORD] ? chord_notes(t, n, kb_nt[k]) : 1u);
-            if (!t->p[P_CHORD])
-                kb_nt[k][0] = (uint8_t)n;
+            if (t->p[P_QUANT] == 2 && kb_black_index(k) >= 0) {
+                kb_n[k] = (uint8_t)kb_black_chord(t, k, kb_nt[k]);
+            } else {
+                if (n == KB_SILENT)
+                    return;
+                kb_n[k] = (uint8_t)(t->p[P_CHORD] && t->p[P_QUANT] != 2 ? chord_notes(t, n, kb_nt[k]) : 1u);
+                if (!(t->p[P_CHORD] && t->p[P_QUANT] != 2))
+                    kb_nt[k][0] = (uint8_t)n;
+            }
             for (i = 0; i < kb_n[k]; i++)
                 er_notes[(kb_nt[k][i] >> 5) & 3u] |= 1u << (kb_nt[k][i] & 31u);
         }
@@ -2276,9 +2323,11 @@ static void key_down(uint32_t k)
         return;
     }
     {
-        uint32_t n = kb_map(t, k);
+        int scale_chords = t->p[P_QUANT] == 2 && !is_drum(t);
+        int black = scale_chords ? kb_black_index(k) : -1;
+        uint32_t n = black >= 0 ? kb_degree_pitch(t, black, song.octave) : kb_map(t, k);
         if (n == KB_SILENT) {
-            if (t->p[P_CHORD] && layer == LY_PLAY && chord_mod_of_key(k)) {   /* CHORD+: a modifier key */
+            if (!scale_chords && t->p[P_CHORD] && layer == LY_PLAY && chord_mod_of_key(k)) {
                 kb_kind[k] = KS_MOD;
                 chord_revoice(sel);
             }
@@ -2294,8 +2343,10 @@ static void key_down(uint32_t k)
         kb_kind[k] = KS_NOTE;
         kb_root[k] = (uint8_t)n;
         kb_oct[k] = (int8_t)song.octave;
-        if (t->p[P_CHORD]) {
-            kb_n[k] = (uint8_t)chord_play_notes(t, n, chord_mods(), kb_nt[k]);   /* (the modifiers held, voiced) */
+        if (black >= 0) {
+            kb_n[k] = (uint8_t)kb_black_chord(t, k, kb_nt[k]);
+        } else if (t->p[P_CHORD] && !scale_chords) {
+            kb_n[k] = (uint8_t)chord_play_notes(t, n, chord_mods(), kb_nt[k]);
         } else {
             kb_nt[k][0] = (uint8_t)n;
             kb_n[k] = 1;
