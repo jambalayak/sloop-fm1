@@ -2489,10 +2489,9 @@ static void rec_follow(uint32_t sel)
 }
 
 /* -------------------------------------------------------- metronome --- */
-/* A wood block on every beat, louder on the first of the bar, from the drum kit's voices
- * (not recorded, not muted with the drum track; GLO > DRUMS LVL sets its level; drums.c click_on: its own voice).
- * GLO > GLOBAL CLICK: OFF (0, default: LIVE needs none), REC = while a track records,
- * ON = while playing. */
+/* An independent sine tick on every beat, louder on the first of the bar. It is not a drum voice,
+ * is not recorded, and is not affected by track mute/solo. GLO > GLOBAL CLICK: OFF (0),
+ * REC = while a track records, ON = while playing. metronome.c owns its audio voice. */
 #define CLICK_REC 1
 #define CLICK_ON 2
 static uint32_t click_last = SEQ_NONE;          /* the beat it last played */
