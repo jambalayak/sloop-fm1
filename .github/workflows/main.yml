@@ -40,6 +40,9 @@ jobs:
             "$HOME/fw-AC79_AIoT_SDK"
           echo "AC79_SDK=$HOME/fw-AC79_AIoT_SDK" >> "$GITHUB_ENV"
 
+      - name: Verify Plaits C++ toolchain
+        run: python3 tools/build.py --check-plaits-cxx
+
       - name: Compile firmware
         run: |
           chmod +x build.sh
