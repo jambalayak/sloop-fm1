@@ -787,7 +787,6 @@ UI_SMALL static void layer_screen_draw(void)
             str_cpy(sub, "page ", sizeof sub);
             str_cpy(sub + 5, p, 4);
         }
-        }
         lab[0] = "note";
         note_name(v[0], pen_note[0]);
         ratio[0] = pen_note[0] * 1000 / 127;
