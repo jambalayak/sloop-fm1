@@ -37,7 +37,7 @@ UI_SMALL static void drum_black_pick(uint32_t b)          /* black key b: its so
     ui_say("SOUND ", LANE_NAME[pen_lane]);
     ui.force = 1;
 }
-UI_SMALL static void drum_hear(uint32_t lane) { if (drum_preview) audition_lane(lane); }   /* (2.7.1) menu DRUM PREVIEW */
+UI_SMALL static void drum_hear(uint32_t lane) { (void)lane; } /* Legacy drum preview is disabled. */
 static void trk_short_name(uint32_t c, char *b);
 UI_SMALL static int on_drum_page(void) { return !ui.home && cur_page()->scope == SC_DRUM; }
 
@@ -705,7 +705,6 @@ UI_SMALL static void drum_screen_input(uint32_t pressed, uint32_t home, uint32_t
             }
             if (k == 1) {                              /* the step: what it holds, heard (2.7.1: DRUM PREVIEW ON) */
                 uint8_t c = (uint8_t)clamp(drum_cursor + s, 0, TDRUM->p[P_SLEN] - 1);
-                if (c != drum_cursor && drum_preview) audition_step(&TDRUM->dstep[c]);
                 drum_cursor = c;
             }
             if (k >= 2) {
@@ -734,8 +733,6 @@ UI_SMALL static void drum_screen_input(uint32_t pressed, uint32_t home, uint32_t
                 int8_t nv = (int8_t)clamp(*p + s, lo, hi);
                 if (nv != *p) {
                     *p = nv;
-                    if (!song.playing)
-                        audition_lane(drum_lane);
                 }
             }
             if (k == 3) song.g[G_DRLVL] = (int16_t)clamp(song.g[G_DRLVL] + s, 0, 127);
