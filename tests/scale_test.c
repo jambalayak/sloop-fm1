@@ -180,12 +180,12 @@ static void black_key_chord_test(void)
     }
     fm1_in.notes = 1u << 1;                 /* first black key: C minor triad */
     keyboard_block();
-    assert(t->nheld == 3u && t->held[0] == 60u && t->held[1] == 63u && t->held[2] == 67u);
+    assert((live_held[0][1] & ((1u << 28) | (1u << 31))) == ((1u << 28) | (1u << 31)) && (live_held[0][2] & (1u << 3)) != 0u);
     assert(mo_w == 3u);
     before = mo_w;
     fm1_in.notes = 0;
     keyboard_block();
-    assert(t->nheld == 0u && mo_w == before + 3u);
+    assert(live_held[0][1] == 0u && live_held[0][2] == 0u && mo_w == before + 3u);
     for (i = 0; i < 3u; i++) {
         assert(((midi_out_q[i] >> 16) & 127u) == notes[i]);
         assert(((midi_out_q[i + 3u] >> 16) & 127u) == notes[i]);
