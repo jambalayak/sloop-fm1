@@ -59,6 +59,53 @@ Before enabling it in a firmware build, the port needs to establish:
 5. Host-side regression tests and an FM-1 hardware build before changing the
    default engine list.
 
+
+## FM-1 implementation reference
+
+A separate open-source FM-1 project, [GATOR](https://github.com/npi3pak/fm1-gator),
+has already demonstrated Plaits DSP on this hardware. Its implementation is a
+useful engineering reference, not a drop-in replacement for HORATIO-1.
+
+The relevant approach in GATOR is:
+
+- Compile Plaits and stmlib `.cc` files separately with JieLi's C++ compiler,
+  using the AC79 core's single-precision FPU (`-mcpu=r3 -mfprev1`). Keep the
+  existing C platform and application code out of the floating-point path.
+- Call the C++ renderer from C through a small `extern "C"` interface using
+  integer values and pointers.
+- Construct `plaits::Voice` with placement new in static storage; initialise
+  its `stmlib::BufferAllocator` from a fixed shared buffer. Do not rely on
+  dynamic allocation or static constructors.
+- Render Plaits in its native  block size and copy samples from that block
+  into the FM-1 audio callback.
+- Check the final image, RAM sections, floating-point helper symbols and
+  remaining pool headroom as part of the build.
+
+GATOR's current macro-oscillator app uses **one** `plaits::Voice` object and
+is monophonic. Its 16 KiB shared allocator and its memory measurements therefore
+must not be treated as the cost of an eight-voice HORATIO-1 implementation.
+GATOR exposes 24 models across three banks, including additional models beyond
+the standard Plaits set. HORATIO-1's intended preset list should be mapped
+explicitly to the upstream Plaits models rather than copied from GATOR's
+extended model numbering.
+
+### What this changes for HORATIO-1
+
+The C++/FPU risk is no longer an unknown: the FM-1 can run Plaits when the C++
+DSP is compiled separately for the FPU and the platform code remains integer
+based. The remaining hard question is **polyphony and integration cost**.
+
+HORATIO-1 has three synth parts and an existing shared eight-voice budget.
+Before replacing the current engines, prototype one Plaits voice through the
+SLOOP audio path, then measure one, two, four and eight simultaneous Plaits
+voices for CPU, static RAM, allocator use and flash. Also test model switching,
+note stealing, retriggering and sustained notes. Do not allocate one full
+Plaits voice per track without those measurements.
+
+GATOR is GPL-3.0-only and Plaits/stmlib remain MIT-licensed. If any GATOR
+adapter code is copied or adapted, retain its GPL notices and record the
+source and changes; retain the MIT notices for Plaits/stmlib files as well.
+
 ## HORATIO-1 design intent
 
 - Plaits synthesis models should be exposed as browsable HORATIO-1 presets.
