@@ -757,6 +757,7 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
     {BK_LEAD, 0, "Acid 303-FM"},
     {BK_LEAD, 0, "FM Metallic Ping"},
     {BK_PLUCK, 0, "Retrowave Bell"},
+    {BK_PLUCK, 0, "Seapunk Pluck"},
     {BK_PLUCK, 0, "Arcade Octaver"},
     {BK_PLUCK, 0, "Poolside Marimba"},
     {BK_PLUCK, 0, "Elevator Chime"},
