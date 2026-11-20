@@ -139,6 +139,9 @@ static inline int32_t sample_next(const smp_zone_t *z, voice_t *v, int loop)
 static void sample_note_on(track_t *t, voice_t *v)
 {
     uint32_t si = (uint32_t)t->p[P_E0] % SMP_NALL, i, zi = 0xFFFFu;
+#ifdef HORATIO_PLAITS
+    if (si == SMP_NSETS - 1u) si = 0u; /* retired GM-kit slot: map to a pitched piano set */
+#endif
     if (si < SMP_NSETS) {
         const smp_set_t *set = &SMP_SETS[si];
         for (i = 0; i < set->nz; i++)
