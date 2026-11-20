@@ -219,3 +219,20 @@ HORATIO adapter, measure the RAM and flash cost of one Plaits voice, then
 measure four voices and the shared-envelope mixer before changing the
 existing track/voice allocator. Do not enable the adapter in release builds
 until those measurements and audio tests pass.
+
+## Engine integration constraint
+
+SLOOP's existing engine interface calls `render()` once for each active
+voice and `block()` once for each synth part. A four-note shared-gate Plaits
+instrument cannot simply create a fresh Plaits `Voice` inside each
+`render()` call: that would give late notes their own envelope start and
+would not provide one instrument-wide gate across the three sequencer
+parts.
+
+The adapter must own the four Plaits DSP instances and a central note/gate
+state. It must advance the shared gate/envelope exactly once per audio
+block, render each active pitch with that same gate, and mix the results
+without advancing the envelope separately for each note. The integration
+must also map SLOOP's global four-voice allocation to those four DSP slots
+and preserve click-free voice stealing. This is a design requirement, not
+yet implemented.
