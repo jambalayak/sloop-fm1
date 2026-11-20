@@ -21,6 +21,7 @@
 #include "cpu1.h"           /* the second core's job API (defined in cpu1.c; the host tests have their own) */
 #include "engines.c"
 #include "drums.c"
+#include "metronome.c"          /* independent click voice; survives removal of the drum engine */
 #include "params.c"
 #include "voice.c"
 #include "slicer.c"          /* per-track SLICER insert, used by fx.c */
