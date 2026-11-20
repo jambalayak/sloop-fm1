@@ -669,7 +669,9 @@ UI_SMALL static void apply_preset_to(track_t *t, uint32_t pi)
         }
         preset_extras(t->p, pr);                     /* glide, pitch / LFO modulation, voice mode */
     }
+#ifndef HORATIO_PLAITS
     fm6_track_loaded(t);                             /* FM6: the preset's patch (its PTCH) */
+#endif
 }
 
 /* the engine's defaults and its first preset. With the audio IRQ off: the ISR sees the old engine with
