@@ -112,7 +112,7 @@ def tc_all(*cmds):
     with ThreadPoolExecutor(min(len(cmds), int(os.environ.get("JOBS", "8")))) as ex:
         return list(ex.map(lambda c: tc(*c), cmds))
 
-def build_cxx():
+def build_cxx(probe=False):
     """Compile Plaits/stmlib only for the opt-in HORATIO Plaits build."""
     if os.environ.get("HORATIO_PLAITS", "0") != "1":
         return []
@@ -134,7 +134,9 @@ def build_cxx():
                stmlib / "dsp" / "units.cc",
                stmlib / "utils" / "random.cc",
                FW / "cxx" / "runtime.cc",
-               FW / "cxx" / "horatio_probe.cc"]
+               FW / "cxx" / "horatio_plaits.cc"]
+    if probe:
+        sources.append(FW / "cxx" / "horatio_probe.cc")
     objdir = OUT / "cxx"
     objdir.mkdir(parents=True, exist_ok=True)
     objects, commands = [], []
@@ -147,11 +149,12 @@ def build_cxx():
     if commands:
         print("c++: compiling " + str(len(commands)) + " of " + str(len(objects)) + " Plaits/stmlib files")
         tc_all(*commands)
-    probe = objdir / "firmware_cxx_horatio_probe.o"
-    symbols = tc("common/bin/objdump", "-t", probe)
-    for line in symbols.splitlines():
-        if "horatio_probe_" in line:
-            print("Plaits memory probe: " + line.strip())
+    if probe:
+        probe_obj = objdir / "firmware_cxx_horatio_probe.o"
+        symbols = tc("common/bin/objdump", "-t", probe_obj)
+        for line in symbols.splitlines():
+            if "horatio_probe_" in line:
+                print("Plaits memory probe: " + line.strip())
     return objects
 
 
@@ -403,7 +406,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     if a.check_plaits_cxx:
         os.environ["HORATIO_PLAITS"] = "1"
-        objects = build_cxx()
+        objects = build_cxx(probe=True)
         print("Plaits C++ compile check passed: " + str(len(objects)) + " object files")
         return 0
     with ThreadPoolExecutor(2) as ex:
