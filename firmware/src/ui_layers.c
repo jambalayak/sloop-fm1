@@ -177,8 +177,6 @@ UI_SMALL static void step_up(uint32_t w)
 UI_SMALL static void pen_lane_move(int32_t s)
 {
     uint8_t l = (uint8_t)clamp(pen_lane + s, 0, DRUM_LANES - 1);
-    if (l != pen_lane)
-        drum_hear(l);                                   /* (2.7.1: menu DRUM PREVIEW ON only) */
     pen_lane = l;
 }
 /* KNOB 1..4 with step keys held: their sound / note (drums: the sound's lane; synth: every note), level,
