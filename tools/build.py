@@ -42,7 +42,7 @@ CFLAGS = ["-Os", "-ffunction-sections", "-fno-builtin", "-Wall", "-Wno-unused-fu
 # HORATIO adapter is present and its flash/RAM budget is verified.
 CXXFLAGS = ["-mcpu=r3", "-mfprev1", "-O2", "-std=gnu++11", "-DTEST",
             "-fno-math-errno", "-fno-exceptions", "-fno-rtti",
-            "-fno-threadsafe-statics", "-fno-use-cxa-atexit", "-nostdinc++",
+            "-fno-threadsafe-statics", "-fno-use-cxa-atexit", "-nostdinc++", "-include", "stdio.h",
             "-ffunction-sections", "-fdata-sections", "-Wall",
             "-Wno-unused-function", "-Wno-unused-variable",
             "-Ifirmware/cxx", "-Ifirmware/src", "-Ithird_party", "-Ithird_party/eurorack"]
