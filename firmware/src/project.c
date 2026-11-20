@@ -24,6 +24,7 @@
 #ifndef UI_SMALL                 /* (2.7) compiled for size: not the audio path (gfx.c UI_SMALL); the host tests: nothing */
 #define UI_SMALL
 #endif
+#define PROJ_NTRK_LEGACY 4u                 /* FUN1..FUN6 have fixed historical track counts; never use live NTRK here */
 #define PROJ_MAGIC 0x46554E36u                 /* "FUN6": format 5 + the 2.6 parameters, nudge and condition in a byte */
 #define PROJ_MAGIC_V5 0x46554E35u              /* "FUN5": format 4 + per-step nudge, parameter locks, fill conditions (SLOOP 2.4) */
 #define PROJ_MAGIC_V4 0x46554E34u              /* "FUN4": four tracks, P_COUNT parameters each, 10-byte steps; read only */
@@ -61,7 +62,7 @@ typedef struct {
     uint32_t magic, size;
     int16_t g[PROJ_NG];
     uint8_t sel, drdly, rsv[2];                /* the selected track; 2.5: G_DRDLY */
-    proj_trk_t t[NTRK];
+    proj_trk_t t[PROJ_NTRK_LEGACY];
     uint32_t sum;
 } project_t;
 static int16_t pt_get(const proj_trk_t *t, uint32_t id)   /* p[id] of a stored track */
@@ -98,7 +99,7 @@ typedef struct {                               /* format 5, read only */
     uint32_t magic, size;
     int16_t g[PROJ_NG];
     uint8_t sel, drdly, rsv[2];
-    proj_trk_v5_t t[NTRK];
+    proj_trk_v5_t t[PROJ_NTRK_LEGACY];
     uint32_t sum;
 } project_v5_t;
 typedef struct {                               /* a track of format 4 (SLOOP 2.0 .. 2.3), read only */
@@ -113,7 +114,7 @@ typedef struct {                               /* format 4, read only */
     uint32_t magic, size;
     int16_t g[PROJ_NG];
     uint8_t sel, rsv[3];
-    proj_trk_v4_t t[NTRK];
+    proj_trk_v4_t t[PROJ_NTRK_LEGACY];
     uint32_t sum;
 } project_v4_t;
 typedef struct { uint8_t note[4], n, time, flags, vel; } step8_t;   /* the steps of formats 1..3 */
@@ -126,7 +127,7 @@ typedef struct {                               /* format 3 (SLOOP 1.x), read onl
     uint32_t magic, size;
     int16_t g[PROJ_NG_V3];
     uint8_t sel, rsv[3];
-    proj_trk_v3_t t[NTRK];
+    proj_trk_v3_t t[PROJ_NTRK_LEGACY];
     uint32_t sum;
 } project_v3_t;
 typedef struct {                               /* a track of formats 1 and 2, read only */
@@ -138,7 +139,7 @@ typedef struct {                               /* format 2 (until 0.9), read onl
     uint32_t magic, size;
     int16_t g[PROJ_NG_V2];
     uint8_t sel, rsv[3];
-    proj_trk_v2_t t[NTRK];
+    proj_trk_v2_t t[PROJ_NTRK_LEGACY];
     uint32_t sum;
 } project_v2_t;
 typedef struct {                               /* format 1 (until 0.5 beta), read only */
@@ -255,7 +256,7 @@ UI_SMALL static int proj_from_v4(project_t *q, const project_v4_t *v4, int n)
     q->size = sizeof *q;
     memcpy(q->g, v4->g, sizeof q->g);
     q->sel = v4->sel;
-    for (i = 0; i < NTRK; i++) {
+    for (i = 0; i < PROJ_NTRK_LEGACY; i++) {
         uint32_t k;
         proj_trk_plain(&q->t[i]);
         for (k = 0; k < PROJ_NC6; k++)                 /* by id up to P_CHORD, the parameters added since: */
@@ -316,7 +317,7 @@ UI_SMALL static void proj_from_v3_ok(project_t *q, const project_v3_t *v3)
     q->size = sizeof *q;
     proj_g_from_old(q->g, v3->g);
     q->sel = v3->sel;
-    for (i = 0; i < NTRK; i++)
+    for (i = 0; i < PROJ_NTRK_LEGACY; i++)
         proj_trk_from_v3(&q->t[i], &v3->t[i], i == TRK_DRUM);
     q->sum = proj_sum(q);
 }
@@ -341,7 +342,7 @@ UI_SMALL static int proj_from_v2(project_t *q, const project_v2_t *v2, int n)
     memset(v3, 0, sizeof *v3);
     memcpy(v3->g, v2->g, sizeof v3->g);
     v3->sel = v2->sel;
-    for (i = 0; i < NTRK; i++)
+    for (i = 0; i < PROJ_NTRK_LEGACY; i++)
         proj_trk_v2_to_v3(&v3->t[i], &v2->t[i], i == TRK_DRUM);
     proj_from_v3_ok(q, v3);
     return 1;
@@ -360,7 +361,7 @@ UI_SMALL static int proj_from_v1(project_t *q, const project_v1_t *v1, int n)
     memcpy(v3->g, v1->g, sizeof v3->g);
     proj_trk_v2_to_v3(&v3->t[0], &v1->t, 0);
     proj_from_v3_ok(q, v3);
-    for (i = 1; i < NTRK; i++) {               /* the other tracks: their defaults, no steps */
+    for (i = 1; i < PROJ_NTRK_LEGACY; i++) {    /* the other legacy tracks: their defaults, no steps */
         uint32_t k;
         for (k = 0; k < P_COUNT; k++)
             pt_set(&q->t[i], k, k >= P_E0 ? ENGINES[trk_def_engine(i)]->edit[k - P_E0].def : TP[k].def);
