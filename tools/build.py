@@ -117,6 +117,12 @@ def build_cxx():
     eurorack = SRC / "third_party" / "eurorack"
     if not (eurorack / "plaits" / "dsp" / "voice.h").exists():
         raise SystemExit("HORATIO_PLAITS=1 but third_party/eurorack is missing; initialise submodules")
+    patch = subprocess.run([sys.executable, str(SRC / "tools" / "patch_plaits.py")],
+                           cwd=SRC, capture_output=True, text=True)
+    if patch.returncode:
+        raise SystemExit(patch.stdout + patch.stderr)
+    if patch.stdout:
+        print(patch.stdout.strip())
     sources = [*sorted((eurorack / "plaits").rglob("*.cc")),
                *sorted((eurorack / "stmlib").rglob("*.cc")),
                *sorted((FW / "src").glob("*.cc")),
