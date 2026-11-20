@@ -1058,7 +1058,9 @@ UI_SMALL static void ui_input(void)
     remote_poll();                                      /* (2.7) the buttons over MIDI */
     pc_poll();                                          /* MIDI Program Change: a sound (2.6, ui.c) */
     midi_chan_fix();                                    /* GLO > MIDI: no channel on two tracks (2.6, ui.c) */
+#ifndef HORATIO_PLAITS
     fm6_poll();                                         /* FM6: PTCH turned -> its patch */
+#endif
     ml_poll();                                          /* MIDI LEARN: a CC came for the picked parameter (2.6) */
     page_fix();                                         /* (a page the track does not have: its neighbour, 2.6) */
     midi_entry();                                       /* (the STEP page's MIDI notes: read every frame, 2.6) */
