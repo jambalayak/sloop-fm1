@@ -775,16 +775,6 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
     {BK_FX, 0, "Micro-Glitch Dust"},
     {BK_FX, 0, "Data Stream"},
     {BK_FX, 0, "Static Geiger"},
-    {BK_BASS, 4, "UP BASS"},
-    {BK_BASS, 4, "DEEP BASS"},
-    {BK_KEYS, 4, "GRAND PNO"},
-    {BK_KEYS, 4, "DUSTY PNO"},
-    {BK_KEYS, 4, "LOFI KEYS"},
-    {BK_ORGAN, 4, "HORN STAB"},
-    {BK_ORGAN, 4, "STRING STB"},
-    {BK_LEAD, 4, "LOFI FLUTE"},
-    {BK_PLUCK, 4, "VIBES"},
-    {BK_FX, 4, "SCRATCH"},
 };
 #else
 static const struct { uint8_t kind, e; const char *name; } BANK[] = {
