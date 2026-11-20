@@ -721,6 +721,69 @@ UI_SMALL static void select_engine(uint32_t e)
  * engine's preset table may change order; tests/ui_pages_test.c checks every preset is here once */
 enum { BK_BASS, BK_KEYS, BK_ORGAN, BK_PAD, BK_LEAD, BK_PLUCK, BK_STAB, BK_FX };
 static const char *const BANK_KIND[] = {"BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK", "STAB", "FX"};
+#ifdef HORATIO_PLAITS
+static const struct { uint8_t kind, e; const char *name; } BANK[] = {
+    {BK_BASS, 0, "Outrun Sub"},
+    {BK_BASS, 0, "Kavinsky Growl"},
+    {BK_BASS, 0, "Analog Tom-Bass"},
+    {BK_BASS, 0, "Muzak Slap Bass"},
+    {BK_BASS, 0, "Squarepusher Sub"},
+    {BK_BASS, 0, "Sub-Harmonic Pulse"},
+    {BK_KEYS, 0, "Nightcall Pulse"},
+    {BK_KEYS, 0, "Tape Detune Keys"},
+    {BK_KEYS, 0, "Mallsoft DX EP"},
+    {BK_KEYS, 0, "Faded Cassette"},
+    {BK_KEYS, 0, "Sega Sunset"},
+    {BK_ORGAN, 0, "Plaza Organ"},
+    {BK_PAD, 0, "Miami Horizon"},
+    {BK_PAD, 0, "Neon Poly"},
+    {BK_PAD, 0, "Sunset Strings"},
+    {BK_PAD, 0, "Vangelis Swell"},
+    {BK_PAD, 0, "Midnight Skyline"},
+    {BK_PAD, 0, "VHS Choir"},
+    {BK_PAD, 0, "Macintosh Pad"},
+    {BK_PAD, 0, "Crystal Fountain"},
+    {BK_PAD, 0, "Late Night Weather"},
+    {BK_PAD, 0, "Hypnagogic Drift"},
+    {BK_PAD, 0, "Slowed Flute"},
+    {BK_PAD, 0, "Liquid Formant"},
+    {BK_PAD, 0, "Resonant Pipe"},
+    {BK_PAD, 0, "BoC Warped Tape"},
+    {BK_LEAD, 0, "Turbo Arp"},
+    {BK_LEAD, 0, "Laser Harp"},
+    {BK_LEAD, 0, "Chrome Lead"},
+    {BK_LEAD, 0, "Grid Runner"},
+    {BK_LEAD, 0, "Dreamcast Menu"},
+    {BK_LEAD, 0, "Acid 303-FM"},
+    {BK_LEAD, 0, "FM Metallic Ping"},
+    {BK_PLUCK, 0, "Retrowave Bell"},
+    {BK_PLUCK, 0, "Arcade Octaver"},
+    {BK_PLUCK, 0, "Poolside Marimba"},
+    {BK_PLUCK, 0, "Elevator Chime"},
+    {BK_PLUCK, 0, "Glass Wire"},
+    {BK_PLUCK, 0, "Inharmonic Bell"},
+    {BK_PLUCK, 0, "Fractured Chord"},
+    {BK_STAB, 0, "Juno Brass 84"},
+    {BK_STAB, 0, "Lobby Sax"},
+    {BK_STAB, 0, "Clockwork Modal"},
+    {BK_FX, 0, "Eccojam Loop"},
+    {BK_FX, 0, "Autechre Grain"},
+    {BK_FX, 0, "Aphex Rubber"},
+    {BK_FX, 0, "Micro-Glitch Dust"},
+    {BK_FX, 0, "Data Stream"},
+    {BK_FX, 0, "Static Geiger"},
+    {BK_BASS, 4, "UP BASS"},
+    {BK_BASS, 4, "DEEP BASS"},
+    {BK_KEYS, 4, "GRAND PNO"},
+    {BK_KEYS, 4, "DUSTY PNO"},
+    {BK_KEYS, 4, "LOFI KEYS"},
+    {BK_ORGAN, 4, "HORN STAB"},
+    {BK_ORGAN, 4, "STRING STB"},
+    {BK_LEAD, 4, "LOFI FLUTE"},
+    {BK_PLUCK, 4, "VIBES"},
+    {BK_FX, 4, "SCRATCH"},
+};
+#else
 static const struct { uint8_t kind, e; const char *name; } BANK[] = {
     {BK_BASS, 0, "808 BOOM"}, {BK_BASS, 0, "808 DIRTY"}, {BK_BASS, 0, "808 SLIDE"}, {BK_BASS, 0, "SUB BASS"},
     {BK_BASS, 0, "PLUGG BASS"}, {BK_BASS, 0, "REESE"}, {BK_BASS, 0, "WOBBLE"}, {BK_BASS, 0, "ACID 303"},
@@ -772,6 +835,8 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
     {BK_FX, ENGI_SLICE, "USR SLICE"},
 #endif
 };
+
+#endif
 #define NBANK (sizeof BANK / sizeof BANK[0])
 static uint8_t bank_pi[NBANK];                       /* the preset index of each entry in its engine */
 static uint8_t bank_ready;
