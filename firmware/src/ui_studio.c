@@ -134,6 +134,8 @@ UI_SMALL static void te_dials(int32_t y0, const char *const lab[4], const char *
 UI_SMALL static void studio_open(uint32_t scope)
 {
     uint32_t i;
+    if (scope == SC_DRUM)
+        return;                                     /* HORATIO-1 has no drum editor page */
     if (scope == SC_SONG && rec_wait)
         rec_wait = 0;                                   /* (an arm does not follow into the song page) */
     for (i = 0; i < NPAGES; i++) if (PAGES[i].scope == scope) {
