@@ -2832,6 +2832,8 @@ static int32_t micro_units(const track_t *t, uint32_t abs, uint32_t slen)
 static void seq_tick(track_t *t, uint32_t adv)
 {
     uint32_t len = trk_len(t), into, slen, abs, idx, nabs, fire = 0;
+    if (is_drum(t))
+        return;                                     /* legacy fourth-track patterns are not played */
     int32_t rel;
     if (t->seq_n && !t->seq_hold) {
         if (t->seq_off <= adv)
