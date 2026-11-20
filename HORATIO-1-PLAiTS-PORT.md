@@ -124,3 +124,30 @@ source and changes; retain the MIT notices for Plaits/stmlib files as well.
   `.fwsc` format until replacements have been proven compatible.
 - Do not remove an existing engine merely to make room until flash, RAM and
   CPU measurements show that this is necessary and the change is reviewed.
+
+
+## Verified SLOOP build headroom (20 November 2026)
+
+The four-voice source build completed successfully on GitHub Actions. Its linker
+report is:
+
+- Firmware image: **571,580 B** of a **581,564 B** app slot (9,984 B free).
+- Shared `.pool`: **333,900 B** of **344,064 B** (10,164 B free).
+- `.data + .bss`: 57,996 B of 98,304 B.
+- Generated sample data: **283,212 B ADPCM**.
+
+The standard Plaits `resources.cc` alone is 378,421 source bytes. It cannot
+simply be added to the current image, and a four-voice Plaits allocator cannot
+fit in the remaining pool. The GATOR port's 16 KiB allocator is for one voice;
+four independent voices need a new shared-allocation design and measured
+per-voice cost.
+
+The likely route is to replace redundant legacy synthesis content rather than
+stack Plaits on top of it: remove the legacy sample engine/sample bank and
+consolidate the existing synth engine table around Plaits' 16 standard models.
+The separate GM drum track is also out of the HORATIO-1 design. Before removing
+legacy synth engines or sample support, confirm which SLOOP features are to be
+retained; preserve the sequencer, preset/project format where possible, and
+useful existing effects. The delay buffer and slicer buffers are further
+possible RAM savings, but should not be shortened or removed without a design
+decision.
