@@ -316,8 +316,6 @@ typedef struct { int32_t l[CTL], r[CTL], sc[CTL], sd[CTL], sr[CTL]; } mixacc_t; 
 static mixacc_t acc[2] __attribute__((section(".lowram")));          /* core 0's, core 1's (.lowram: app.ld, main.c) */
 static int32_t wet_l[CTL], wet_r[CTL];
 static int32_t part_buf[2][CTL] __attribute__((section(".lowram")));   /* a part's scratch, one per core */
-static int32_t drum_buf[4][CTL] __attribute__((section(".lowram")));   /* the drums through the drum track's FILTER: L, R,
-                                                                        * reverb, delay */
 
 /* ---- mute / solo: a track that goes silent fades out over ~6 ms (and back in) */
 #define MUTE_STEP 4096                                  /* Q15 per block: 8 blocks */
@@ -467,7 +465,7 @@ typedef struct {
     int16_t line[IL_LEN];               /* FLANG / CHOR, at a quarter (headroom) */
 } ins_t;
 /* (in .bss, not the pool: tools/build.py keeps 8 KiB of the pool spare; RAM has room) */
-static ins_t ins[NPART + 4u];                    /* the parts; the drum track's L, R, REV, DLY */
+static ins_t ins[NPART];                         /* one INSERT state per synth part */
 
 static inline int32_t ins_mixq(int32_t m) { return m >= 127 ? 32768 : m <= 0 ? 0 : m * 258; }   /* MIX -> Q15 */
 static inline int32_t ins_mix(int32_t x, int32_t y, int32_t w) { return w == 32768 ? y : x + mulq16(y - x, (uint32_t)w << 1); }
@@ -809,8 +807,7 @@ static void djf_process(int32_t *l, int32_t *r, uint32_t n)
 }
 
 #include "punch.c"            /* PUNCH-IN FX on the whole mix (FX held + a white key) */
-/* ---- the render units and the second core. A unit is a synth part (mix_part) or the drum track with the
- * metronome (mix_drums); unit k is bit k of a mask, the drums bit NPART. What a unit on core 1 may not share
+/* ---- the render units and the second core. A unit is one synth part (mix_part). What a unit on core 1 may not share
  * with one on core 0: part_buf (one per core); FM6's operator buses (per part, in its arena); the formant
  * engine's breath noise, one xorshift for all its voices (two FORMANT parts stay together, on core 0); and
  * rng() (libc.c): a part whose LFO wraps this block (track_lfo_tick draws) or whose PHYS model changed under
@@ -818,55 +815,7 @@ static void djf_process(int32_t *l, int32_t *r, uint32_t n)
  * SLOOP 2.6 added two things a part keeps for its block, now per part or per core: the ENV SYNC steps (voice.c
  * esync_k) and the preset fade's sound set aside (mix_part pnew); its INSERT state is per part (ins[]), the drum
  * track's its own; TEXTURE, the THROWs' glide, FREEZE and the look-ahead limiter run on core 0 outside the units. */
-#define U_DRUMS (1u << NPART)
-#define U_ALL ((2u << NPART) - 1u)
-
-/* the drum track's INSERT (2.6): its left, right and the two sends, each through its own state, the same settings */
-static void drum_insert(int32_t *l, int32_t *r, int32_t *v, int32_t *d, uint32_t n)
-{
-    track_t *t = TDRUM;
-    int run;
-    if (!(t->p[P_ITYPE] | t->ins_run))
-        return;
-    run = ins_run(&ins[NPART], t->p, l, n);
-    run |= ins_run(&ins[NPART + 1u], t->p, r, n);
-    run |= ins_run(&ins[NPART + 2u], t->p, v, n);
-    run |= ins_run(&ins[NPART + 3u], t->p, d, n);
-    t->ins_run = (uint8_t)run;
-}
-/* the drum track with the metronome: drums_render, through the SLICER when it is on (slicer.c), then through its
- * INSERT (2.6) and the track's FILTER when they are on (into drum_buf, left, right and the two sends apart, then added) */
-static void mix_drums(uint32_t n, mixacc_t *mx)
-{
-    uint32_t i;
-    tsvf_t fc;
-    djf_t *f = &tflt[TRK_DRUM];
-    int flt;
-    drums.a0 = TDRUM->att;                              /* the drum track's mute / solo fade */
-    drums.a1 = 32767 - gain_next(TDRUM);
-    flt = n <= CTL && djf_block(f, TDRUM->p[P_TFLT], &fc, tflt_reso());   /* the drum track's FILTER */
-    if (flt || (n <= CTL && (TDRUM->p[P_ITYPE] | TDRUM->ins_run))) {   /* .. or its INSERT: left, right, the sends */
-        int32_t *dl = drum_buf[0], *dr = drum_buf[1], *dv = drum_buf[2], *dd = drum_buf[3];
-        for (i = 0; i < n; i++)
-            dl[i] = dr[i] = dv[i] = dd[i] = 0;
-        slicer_drums(dl, dr, dv, dd, n);
-        drum_insert(dl, dr, dv, dd, n);                 /* (2.6: off, nothing) */
-        if (flt) {
-            tflt_run(f, &fc, dl, n, 0);
-            tflt_run(f, &fc, dr, n, 1);
-            tflt_run(f, &fc, dv, n, 2);
-            tflt_run(f, &fc, dd, n, 3);
-        }
-        for (i = 0; i < n; i++) {
-            mx->l[i] += dl[i];
-            mx->r[i] += dr[i];
-            mx->sr[i] += dv[i];
-            mx->sd[i] += dd[i];
-        }
-    } else {
-        slicer_drums(mx->l, mx->r, mx->sr, mx->sd, n);   /* drums_render, through the SLICER when on */
-    }
-}
+#define U_ALL ((1u << NPART) - 1u)
 
 /* the units of mask into the set mx, in their order */
 static void mix_units(uint32_t mask, uint32_t n, mixacc_t *mx, int32_t *scratch)
@@ -875,8 +824,6 @@ static void mix_units(uint32_t mask, uint32_t n, mixacc_t *mx, int32_t *scratch)
     for (k = 0; k < NPART; k++)
         if (mask & (1u << k))
             mix_part(&trk[k], n, mx, scratch);
-    if (mask & U_DRUMS)
-        mix_drums(n, mx);
 }
 
 /* the load figures: core 1's time in its job and core 0's time waiting for it, in ticks over a half (cpu1.h
@@ -900,11 +847,10 @@ static void cpu1_units_job(uint32_t arg)                /* core 1's job: the uni
     cpu1_job_ticks += cpu1_ticks() - t0;
 }
 
-/* the units core 1 renders this block: the last part and the drums (cpu1_units when set: the menu, the tests),
- * less the parts that must stay here (above) */
+/* the units core 1 renders this block: synth parts selected for the second core, less parts that must stay here */
 static uint32_t units_split(void)
 {
-    uint32_t mask = cpu1_units < 0 ? (1u << (NPART - 1u)) | U_DRUMS : (uint32_t)cpu1_units & U_ALL, k, nform = 0;
+    uint32_t mask = cpu1_units < 0 ? (1u << (NPART - 1u)) : (uint32_t)cpu1_units & U_ALL, k, nform = 0;
     if (!mask)
         return 0;
     for (k = 0; k < NPART; k++)
