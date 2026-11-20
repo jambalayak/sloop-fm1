@@ -28,7 +28,7 @@ static struct {
     int16_t vu[5], pk[5], pkt[5];                   /* VU: tracks + master, peak holds */
     int16_t lvl[5];                                 /* the tracks' levels (0..1000) this frame, the master */
     int16_t bh[4], bv[4];                           /* BOUNCE: height and speed (1/256 units) */
-    uint8_t flash[4], kick;                         /* frames since a note started (0 = none) / a kick, fading */
+    uint8_t flash[4];                              /* frames since a note started (0 = none) */
     int16_t wamp[4];                                /* WIRES: each string's swing (0..1000) */
     uint8_t wn[4];                                  /* its wave count (from the note) */
     uint32_t free_q8, last_ms, wph;                 /* beats (1/256) when stopped; the wires' phase */
@@ -228,10 +228,6 @@ static void vis_update(void)
     drums.peak = 0;
     hit = vis_hit;
     vis_hit = 0;
-    if (vis_kick_hit) {
-        vis_kick_hit = 0;
-        vs.kick = 255;
-    }
     fm1_irq_on();
     for (i = 0; i < 4u; i++) {
         int32_t v = trk_level(i) && !trk[i].p[P_MUTE] ? vis_lvl(pk[i]) : 0;   /* (as the TRACKS meters) */
@@ -254,7 +250,6 @@ static void vis_update(void)
             vs.bv[i] = (int16_t)(vs.bv[i] < -256 ? -vs.bv[i] * 35 / 100 : 0);
     }
     vs.lvl[4] = (int16_t)vis_lvl(mpk);
-    vs.kick = (uint8_t)(vs.kick > 20 ? vs.kick - 20 : 0);
     /* the free beat count (stopped) */
     {
         uint32_t dt = now - vs.last_ms;
@@ -433,7 +428,7 @@ static void vis_meters(void)
 }
 static void vis_ring(void)
 {
-    int32_t k = vs.kick, r0 = 52 + k * 18 / 255, rc = r0 * 6 / 10, sc = vs.peak > vs.scale ? vs.peak : vs.scale;
+    int32_t k = 0, r0 = 52, rc = r0 * 6 / 10, sc = vs.peak > vs.scale ? vs.peak : vs.scale;
     int32_t px = 0, py = 0, i;
     vis_ellipse(120, 120, rc, rc, RGB(40 + 140 * k / 255, 14 + 50 * k / 255, 4));
     for (i = 0; i <= 180; i++) {                    /* the wave round the ring, 2 degrees a point */
