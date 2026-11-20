@@ -133,7 +133,8 @@ def build_cxx():
                eurorack / "plaits" / "resources.cc",
                stmlib / "dsp" / "units.cc",
                stmlib / "utils" / "random.cc",
-               FW / "cxx" / "runtime.cc"]
+               FW / "cxx" / "runtime.cc",
+               FW / "cxx" / "horatio_probe.cc"]
     objdir = OUT / "cxx"
     objdir.mkdir(parents=True, exist_ok=True)
     objects, commands = [], []
@@ -146,6 +147,12 @@ def build_cxx():
     if commands:
         print("c++: compiling " + str(len(commands)) + " of " + str(len(objects)) + " Plaits/stmlib files")
         tc_all(*commands)
+    probe = objdir / "firmware_cxx_horatio_probe.o"
+    symbols = tc("common/bin/objdump", "-t", probe)
+    for line in symbols.splitlines():
+        fields = line.split()
+        if len(fields) >= 6 and fields[-1].startswith("horatio_probe_"):
+            print("Plaits memory probe: " + fields[-1] + " = " + str(int(fields[-2], 16)) + " bytes")
     return objects
 
 
