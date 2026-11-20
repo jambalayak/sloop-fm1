@@ -20,8 +20,9 @@ enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
  * presets store the engine index as a byte, and no shipped SLOOP was built with SLICE, so its number is stored
  * nowhere: FM6 may take 9 and SLICE moves up (engines.c ENGINES[], params.c N_ENGNAME follow this order) */
 #ifdef HORATIO_PLAITS
-#define NENGINES 1u
+#define NENGINES 2u
 #define ENGI_PLAITS 0u
+#define ENGI_SAMPLE 1u
 #else
 #define NENGINES (12 + FELUCCA_SLICE)
 #endif
