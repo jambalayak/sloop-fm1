@@ -60,6 +60,13 @@ SET_PRESETS = {
     "SCRCH": ("SCRATCH", [0, 0, 0, 0, 127, 0, 8, 0], (0, 127, 127, 18), 0, (0, 0, 0, 0), ()),
     "PERC": ("GM KIT", [0, 0, 0, 0, 127, 0, 0, 0], (0, 127, 127, 60), 0, (0, 0, 0, 6), ()),
 }
+
+# HORATIO-1 keeps pitched sample playback but deliberately ships no drum-kit
+# sample set or GM percussion preset. The sequencer's dedicated drum system
+# is retired independently; these remain ordinary pitched sample instruments.
+if os.environ.get("HORATIO_PLAITS") == "1":
+    CC0_SETS = [entry for entry in CC0_SETS if entry[0] != "KIT"]
+    SET_PRESETS.pop("PERC", None)
 # more presets on a set: (set, name, E[], env, mono, sends, more)
 EXTRA_PRESETS = [
     ("PIANO", "DUSTY PNO", [0, 0, 34, 0, 96, 0, 24, 0], (0, 98, 0, 52), 0, (0, 8, 10, 22), ()),
