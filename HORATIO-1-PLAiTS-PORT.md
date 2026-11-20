@@ -128,19 +128,28 @@ source and changes; retain the MIT notices for Plaits/stmlib files as well.
 
 ## Verified SLOOP build headroom (20 November 2026)
 
-The four-voice source build completed successfully on GitHub Actions. Its linker
-report is:
+Build #137 (commit `874469b`) completed successfully on GitHub Actions. Its
+linker report is:
 
-- Firmware image: **571,580 B** of a **581,564 B** app slot (9,984 B free).
+- Firmware image: **552,912 B** of a **581,564 B** app slot (28,652 B free).
 - Shared `.pool`: **333,900 B** of **344,064 B** (10,164 B free).
-- `.data + .bss`: 57,996 B of 98,304 B.
+- `.data + .bss`: **55,180 B** of 98,304 B.
+- `.lowram`: **22,260 B** of 29,384 B.
 - Generated sample data: **283,212 B ADPCM**.
+- The build still generates 32 legacy synthesized drum kits.
+
+The Plaits C++ step compiles all 40 pinned Plaits/stmlib translation units,
+but those objects are not yet linked into the installable firmware image.
+The successful `.fwsc` from build #137 is still the SLOOP-derived reference
+firmware, not a playable HORATIO-1 build.
 
 The standard Plaits `resources.cc` alone is 378,421 source bytes. It cannot
-simply be added to the current image, and a four-voice Plaits allocator cannot
-fit in the remaining pool. The GATOR port's 16 KiB allocator is for one voice;
-four independent voices need a new shared-allocation design and measured
-per-voice cost.
+simply be added to the current image, and four Plaits voice arenas cannot fit
+in the remaining pool. The current image therefore needs a measured redesign:
+remove the approved legacy engine/sample/drum payloads, reclaim or repurpose
+memory without discarding the useful effects, and measure the actual size of
+the four Plaits state objects plus their per-voice arenas before enabling the
+new engine.
 
 The likely route is to replace redundant legacy synthesis content rather than
 stack Plaits on top of it: remove the legacy sample engine/sample bank and
