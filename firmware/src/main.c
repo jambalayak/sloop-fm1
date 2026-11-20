@@ -163,13 +163,21 @@ UI_SMALL static void fm1_fault(const fm1_crash_t *c)
     fm1_reboot();
 }
 
+#ifdef HORATIO_PLAITS
+#include "horatio_plaits.h"
+#endif
+
 /* power-on: three synth parts with their default sounds (TRK_DEF); the legacy fourth slot stays empty */
 UI_SMALL static void felucca_init(void)
 {
     uint32_t i;
     for (i = 0; i < G_COUNT; i++)
         song.g[i] = GP[i].def;
+#ifdef HORATIO_PLAITS
+    horatio_plaits_init();
+#else
     fm6_init();                               /* every part's FM6 patch: the init voice */
+#endif
     for (i = 0; i < NTRK; i++) {
         track_t *t = &trk[i];
         track_defaults(t);
