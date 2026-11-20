@@ -1,16 +1,15 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
-/* Felucca core types: tracks, voices, engines, parameters.
- * Four tracks: tracks 1..3 are synth parts (each its own engine, preset, parameters,
- * voices and 64-step pattern), track 4 is the GM drum part (drums.c; its own voices,
- * pattern and the pattern parameters of its track_t). The parts share one budget of
- * NVOICE sounding voices (voice.c). */
+/* HORATIO-1/SLOOP core types: tracks, voices, engines, parameters.
+ * Tracks 1..3 are the active synth parts. Track 4 remains only as a legacy
+ * compatibility slot so old project layouts can still be imported safely.
+ * The synth parts share one budget of NVOICE sounding voices (voice.c). */
 #include <stdint.h>
-#define NVOICE 4                 /* voice slots per part; four sounding voices shared across all synth parts */
+#define NVOICE 4                 /* voice slots per track; four sounding voices shared across all synth parts */
 #define NPOLY 4                  /* maximum POLY/UNISON allocation per synth part */
-#define NPART 3                  /* synth parts: tracks 1..3 */
-#define NTRK 4                   /* + the drum track */
-#define TRK_DRUM 3
+#define NPART 3                  /* active synth parts: tracks 1..3 */
+#define NTRK 4                   /* NPART plus the retired legacy compatibility slot */
+#define TRK_DRUM 3                /* legacy on-disk track index only; no live drum engine */
 enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
 #define NSTEP 64
 #define HALF_FRAMES 256          /* I2S half buffer: 5.8 ms at 44.1 kHz */
