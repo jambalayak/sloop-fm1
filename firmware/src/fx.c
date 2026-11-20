@@ -866,7 +866,6 @@ static void mix_drums(uint32_t n, mixacc_t *mx)
     } else {
         slicer_drums(mx->l, mx->r, mx->sr, mx->sd, n);   /* drums_render, through the SLICER when on */
     }
-    click_render(mx->l, mx->r, n);                        /* the metronome: its own voice (drums.c), any kit, any mute */
 }
 
 /* the units of mask into the set mx, in their order */
@@ -1215,6 +1214,7 @@ static void mix_block(int32_t *out, uint32_t n)
             acc[0].sr[i] += acc[1].sr[i];
         }
     }
+    click_render(mix_l, mix_r, n);                       /* independent metronome: mixed once after both render cores */
     texture_mix(mix_l, mix_r, n);                       /* GLO > TEXTURE (2.6): the bed, dry; after both cores' units
                                                          * (what it adds does not depend on them: the same sum) */
     punch_freeze_feed(acc[0].sr, mix_l, mix_r, n);     /* punch-in FREEZE: the whole dry mix into the held reverb */
