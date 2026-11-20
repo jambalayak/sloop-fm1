@@ -2714,41 +2714,12 @@ static void seq_step(track_t *t, const step_t *s, uint32_t slen, uint32_t skip)
     t->seq_hold = !s->rat && ((s->flags & SF_SLIDE) != 0 || next_tie);   /* next step a TIE: keep the notes to it */
 }
 
-/* play one drum step: each lane a hit (skip: lanes already played by live recording, or rolling) */
-static void drum_step(track_t *t, const dstep_t *s, uint32_t skip)
-{
-    uint32_t l, m = dstep_mask(s) & ~skip & ~roll_lanes(t) & ~(uint32_t)drum_mute;
-    seq_out_track_off(t);                           /* the last step's hits end here */
-    for (l = 0; m; l++, m >>= 1)
-        if (m & 1u) {
-            trk_note_on(t, LANE_NOTE[l], lvl_vel(dstep_lvl(s, l), 100));
-            seq_out_on(t, LANE_NOTE[l], lvl_vel(dstep_lvl(s, l), 100));
-        }
-}
-
 /* ratchets: the further hits of the playing step's notes / lanes, each at its share of the step */
 static void seq_ratchets(track_t *t, uint32_t into, uint32_t slen)
 {
     uint32_t i;
     if (t->seq_skip)
         return;                                     /* (its condition failed: no hit at all) */
-    if (is_drum(t)) {
-        const dstep_t *s = &t->dstep[t->seq_idx % NSTEP];
-        uint32_t m = dstep_mask(s) & ~roll_lanes(t) & ~(uint32_t)drum_mute;
-        for (i = 0; m; i++, m >>= 1) {
-            uint32_t hits = 1u + dstep_rat(s, i), h, done;
-            if (!(m & 1u) || hits == 1u)
-                continue;
-            h = into * hits / slen;
-            done = (t->rat_lanes >> (2u * i)) & 3u;
-            if (h > done && h < hits) {
-                t->rat_lanes = (t->rat_lanes & ~(3u << (2u * i))) | h << (2u * i);
-                trk_note_on(t, LANE_NOTE[i], lvl_vel(dstep_lvl(s, i), 100));
-                seq_out_on(t, LANE_NOTE[i], lvl_vel(dstep_lvl(s, i), 100));
-            }
-        }
-        return;
-    }
     {
         const step_t *s = &t->step[t->seq_idx % NSTEP];
         if (s->time != ST_NOTE || !s->rat)
@@ -2839,17 +2810,8 @@ static void seq_tick(track_t *t, uint32_t adv)
             lock_step(t, NSTEP);                     /* (no step has locks there: the bases are back) */
             t->rskip_lanes = 0;
             t->rskip_n = 0;
-            if (is_drum(t)) {
-                seq_out_track_off(t);
-            } else {
-                rec_hold(t, idx, len, nabs);
-                seq_release(t);
-            }
-        } else if (is_drum(t)) {
-            uint32_t skip = t->rskip_abs == nabs ? t->rskip_lanes : 0u;
-            lock_step(t, idx);                       /* its parameter locks, before the block renders */
-            t->rskip_lanes = 0;
-            drum_step(t, &t->dstep[idx], skip);
+            rec_hold(t, idx, len, nabs);
+            seq_release(t);
         } else {
             const step_t *s = &t->step[idx];
             uint32_t skip = 0, i, k;
