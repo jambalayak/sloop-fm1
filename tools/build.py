@@ -107,7 +107,9 @@ def tc(tool, *args):
 
 
 def tc_all(*cmds):
-    with ThreadPoolExecutor(len(cmds)) as ex:
+    if not cmds:
+        return []
+    with ThreadPoolExecutor(min(len(cmds), int(os.environ.get("JOBS", "8")))) as ex:
         return list(ex.map(lambda c: tc(*c), cmds))
 
 def build_cxx():
@@ -372,6 +374,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--release", metavar="X.Y", help="release build: identity FM-1_9XY, version string X.Y")
     ap.add_argument("--sdk", type=Path, help="JieLi AC79 SDK checkout (default: $AC79_SDK)")
+    ap.add_argument("--check-plaits-cxx", action="store_true",
+                    help="compile the pinned Plaits/stmlib C++ sources only; do not build a firmware image")
     a = ap.parse_args()
     name = "felucca.fwsc"
     if a.release:                   # one digit each: the identity has room for two
@@ -386,6 +390,11 @@ def main():
         if hashlib.sha256(fm1pkg_make.sdk_file(rel)).hexdigest() != sha:
             print(f"warning: SDK {rel} differs from AC79NN_SDK_V1.2.1; the package will not match the reference")
     OUT.mkdir(parents=True, exist_ok=True)
+    if a.check_plaits_cxx:
+        os.environ["HORATIO_PLAITS"] = "1"
+        objects = build_cxx()
+        print("Plaits C++ compile check passed: " + str(len(objects)) + " object files")
+        return 0
     with ThreadPoolExecutor(2) as ex:
         gen, ldr = ex.submit(generate), ex.submit(build_loader)
         gen.result()
