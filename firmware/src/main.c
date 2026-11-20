@@ -163,7 +163,7 @@ UI_SMALL static void fm1_fault(const fm1_crash_t *c)
     fm1_reboot();
 }
 
-/* power-on: three parts with their default sounds (TRK_DEF), the drum track, empty patterns */
+/* power-on: three synth parts with their default sounds (TRK_DEF); the legacy fourth slot stays empty */
 UI_SMALL static void felucca_init(void)
 {
     uint32_t i;
@@ -180,7 +180,6 @@ UI_SMALL static void felucca_init(void)
         }
         track_defaults_steps(t);              /* the sequencers start empty */
     }
-    TDRUM->p[P_E0] = DRUM_DEFAULT_KIT;        /* the 808 kit */
     song.sel = 0;
     song.master_q12 = 2048;
     autosave_resume();                        /* the project as it was left (project.c) */
