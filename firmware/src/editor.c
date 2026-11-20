@@ -666,7 +666,7 @@ UI_SMALL static int ed_backup(uint32_t cmd, const uint8_t *a, uint32_t na)   /* 
 #endif
 
 #include "editor_fm6.c"                               /* v9: the FM6 patches (68..71) */
-#include "editor_dsyn.c"                              /* v10: the SYN drum kits (72..76) */
+/* Legacy DSYN editor commands (72..76) are reserved and unsupported. */
 
 #include "editor_live.c"                              /* v12: the LIVE page (77) */
 
@@ -683,10 +683,6 @@ UI_SMALL static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes b
         return;
     }
     if (ed_fm6_handle(cmd, a, na)) {                       /* v9: FM6 patches */
-        ed_send();
-        return;
-    }
-    if (ed_dsyn_handle(cmd, a, na)) {                      /* v10: the SYN drum kits */
         ed_send();
         return;
     }
