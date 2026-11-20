@@ -252,13 +252,25 @@ Target behaviour:
 
 - Manual root-note and scale selection, available from the performance and
   sequencer workflow.
-- In scale-keyboard mode, the 16 white keys play successive scale degrees.
-- The 11 black keys each trigger the diatonic chord built on the corresponding
-  scale degree. Chord voicing is capped at four notes to match the instrument's
-  four-note performance limit.
-- Keep a clearly accessible chromatic mode and preserve MIDI note input/output.
-- Keep existing chord-quality/voicing options where they fit; avoid making
-  black-key chord triggers behave as chord modifiers at the same time.
+- Keyboard mapping is an explicit user-selectable option, independent of
+  the selected root and scale:
+  - CHROMATIC: the standard keyboard layout; every key plays its normal
+    semitone note.
+  - SCALE + CHORDS: the 16 white keys play successive scale degrees; the 11
+    black keys trigger the diatonic triad built on the corresponding scale
+    degree.
+- Switching mapping must not alter the selected root, scale, octave, sequence,
+  or stored notes. Make the active mapping visible in the UI.
+- Chord-key note-on must start all notes in that triad; key-up must release
+  exactly those notes, including when keys are held together, the track changes,
+  or the mapping is switched while a key is held. No hanging internal or MIDI
+  notes.
+- Chord voicing is capped at three notes for these black-key triggers, within
+  the instrument's four-note performance limit. Keep the existing separate
+  chord/strum features available where compatible; do not conflate them with
+  this keyboard mapping.
+- Preserve MIDI note input/output and keep incoming MIDI notes chromatic unless
+  the user explicitly enables a separate MIDI scale-quantise option.
 - The keyboard display should show the selected root and scale tones, with a
   restrained neon/vaporwave visual treatment while retaining readable labels.
 
