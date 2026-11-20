@@ -557,7 +557,11 @@ static void proj_apply(const project_t *p, int all)
     for (k = 0; k < NTRK; k++) {
         track_t *t = &trk[k];
         const proj_trk_t *s = &p->t[k];
+#ifdef HORATIO_PLAITS
+        uint32_t e = k < NPART && s->engine == ENGI_SAMPLE ? ENGI_SAMPLE : ENGI_PLAITS;
+#else
         uint32_t e = k < NPART ? s->engine % NENGINES : 0u;
+#endif
         t->eng_req = (uint8_t)e;
         t->user = 0;                                    /* (no user preset slot is saved) */
         t->lk_n = 0;                                    /* (the locks in force: the values come from the project) */
