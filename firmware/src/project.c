@@ -285,7 +285,7 @@ UI_SMALL static int proj_from_v5(project_t *q, const project_v5_t *v5, int n)
     memcpy(q->g, v5->g, sizeof q->g);
     q->sel = v5->sel;
     q->drdly = v5->drdly;
-    for (i = 0; i < NTRK; i++) {
+    for (i = 0; i < PROJ_NTRK_LEGACY; i++) {
         const proj_trk_v5_t *s = &v5->t[i];
         proj_trk_t *d = &q->t[i];
         proj_trk_plain(d);
