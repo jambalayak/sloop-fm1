@@ -1300,3 +1300,4 @@ UI_SMALL static void sections_flush(void)                        /* main loop */
 }
 #endif
 #endif /* PROJ_HOST */
+#endif /* FELUCCA_FLASH: settings persistence */
