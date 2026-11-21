@@ -22,12 +22,8 @@ int main(void) {
         horatio_plaits_all_off(0);
         horatio_plaits_render(0, samples, 48);
 
-        /* Speech model's LPC word banks need a much larger decoded-frame
-         * workspace than the FM-1 per-voice arena. Exercise its formant/SAM/
-         * LPC-vowel range here; word-bank mode needs a separate memory design. */
-        const uint16_t harmonics = model == 15u ? 8192u : 19660u;
         horatio_plaits_configure(0, model, 60 * 128,
-                                 harmonics, 16384, 19660,
+                                 19660, 16384, 19660,
                                  24575, 16384, 0, 32767);
         horatio_plaits_note_on(0);
         horatio_plaits_render(0, samples, 1024);
