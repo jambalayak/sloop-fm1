@@ -1,129 +1,136 @@
 # HORATIO-1 Factory Preset Bank
 
-**Status:** 45 active presets; original IDs retained with gaps at 11, 14, 29, 33 and 39. This specification is not yet a hardware-validated bank.
+**Factory bank:** 103 complete Rochefsky Plaits 1.2 recipes. No genre groupings. The previous 45 HORATIO-designed factory sounds have been replaced on the `plaits-development` branch.
 
-A 45-sound factory bank for the three HORATIO-1 synth tracks, plus 12 three-track performance templates. No drum engine, drum preset or drum lane is used; all four legacy drum lanes are to remain muted in these templates.
+**Source:** [Rochefsky — Plaits sound-design recipes](https://www.rochefsky.com/learnings/plaits), shared spreadsheet/PDF supplied for this project.
 
-## Parameter and model translation
+## Model mapping
 
-H/T/M mean Plaits **Harmonics / Timbre / Morph**, specified as percentages. Convert to the Plaits 0–127 range at import time (round percentage × 127 / 100, then clamp).
+The source's bank/model numbers map to the 24 Plaits 1.2 engines as follows:
 
-Target model translations:
-- Virtual Analog → Virtual Analog
-- Chords → Chord
-- Waveshaping and Wavefolder → Waveshaping
-- Two-Op FM → FM
-- Additive and Harmonic Osc → Harmonics
-- String (Karplus) → String
-- Formant / Vowel → Speech, with formant-style settings
-- Modal Resonator → Modal
-- Granular Cloud → Grain
-- Particle Noise → Particle
-- Phase Distortion → JamesOS Phase Distortion only if that optional extension is deliberately adopted; otherwise use Waveshaping as a documented approximation.
+- Orange 1–8 → HORATIO model indices 0–7
+- Green 1–8 → HORATIO model indices 8–15
+- Red 1–8 → HORATIO model indices 16–23
 
-Do not substitute Plaits' bass drum, snare or hi-hat models for any entry. Percussive character is made with pitched/synth models and envelopes. Filter, envelope, LFO and FX notes below are sound-design targets, not yet validated register values. Translate them to controls actually supported by HORATIO-1. If LFO 2, stereo sends, a specific modulation destination or a requested chord voicing is unavailable, document the closest supported sound rather than inventing controls.
+The model index is zero-based in firmware. The recipe bank order follows the source sheet, not a genre grouping.
 
-## Synthwave (01–17)
+## Factory recipes
 
-| # | Name | Model | H/T/M % | Filter, envelope, modulation and FX target |
-|---:|---|---|---:|---|
-| 01 | Outrun Sub | Virtual Analog | 35/60/20 | LP 30%, resonance 25%; snappy filter decay 25%; driving 8th-note bass |
-| 02 | Nightcall Pulse | Virtual Analog | 20/45/80 | Narrow PWM square; slow sine LFO 1 to Timbre for chorus-like width |
-| 03 | Juno Brass 84 | Chord | 40/55/45 | Minor 7th voicing; slow amp attack 25%; subtle LFO 1 pitch drift |
-| 04 | Miami Horizon | Waveshaping | 50/65/40 | Rich saw-fold; long release 55%; stereo reverb send |
-| 05 | Turbo Arp | Virtual Analog | 30/70/35 | Short amp/filter decay 18%, zero sustain; crisp arpeggiator pluck |
-| 06 | Laser Harp | FM | 65/75/30 | Bright sync-like harmonic bite; medium delay send |
-| 07 | Chrome Lead | Virtual Analog | 50/80/25 | Detuned dual-saw; 5 Hz sine LFO 1 to Pitch for solo vibrato |
-| 08 | Neon Poly | Chord | 60/40/50 | Major 9th chord; medium filter cutoff 45%; warm envelope |
-| 09 | Kavinsky Growl | Waveshaping | 25/75/60 | Aggressive folded bass; LP cutoff 35%; high envelope depth |
-| 10 | Sunset Strings | Harmonics | 45/50/65 | Slow attack 45%, long release 65%; slow LFO 2 sweep on Morph |
-| 12 | Arcade Octaver | Virtual Analog | 50/50/10 | One-octave spread; punchy envelope for bass/lead doubling |
-| 13 | Analog Tom-Bass | FM | 40/60/20 | Pitch-envelope drop on attack; hybrid percussive synth bass, not a drum voice |
-| 15 | Grid Runner | Phase Distortion* | 35/65/50 | Resonant digital saw; tight 16th-note decay |
-| 16 | Tape Detune Keys | Virtual Analog | 42/38/30 | LP 40%; triangle LFO 1 gently detunes Pitch |
-| 17 | Midnight Skyline | String | 50/60/75 | Bright plucked synth-guitar; stereo delay |
+| # | Recipe | Source model → firmware index | Trigger in source | H/T/M values (0–127) |
+|---:|---|---|---|---:|
+| 1 | Orchestra tuning up poorly | Red 1 → 16 | no | 89/38/70 |
+| 2 | Bowed string Instrument harmonics | Red 1 → 16 | no | 25/25/64 |
+| 3 | Mosquito in your ear | Red 1 → 16 | no | 0/0/0 |
+| 4 | side-chainy string pluck (Bass - Guitar) | Red 1 → 16 | yes | 25/0/64 |
+| 5 | bouncing marimba mallets | Red 2 → 17 | yes | 127/25/89 |
+| 6 | noisy marimba | Red 2 → 17 | yes | 64/127/127 |
+| 7 | Bubbling liquid | Red 3 → 18 | no | 64/76/83 |
+| 8 | Puddle Walking / Dog Drinking | Red 3 → 18 | yes | 127/76/83 |
+| 9 | Walking through a cement tunnel | Red 3 → 18 | yes | 64/76/25 |
+| 10 | Wind Chimes | Red 3 → 18 | no | 64/25/127 |
+| 11 | water dripping | Red 3 → 18 | yes | 0/0/70 |
+| 12 | water dripping too | Red 3 → 18 | yes | 0/0/70 |
+| 13 | water dripping three | Red 3 → 18 | yes | 0/0/127 |
+| 14 | Computer Thinking noise | Red 3 → 18 | no | 102/89/127 |
+| 15 | Harp - soft | Red 4 → 19 | yes | 0/0/83 |
+| 16 | Harp - buzzy | Red 4 → 19 | yes | 0/89/89 |
+| 17 | Large InHarmonic Church Bells | Red 4 → 19 | yes | 89/127/127 |
+| 18 | Buzzy String Pad | Red 4 → 19 | yes | 25/127/127 |
+| 19 | Snare-like Wood Blocks | Red 4 → 19 | yes | 127/127/127 |
+| 20 | Wood Blocks | Red 4 → 19 | yes | 127/127/0 |
+| 21 | String Mutes | Red 4 → 19 | yes | 0/102/25 |
+| 22 | Steel Drum | Red 4 → 19 | yes | 102/127/51 |
+| 23 | Brass Section | Red 4 → 19 | yes | 13/127/83 |
+| 24 | Standing Bass | Red 4 → 19 | yes | 0/64/64 |
+| 25 | Slap Standing Bass | Red 4 → 19 | yes | 0/127/0 |
+| 26 | Glass Bells | Red 5 → 20 | yes | 127/45/51 |
+| 27 | Glass Bells hit with pencil | Red 5 → 20 | yes | 127/45/51 |
+| 28 | water dripping - low | Red 5 → 20 | yes | 25/127/0 |
+| 29 | Xylophone | Red 5 → 20 | yes | 127/64/51 |
+| 30 | wood sticks | Red 5 → 20 | yes | 127/127/0 |
+| 31 | Electronic popcorn | Red 5 → 20 | yes | 0/127/0 |
+| 32 | Space ships & Laser Beams | Red 5 → 20 | yes | 64/64/96 |
+| 33 | baby chicks | Red 5 → 20 | yes | 64/127/0 |
+| 34 | Resonant Bass | Red 5 → 20 | yes | 38/0/38 |
+| 35 | Toy Piano | Red 6 → 21 | yes | 64/0/64 |
+| 36 | Standing Bass Plucked | Red 6 → 21 | yes | 64/25/102 |
+| 37 | Emergency vehicle | Red 6 → 21 | yes | 127/64/127 |
+| 38 | snappy closed hi-hat | Red 7 → 22 | yes | 127/64/25 |
+| 39 | softer closed hi-hat | Red 7 → 22 | yes | 127/64/25 |
+| 40 | Snap a whip | Red 7 → 22 | yes | 127/64/51 |
+| 41 | Muted Strings | Red 7 → 22 | yes | 0/25/25 |
+| 42 | Frog Croak-ish | Red 7 → 22 | yes | 0/64/77 |
+| 43 | gun shot | Red 8 → 23 | yes | 127/0/70 |
+| 44 | trash can / pots & pans | Red 8 → 23 | yes | 45/64/70 |
+| 45 | great phaser gun | Red 8 → 23 | yes | 0/0/51 |
+| 46 | phaser laser gun | Red 8 → 23 | yes | 38/89/64 |
+| 47 | Bass - Plucky | Green 1 → 8 | yes | 64/64/64 |
+| 48 | Harmonium | Green 1 → 8 | yes | 64/64/64 |
+| 49 | Bass Drum | Green 1 → 8 | yes | 64/64/64 |
+| 50 | Monster FootSteps | Green 1 → 8 | yes | 64/64/102 |
+| 51 | Cello section | Green 1 → 8 | no | 38/64/64 |
+| 52 | De-tuned Classic Synth | Green 1 → 8 | yes | 38/38/89 |
+| 53 | Deep Grungy bass drone | Green 1 → 8 | no | 38/38/89 |
+| 54 | Electric string bass | Green 2 → 9 | yes | 0/64/64 |
+| 55 | Plucky Strings | Green 2 → 9 | yes | 0/64/64 |
+| 56 | Marimba / bells | Green 2 → 9 | yes | 0/64/0 |
+| 57 | Mandolin or Oud | Green 2 → 9 | yes | 38/0/76 |
+| 58 | Muted Bells | Green 2 → 9 | yes | 64/0/0 |
+| 59 | Muted Strings | Green 2 → 9 | yes | 64/0/127 |
+| 60 | Buzzy Sitar | Green 3 → 10 | yes | 0/127/127 |
+| 61 | Melodic Frog | Green 4 → 11 | yes | 102/64/76 |
+| 62 | Say Ah and other Ew | Green 4 → 11 | yes | 76/76/76 |
+| 63 | Trombone | Green 5 → 12 | yes | 25/64/25 |
+| 64 | Wah Wah | Green 5 → 12 | yes | 64/64/64 |
+| 65 | Pew Pew | Green 5 → 12 | yes | 64/83/64 |
+| 66 | Cat Purr | Green 5 → 12 | no | 64/38/64 |
+| 67 | Flute-ish | Green 5 → 12 | no | 0/45/127 |
+| 68 | Clarinet-ish | Green 5 → 12 | no | 45/38/0 |
+| 69 | Vowel Sounds (modulate!) | Green 5 → 12 | no | 64/64/64 |
+| 70 | Harmonic Organ | Green 6 → 13 | yes | 127/96/102 |
+| 71 | Standing Bass Too | Green 6 → 13 | yes | 127/64/64 |
+| 72 | Weh Wah | Green 6 → 13 | yes | 64/64/64 |
+| 73 | SpaceShip Chaos | Green 6 → 13 | yes | 127/64/64 |
+| 74 | Doom Bass Drone | Green 7 → 14 | no | 32/25/32 |
+| 75 | Halloween Organ | Green 7 → 14 | yes | 51/0/38 |
+| 76 | Arpegiatish | Green 7 → 14 | yes | 0/25/64 |
+| 77 | Piano Sweep | Green 7 → 14 | yes | 89/25/64 |
+| 78 | Congregation Organ | Green 7 → 14 | yes | 13/0/83 |
+| 79 | Dafty Punky | Green 8 → 15 | yes | 38/25/64 |
+| 80 | Oh Yeah | Green 8 → 15 | yes | 0/25/25 |
+| 81 | Oy! | Green 8 → 15 | yes | 0/25/64 |
+| 82 | Ah | Green 8 → 15 | yes | 0/64/0 |
+| 83 | Aye | Green 8 → 15 | yes | 0/64/83 |
+| 84 | Ayo | Green 8 → 15 | yes | 0/64/127 |
+| 85 | ROYGBIV Rainbow Colors | Green 8 → 15 | yes | 64/64/64 |
+| 86 | Counting one to ten | Green 8 → 15 | yes | 76/64/64 |
+| 87 | Alphabet | Green 8 → 15 | yes | 83/64/64 |
+| 88 | Radio Speak | Green 8 → 15 | yes | 89/64/64 |
+| 89 | Technical Jargon | Green 8 → 15 | yes | 102/64/64 |
+| 90 | Classic Synth Bass | Orange 1 → 0 | yes | 89/127/127 |
+| 91 | play your cheeks | Orange 1 → 0 | yes | 127/25/25 |
+| 92 | low horns section | Orange 1 → 0 | yes | 64/83/64 |
+| 93 | Choice of Bass | Orange 1 → 0 | yes | 64/102/25 |
+| 94 | Violin String Pluck | Orange 2 → 1 | yes | 127/0/127 |
+| 95 | Pure Electric strings | Orange 2 → 1 | yes | 127/127/0 |
+| 96 | Tuba or Airy Standing Bass | Orange 6 → 5 | yes | 64/25/25 |
+| 97 | Motor | Orange 6 → 5 | yes | 127/64/64 |
+| 98 | pulsing sidechain saw | Orange 6 → 5 | yes | 127/0/0 |
+| 99 | slow rise saw-chain | Orange 6 → 5 | yes | 95/127/127 |
+| 100 | Bass with Chords | Orange 7 → 6 | yes | 25/127/25 |
+| 101 | sidechained rhythmic house chords | Orange 7 → 6 | yes | 51/102/64 |
+| 102 | Your unexpected Arp | Orange 7 → 6 | yes | 13/114/64 |
+| 103 | All the Arpeggios | Orange 8 → 7 | yes | 64/64/64 |
 
-## Vaporwave (18–34)
+## Translation notes and limitations
 
-| # | Name | Model | H/T/M % | Filter, envelope, modulation and FX target |
-|---:|---|---|---:|---|
-| 18 | Mallsoft DX EP | FM | 75/35/20 | Soft EP tine; slow random/triangle LFO to Pitch for tape warble |
-| 19 | VHS Choir | Speech | 50/40/65 | Dark ooh/aah formant; slow attack 55%; LFO 2 sweeps Morph |
-| 20 | Macintosh Pad | Harmonics | 45/30/70 | Filtered hazy partials; LP cutoff 38%; long release 75% |
-| 21 | Seapunk Pluck | String | 60/45/55 | Glassy chorus-like pluck; medium decay and lush reverb |
-| 22 | Muzak Slap Bass | Waveshaping | 25/45/35 | Rubbery mid-range fretless tone; snappy filter decay |
-| 23 | Lobby Sax | Speech | 65/50/40 | Breathy lo-fi synth reed; LFO 1 vibrato on Pitch |
-| 24 | Eccojam Loop | Chord | 30/35/60 | Minor chord stab; LP 35%; pitch LFO for slowed-tape sag |
-| 25 | Crystal Fountain | Modal | 55/40/65 | Shimmering water-drop harmonics; long decay and delay |
-| 26 | Faded Cassette | Virtual Analog | 40/25/50 | Heavily low-passed 28%; irregular LFO pitch flutter |
-| 27 | Plaza Organ | Harmonics | 60/35/45 | Warm drawbar-style organ; zero attack, medium release |
-| 28 | Dreamcast Menu | FM | 80/40/25 | Airy glassy bell pad; slow attack 35%; high reverb |
-| 30 | Poolside Marimba | Modal | 35/50/30 | Warm wooden mallet tone; short decay 28% |
-| 31 | Hypnagogic Drift | Grain | 45/30/70 | Soft smeared harmonic cloud; slow LFO on Harmonics |
-| 32 | Sega Sunset | FM | 50/45/35 | Warm 16-bit FM brass/pad hybrid; medium attack |
-| 34 | Slowed Flute | Particle | 40/35/80 | Pitched airy-noise resonance; soft attack 30% |
+- The three direct Plaits controls are imported: Harmonics, Timbre and Morph. Clock-face positions are converted to the firmware's 0–127 range, with 7 o'clock at 0, 12 o'clock at 64 and 5 o'clock at 127. Ranges are represented by their midpoint; “center”, “any”, “all” and static “modulate” entries use 64.
+- AUX notes are translated to the HORATIO AUX MIX control: OUT-only/no-AUX = 0, OUT+AUX mix = 64, AUX-only = 127.
+- The source's frequency ranges are playing-range guidance, not a Plaits parameter, so they are not applied as pitch limits.
+- Timbre attenuator/CV, Morph attenuator/CV and FM attenuator/CV are modulation-patch instructions. HORATIO's current preset schema does not store those patch routings; their static knob values are imported, but external CV/modulation behavior is not recreated.
+- “Trigger yes/no” is preserved in the source list but the current HORATIO Plaits adapter triggers notes from the sequencer/keyboard uniformly. Per-recipe trigger-patch behavior is not yet implemented.
+- Envelope LED counts are indicators from the original module, not ADSR values. They are not copied into unrelated HORATIO envelope parameters.
+- The three “ANY 32 DX7 FM Synthesis Patches” rows are instructions to curate external patch banks, not sound settings. They are not represented as fake presets. The five rows under the source's “INCOMPLETE - FUTURE AREA” section are also excluded.
+- Plaits' individual percussion models remain available as synth models. HORATIO still has no drum machine, drum track, drum kit or drum sequencer.
 
-## IDM & Braindance (35–50)
-
-| # | Name | Model | H/T/M % | Filter, envelope, modulation and FX target |
-|---:|---|---|---:|---|
-| 35 | Clockwork Modal | Modal | 62/55/40 | Inharmonic metallic pluck; S&H LFO 1 at 1/16 to Harmonics and Morph |
-| 36 | Autechre Grain | Grain | 70/60/50 | Scattered micro-grains; fast S&H LFO 2 to Timbre; conditional triggers |
-| 37 | Aphex Rubber | Waveshaping | 25/70/65 | Squelchy acid bass; resonance 70%; S&H LFO modulates filter cutoff |
-| 38 | Glass Bell | Modal | 75/80/35 | Bright inharmonic resonator; short decay 18%; S&H on Timbre |
-| 40 | BoC Warped Tape | Virtual Analog | 45/35/55 | Nostalgic detuned saw; slow S&H/triangle pitch drift |
-| 41 | FM Metallic Ping | FM | 88/70/60 | Non-integer FM ratio; sharp transient, attack 0 and decay 15% |
-| 42 | Liquid Formant | Speech | 55/75/50 | Squelchy vocal-filter sweep; fast LFO 1 modulates Morph |
-| 43 | Squarepusher Sub | Waveshaping | 20/65/80 | Growling folded sub-bass; fast envelope for rapid 16th-note runs |
-| 44 | Inharmonic Bell | Harmonics | 85/60/40 | Clashing upper partials; S&H LFO 1 randomizes partial tilt |
-| 45 | Data Stream | Grain | 90/85/30 | High-density digital stutter texture; pair with Punch FX stutter |
-| 46 | Resonant Pipe | Modal | 30/70/85 | Hollow bowed tube; slow attack 35%; LFO on Harmonics |
-| 47 | Acid 303-FM | FM | 33/75/55 | Feedback-driven FM acid; high filter resonance and accented envelope |
-| 48 | Fractured Chord | Chord | 65/70/40 | S&H LFO 1 to Harmonics for chord-inversion movement where supported |
-| 49 | Static Geiger | Particle | 60/40/90 | Sparse resonant clicks; use sequencer probability, not a drum lane |
-| 50 | Sub-Harmonic Pulse | Harmonics | 15/65/50 | Deep shifting sub-partials; slow LFO 2 modulates Timbre |
-
-*Phase Distortion is a JamesOS extension, not one of the 16 standard Plaits 1.2 models. If HORATIO-1 remains strictly standard Plaits, preset 15 uses the documented Waveshaping approximation.
-
-## Three-track combination trios
-
-Each template assigns one sound to each of the three synth tracks. Keep all four drum lanes muted. Octave ranges and pattern ideas are starting points.
-
-### Synthwave
-
-1. **Classic Driving Outrun** — T1 [01] Outrun Sub, Oct 1–2, tight 8th-note pulse; T2 [03] Juno Brass 84, Oct 3–4, sustained chords; T3 [07] Chrome Lead, Oct 4–5, melody and stereo delay.
-2. **Shimmering Retro-Arp** — T1 [09] Kavinsky Growl, Oct 1, whole/half-note roots; T2 [05] Turbo Arp, Oct 3–4, 16th-note arp; T3 [41] FM Metallic Ping, Oct 5, sparse counter-melody and reverb.
-3. **Dark Cyberpunk / Darksynth** — T1 [13] Analog Tom-Bass, Oct 1–2, syncopated octave jumps; T2 [15] Grid Runner, Oct 3, gated 16th-note ostinato and high resonance; T3 [10] Sunset Strings, Oct 4–5, slow fifths/octaves and heavy reverb.
-4. **Nostalgic Sunset Cruise** — T1 [02] Nightcall Pulse, Oct 1–2, steady PWM bass and LP cutoff about 35%; T2 [17] Midnight Skyline, Oct 3–4, off-beat plucks and dotted-8th delay; T3 [06] Laser Harp, Oct 4–5, expressive sync-style lead.
-
-### Vaporwave
-
-5. **Late-Night Mallsoft** — T1 [22] Muzak Slap Bass, Oct 1–2, syncopated fretless groove; T2 [18] Mallsoft DX EP, Oct 3–4, slow detuned 7th/9th chords; T3 [19] VHS Choir, Oct 4–5, held top-line notes, panned opposite T2.
-6. **Hypnagogic Plunder-Loop** — T1 [20] Macintosh Pad, Oct 2–3, thick low-passed pad chords; T2 [21] Seapunk Pluck, Oct 4, off-beat stabs or broken arps; T3 [23] Lobby Sax, Oct 4–5, vibrato-heavy melody.
-7. **Weather Channel / Smooth Jazz Fusion** — T1 [12] Arcade Octaver, Oct 1–2, LP cutoff about 30%; T2 [08] Neon Poly, Oct 3–4, sustained sus4/11th chords; T3 [30] Poolside Marimba, Oct 4–5, syncopated tropical lead runs.
-8. **Abandoned Atrium / Utopian Virtual** — T1 [27] Plaza Organ, Oct 2–3, held root-fifth pedal tones tucked back; T2 [25] Crystal Fountain, Oct 4, sparse 8th-note arp and heavy stereo delay; T3 [34] Slowed Flute, Oct 4–5, long breathy notes and high reverb.
-
-### IDM & Braindance
-
-9. **Clockwork Melodic Glitch** — T1 [43] Squarepusher Sub, Oct 1–2, tightly gated bass and low cutoff; T2 [35] Clockwork Modal, Oct 3–4, 16th-note melodic percussion and S&H LFO; T3 [49] Static Geiger, Oct 5, sparse conditional triggers at 30–50% probability.
-10. **Nostalgic Tape Braindance** — T1 [50] Sub-Harmonic Pulse, Oct 1, deep slowly shifting sub notes; T2 [40] BoC Warped Tape, Oct 3–4, detuned triads and slow pitch drift; T3 [48] Fractured Chord, Oct 4–5, sparse stabs and S&H chord movement.
-11. **Acid Drill & Bass** — T1 [37] Aphex Rubber, Oct 2–3, 16th-note acid line, S&H cutoff and accents; T2 [41] FM Metallic Ping, Oct 5, rapid pitched FM hits at 50–70% probability; T3 [45] Data Stream, Oct 4, 1–2 events/bar at 25% probability and Punch FX stutters.
-12. **Crystalline Ambient Glitch** — T1 [47] Acid 303-FM, Oct 1, LP cutoff about 20% and slow sustained sub notes; T2 [38] Glass Bell, Oct 3–4, 5- or 7-step polyrhythm and S&H Timbre; T3 [44] Inharmonic Bell, Oct 5, sparse bell tones, long release and delay/reverb.
-
-## Performance and mix starting points
-
-- Keep Track 1 (bass/sub) centered; pan Tracks 2 and 3 about 20–35% left/right.
-- Try track lengths of 16 steps, 12 or 15 steps, and 7 or 9 steps for polyrhythmic combinations.
-- For a live drop, mute Track 1 for four bars while Tracks 2 and 3 ring out, then bring it back on the downbeat.
-
-## Implementation requirements
-
-1. Keep the 45 active names, original numbers (including intentional gaps), H/T/M values and sound-design targets.
-2. Implement as a factory bank separate from user-saved presets and projects.
-3. Loading must not overwrite patterns, track level, pan, tuning, scale, MIDI settings or keyboard mapping.
-4. Browsing should preview temporarily; explicit Load applies the sound.
-5. Store actual engine IDs and supported parameter values, not only descriptive labels.
-6. Provide category browsing and short screen-friendly names; retain full names in the editor/library.
-7. Add tests for all 50 entries, model-ID validity, macro conversion, parameter bounds and round-trip loading.
-8. Listen-test and level-match on hardware when available.
-9. Keep the current SLOOP build and project compatibility until Plaits integration is complete and validated.
+This is a faithful first translation of the complete recipe settings that HORATIO can currently represent, not a claim that every modular CV/trigger patch has been recreated.
