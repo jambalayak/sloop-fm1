@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * HORATIO-1 fixed-memory adapter for the 16 original Plaits models.
+ * HORATIO-1 fixed-memory adapter for all 24 Plaits 1.2 models.
  * Plaits/stmlib DSP remains MIT-licensed; retain upstream notices. */
 #include <new>
 #include <stdint.h>
@@ -37,7 +37,7 @@ struct PlaitsSlot {
 
 #define HORATIO_ALIGN8(n) (((n) + 7u) & ~7u)
 static uint8_t voice_storage[kVoiceCount][HORATIO_ALIGN8(sizeof(plaits::Voice))]
-    __attribute__((aligned(8)));
+    __attribute__((section(".pool"), aligned(8)));
 static PlaitsSlot slots[kVoiceCount] __attribute__((section(".pool"), aligned(8)));
 static plaits::Voice *voices[kVoiceCount];
 static stmlib::BufferAllocator *allocators[kVoiceCount];
