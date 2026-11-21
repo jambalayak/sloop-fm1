@@ -96,3 +96,35 @@ if ("chiptune_engine_" in vc or "phase_distortion_engine_" in vc or
         "if (engine_index == 15)" in vc):
     raise SystemExit("Plaits voice.cc still contains an engine2 registration or branch")
 print("Plaits model set reduced to the 16 original engines")
+
+# Four paraphonic voices use one shared Particle diffuser bus. The original
+# Plaits implementation allocates an 8192-sample (16 KiB) diffuser per voice;
+# sharing this effect state preserves the original delay lengths while
+# avoiding 48 KiB of duplicated delay RAM. Particle voices are rendered
+# sequentially by the FM-1 audio loop, so the shared diffuser is single-owner.
+particle_cc = root / "third_party" / "eurorack" / "plaits" / "dsp" / "engine" / "particle_engine.cc"
+patch_file(particle_cc, [
+    ("namespace plaits {\n\nusing namespace std;\nusing namespace stmlib;\n",
+     """namespace plaits {
+
+using namespace std;
+using namespace stmlib;
+
+namespace {
+Diffuser horatio_shared_particle_diffuser;
+uint16_t horatio_shared_particle_diffuser_buffer[8192]
+    __attribute__((section(".pool"), aligned(4)));
+bool horatio_shared_particle_diffuser_initialized;
+}
+"""),
+    ("  diffuser_.Init(allocator->Allocate<uint16_t>(8192));",
+     """  if (!horatio_shared_particle_diffuser_initialized) {
+    horatio_shared_particle_diffuser.Init(horatio_shared_particle_diffuser_buffer);
+    horatio_shared_particle_diffuser_initialized = true;
+  }"""),
+    ("  diffuser_.Reset();", "  horatio_shared_particle_diffuser.Reset();"),
+    ("  diffuser_.Process(\n      0.8f * diffusion * diffusion,",
+     "  horatio_shared_particle_diffuser.Process(\n      0.8f * diffusion * diffusion,"),
+], "particle diffuser")
+print("Plaits Particle diffuser shared across the four paraphonic voices")
+
