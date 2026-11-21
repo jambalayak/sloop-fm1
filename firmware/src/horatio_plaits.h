@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 #define HORATIO_PLAITS_VOICES 4u
-#define HORATIO_PLAITS_MODELS 16u
+#define HORATIO_PLAITS_MODELS 24u
 
 void horatio_plaits_init(void);
 void horatio_plaits_block(void);

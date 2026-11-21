@@ -167,7 +167,7 @@ def build_cxx(probe=False):
     if not (stmlib / "stmlib.h").exists():
         raise SystemExit("HORATIO Plaits stmlib dependency is missing")
     # Only compile synthesis DSP, never the upstream STM32 drivers or bootloader.
-    sources = [*sorted(f for f in (eurorack / "plaits" / "dsp").rglob("*.cc") if "engine2" not in f.parts),
+    sources = [*sorted((eurorack / "plaits" / "dsp").rglob("*.cc")),
                eurorack / "plaits" / "resources.cc",
                stmlib / "dsp" / "units.cc",
                stmlib / "utils" / "random.cc",

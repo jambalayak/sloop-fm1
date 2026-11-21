@@ -6,10 +6,12 @@
 /* The FM-1 value field is five characters wide. Keep these compact so
  * every model remains distinguishable instead of being silently truncated. */
 static const char *const PL_MODEL_NAMES[HORATIO_PLAITS_MODELS] = {
-    "V-ANL", "W-SHP", "2-OP", "FORMT",
-    "ADDIT", "W-TBL", "CHORD", "SPECH",
-    "SWARM", "NOISE", "PARTL", "STRNG",
-    "MODAL", "B-DRM", "SNR", "HIHAT"
+    /* Bank A: Plaits 1.2 orange additions (six-op FM banks share one engine). */
+    "VA-VCF", "P-DST", "6OP-I", "6OP-II", "6OP-III", "TERRN", "STR-M", "CHIP",
+    /* Bank B: original red models. */
+    "V-ANL", "W-SHP", "2-OP", "FORMT", "ADDIT", "W-TBL", "CHORD", "SPECH",
+    /* Bank C: original green models. */
+    "SWARM", "NOISE", "PARTL", "STRNG", "MODAL", "B-DRM", "SNR", "HIHAT"
 };
 
 /* H/T/M percentages from HORATIO-1-FACTORY-PRESET-BANK.md are converted
@@ -131,7 +133,7 @@ static void plaits_render(track_t *t, voice_t *v, int32_t *out,
     pitch_q7 = m->pitch16 * 8 + m->fine / 32;
     vca = plaits_q15(p[P_E7]);
     level = (uint16_t)(((uint32_t)v->vel * 258u * vca + 16383u) / 32767u);
-    horatio_plaits_configure(id - 1u, (uint32_t)clamp(p[P_E0], 0, 15),
+    horatio_plaits_configure(id - 1u, (uint32_t)clamp(p[P_E0], 0, 23),
         pitch_q7, plaits_q15(p[P_E1]), plaits_q15(p[P_E2]),
         plaits_q15(p[P_E3]), plaits_q15(p[P_E4]), plaits_q15(p[P_E5]),
         plaits_q15(p[P_E6]), level);
@@ -149,7 +151,7 @@ static void plaits_render(track_t *t, voice_t *v, int32_t *out,
 static const engine_t ENG_PLAITS = {
     "PLT", {"MODEL", "SHAPE"},
     {
-        {"MODEL", F_INT, 0, 15, 0, PL_MODEL_NAMES, 0},
+        {"MODEL", F_INT, 0, 23, 0, PL_MODEL_NAMES, 0},
         {"HARM", F_PCT, 0, 127, 64, 0, 0},
         {"TIMBRE", F_PCT, 0, 127, 64, 0, 0},
         {"MORPH", F_PCT, 0, 127, 64, 0, 0},
