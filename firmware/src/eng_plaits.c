@@ -6,11 +6,11 @@
 /* The FM-1 value field is five characters wide. Keep these compact so
  * every model remains distinguishable instead of being silently truncated. */
 static const char *const PL_MODEL_NAMES[HORATIO_PLAITS_MODELS] = {
-    /* Bank A: Plaits 1.2 orange additions (six-op FM banks share one engine). */
+    /* Orange bank: Plaits 1.2 additions (six-op FM banks share one engine). */
     "VA-VCF", "P-DST", "6OP-I", "6OP-II", "6OP-III", "TERRN", "STR-M", "CHIP",
-    /* Bank B: original red models. */
+    /* Green bank: original pitched-sound models. */
     "V-ANL", "W-SHP", "2-OP", "FORMT", "ADDIT", "W-TBL", "CHORD", "SPECH",
-    /* Bank C: original green models. */
+    /* Red bank: original noise, string and percussion models. */
     "SWARM", "NOISE", "PARTL", "STRNG", "MODAL", "B-DRM", "SNR", "HIHAT"
 };
 
