@@ -1,6 +1,6 @@
 # HORATIO-1 Factory Preset Bank
 
-**Factory bank:** 103 complete Rochefsky Plaits 1.2 recipes. No genre groupings. The previous 45 HORATIO-designed factory sounds have been replaced on the `plaits-development` branch.
+**Factory bank:** 106 entries: 103 complete Rochefsky Plaits 1.2 recipes plus three six-op FM bank selectors. The PRESETS browser exposes every entry in source-sheet order and groups them by Plaits bank (ORNG, GREEN, RED).
 
 **Source:** [Rochefsky — Plaits sound-design recipes](https://www.rochefsky.com/learnings/plaits), shared spreadsheet/PDF supplied for this project.
 
@@ -76,7 +76,7 @@ The model index is zero-based in firmware. The recipe bank order follows the sou
 | 56 | Marimba / bells | Green 2 → 9 | yes | 0/64/0 |
 | 57 | Mandolin or Oud | Green 2 → 9 | yes | 38/0/76 |
 | 58 | Muted Bells | Green 2 → 9 | yes | 64/0/0 |
-| 59 | Muted Strings | Green 2 → 9 | yes | 64/0/127 |
+| 59 | Muted Strings (Wave) | Green 2 → 9 | yes | 64/0/127 |
 | 60 | Buzzy Sitar | Green 3 → 10 | yes | 0/127/127 |
 | 61 | Melodic Frog | Green 4 → 11 | yes | 102/64/76 |
 | 62 | Say Ah and other Ew | Green 4 → 11 | yes | 76/76/76 |
@@ -134,3 +134,16 @@ The model index is zero-based in firmware. The recipe bank order follows the sou
 - Plaits' individual percussion models remain available as synth models. HORATIO still has no drum machine, drum track, drum kit or drum sequencer.
 
 This is a faithful first translation of the complete recipe settings that HORATIO can currently represent, not a claim that every modular CV/trigger patch has been recreated.
+
+
+## Additional six-op model selectors
+
+The source recipe sheet does not enumerate the three DX7-style six-op banks. HORATIO adds three neutral starting presets so all eight orange-bank models are reachable from the factory browser:
+
+| # | Preset | Model index | Patch source |
+|---:|---|---:|---|
+| 104 | 6OP FM Bank I | 2 | Bundled default patch data |
+| 105 | 6OP FM Bank II | 3 | Bundled default patch data |
+| 106 | 6OP FM Bank III | 4 | Bundled default patch data |
+
+These are model-access presets, not named DX7 patch collections. The browser's three categories are the Plaits banks: ORNG (models 0–7), GREEN (8–15), and RED (16–23).
