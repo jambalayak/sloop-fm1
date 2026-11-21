@@ -97,34 +97,24 @@ if ("chiptune_engine_" in vc or "phase_distortion_engine_" in vc or
     raise SystemExit("Plaits voice.cc still contains an engine2 registration or branch")
 print("Plaits model set reduced to the 16 original engines")
 
-# Four paraphonic voices use one shared Particle diffuser bus. The original
-# Plaits implementation allocates an 8192-sample (16 KiB) diffuser per voice;
-# sharing this effect state preserves the original delay lengths while
-# avoiding 48 KiB of duplicated delay RAM. Particle voices are rendered
-# sequentially by the FM-1 audio loop, so the shared diffuser is single-owner.
+# Keep the Particle engine's diffuser independent per voice while reducing
+# its delay-line footprint for the FM-1's four-voice memory budget. All seven
+# all-pass/delay lines remain; their lengths and modulation ranges are scaled
+# to one quarter, preserving the diffusion topology with shorter decay times.
 particle_cc = root / "third_party" / "eurorack" / "plaits" / "dsp" / "engine" / "particle_engine.cc"
+diffuser_h = root / "third_party" / "eurorack" / "plaits" / "dsp" / "fx" / "diffuser.h"
 patch_file(particle_cc, [
-    ("namespace plaits {\n\nusing namespace std;\nusing namespace stmlib;\n",
-     """namespace plaits {
-
-using namespace std;
-using namespace stmlib;
-
-namespace {
-Diffuser horatio_shared_particle_diffuser;
-uint16_t horatio_shared_particle_diffuser_buffer[8192]
-    __attribute__((section(".pool"), aligned(4)));
-bool horatio_shared_particle_diffuser_initialized;
-}
-"""),
     ("  diffuser_.Init(allocator->Allocate<uint16_t>(8192));",
-     """  if (!horatio_shared_particle_diffuser_initialized) {
-    horatio_shared_particle_diffuser.Init(horatio_shared_particle_diffuser_buffer);
-    horatio_shared_particle_diffuser_initialized = true;
-  }"""),
-    ("  diffuser_.Reset();", "  horatio_shared_particle_diffuser.Reset();"),
-    ("  diffuser_.Process(\n      0.8f * diffusion * diffusion,",
-     "  horatio_shared_particle_diffuser.Process(\n      0.8f * diffusion * diffusion,"),
-], "particle diffuser")
-print("Plaits Particle diffuser shared across the four paraphonic voices")
-
+     "  diffuser_.Init(allocator->Allocate<uint16_t>(2048));"),
+], "particle engine")
+patch_file(diffuser_h, [
+    ("E::Reserve<126,\n      E::Reserve<180,\n      E::Reserve<269,\n      E::Reserve<444,\n      E::Reserve<1653,\n      E::Reserve<2010,\n      E::Reserve<3411>",
+     "E::Reserve<32,\n      E::Reserve<45,\n      E::Reserve<67,\n      E::Reserve<111,\n      E::Reserve<413,\n      E::Reserve<503,\n      E::Reserve<853>"),
+    ("c.Interpolate(ap4, 400.0f, LFO_1, 43.0f, kap);",
+     "c.Interpolate(ap4, 100.0f, LFO_1, 10.75f, kap);"),
+    ("c.Interpolate(del, 3070.0f, LFO_1, 340.0f, rt);",
+     "c.Interpolate(del, 767.5f, LFO_1, 85.0f, rt);"),
+    ("typedef FxEngine<8192, FORMAT_12_BIT> E;",
+     "typedef FxEngine<2048, FORMAT_12_BIT> E;"),
+], "Particle diffuser")
+print("Plaits Particle diffuser adapted to 2048 samples per voice (independent voices)")
