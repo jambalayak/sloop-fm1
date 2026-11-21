@@ -44,7 +44,10 @@ static stmlib::BufferAllocator *allocators[kVoiceCount];
 static uint8_t initialized;
 
 static float unit_q15(uint16_t value) {
-    return static_cast<float>(value) * (1.0f / 32767.0f);
+    /* Q15 is signed 1.15: 32767 represents 1 - 2^-15, not 1.0.
+     * Keeping the endpoint below 1.0 also avoids an upstream Plaits DX-FM
+     * interpolation over-read at exactly velocity 1.0. */
+    return static_cast<float>(value) * (1.0f / 32768.0f);
 }
 
 static void render_chunk(uint32_t index, uint32_t trigger) {
