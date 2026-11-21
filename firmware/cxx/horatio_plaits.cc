@@ -11,7 +11,7 @@
 
 namespace {
 
-static const uint32_t kArenaBytes = 4096u;
+static const uint32_t kArenaBytes = 8192u;
 static const uint32_t kVoiceCount = HORATIO_PLAITS_VOICES;
 static const uint32_t kFrameCount = plaits::kBlockSize;
 
