@@ -31,20 +31,30 @@ if len(set(envelopes)) < 8:
 if all(env == (0, 0, 0, 0) for env in envelopes):
     raise SystemExit("Factory presets have no programmed ADSR envelopes")
 
-# Prevent sustained instruments from collapsing into short clicks. Deliberately
-# percussive recipes may use zero sustain, but still need a usable decay/release.
-percussive = re.compile(r"drip|marimba|mallet|chime|bell|wood block|snare|steel drum|xylophone|hi.hat|whip|gun|laser|pew pew|popcorn|stick|percuss|bouncing|mosquito|emergency vehicle|space ship|computer thinking|bubbling liquid|puddle walking|dog drinking|motor\b", re.I)
-pads = re.compile(r"pad|string|orchestra|cello|violin|harmonium|organ|drone|church|choir|slow rise|sidechain|side.chain|chord|saw.chain", re.I)
+# Envelope checks are based on each sound's identity, not broad bass/lead/pad classes.
+# The table is authored per preset; identical ADSR tuples are rejected.
+percussive = re.compile(r"drip|marimba|mallet|chime|bell|wood block|snare|steel drum|xylophone|hi.hat|whip|gun|laser|pew pew|popcorn|stick|percuss|bouncing|mosquito|emergency vehicle|space ship|computer thinking|bubbling liquid|puddle walking|dog drinking|motor\\b|toy piano|harp|mandolin|oud|plucked|pluck|sitar|piano", re.I)
+plucked = re.compile(r"bass|guitar|piano|pluck|mandolin|oud|sitar|epiano|e\\. piano|clav|rhodes", re.I)
+pads = re.compile(r"pad|string|orchestra|cello|violin|harmonium|organ|drone|church|choir|slow rise|sidechain|side.chain|chord|saw.chain|ensemble", re.I)
+winds = re.compile(r"brass|horn|trumpet|trombone|sax|flute|clarinet|reed|voice|vocal", re.I)
 for name, env in zip(names, envelopes):
     attack, decay, sustain, release = env
-    if percussive.search(name):
+    if percussive.search(name) and not pads.search(name):
         if decay < 64 or release < 44:
             raise SystemExit(f"{name}: percussive envelope is too short to avoid a click")
-    elif pads.search(name):
+    elif pads.search(name) and not plucked.search(name):
         if attack < 18 or decay < 82 or sustain < 88 or release < 88:
             raise SystemExit(f"{name}: pad/string envelope is too short for a sustained sound")
-    elif attack < 5 or decay < 76 or sustain < 76 or release < 68:
-        raise SystemExit(f"{name}: sustained preset needs a usable amp envelope")
+    elif plucked.search(name):
+        if attack > 12 or decay < 56 or release < 30:
+            raise SystemExit(f"{name}: plucked/piano/bass envelope lacks a defined attack or natural tail")
+    elif winds.search(name):
+        if attack > 18 or decay < 68 or sustain < 70 or release < 42:
+            raise SystemExit(f"{name}: wind/brass envelope does not sustain naturally")
+    elif attack > 24 or decay < 60 or release < 40:
+        raise SystemExit(f"{name}: general synth envelope is outside the useful range")
+if len(set(envelopes)) != len(envelopes):
+    raise SystemExit("Every factory preset must have its own unique ADSR envelope")
 preset_lines = [line for line in preset_block.splitlines() if line.lstrip().startswith('{"')]
 fenvs = []
 filter_cutoffs = []
