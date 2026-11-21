@@ -9,8 +9,8 @@
 The source's bank/model numbers map to the 24 Plaits 1.2 engines as follows:
 
 - Orange 1–8 → HORATIO model indices 0–7
-- Green 1–8 → HORATIO model indices 8–15
-- Red 1–8 → HORATIO model indices 16–23
+- Green 1–7 → HORATIO model indices 8–14
+- Red 1–8 → HORATIO model indices 15–22
 
 The model index is zero-based in firmware. The recipe bank order follows the source sheet, not a genre grouping.
 
@@ -18,52 +18,52 @@ The model index is zero-based in firmware. The recipe bank order follows the sou
 
 | # | Recipe | Source model → firmware index | Trigger in source | H/T/M values (0–127) |
 |---:|---|---|---|---:|
-| 1 | Orchestra tuning up poorly | Red 1 → 16 | no | 89/38/70 |
-| 2 | Bowed string Instrument harmonics | Red 1 → 16 | no | 25/25/64 |
-| 3 | Mosquito in your ear | Red 1 → 16 | no | 0/0/0 |
-| 4 | side-chainy string pluck (Bass - Guitar) | Red 1 → 16 | yes | 25/0/64 |
-| 5 | bouncing marimba mallets | Red 2 → 17 | yes | 127/25/89 |
-| 6 | noisy marimba | Red 2 → 17 | yes | 64/127/127 |
-| 7 | Bubbling liquid | Red 3 → 18 | no | 64/76/83 |
-| 8 | Puddle Walking / Dog Drinking | Red 3 → 18 | yes | 127/76/83 |
-| 9 | Walking through a cement tunnel | Red 3 → 18 | yes | 64/76/25 |
-| 10 | Wind Chimes | Red 3 → 18 | no | 64/25/127 |
-| 11 | water dripping | Red 3 → 18 | yes | 0/0/70 |
-| 12 | water dripping too | Red 3 → 18 | yes | 0/0/70 |
-| 13 | water dripping three | Red 3 → 18 | yes | 0/0/127 |
-| 14 | Computer Thinking noise | Red 3 → 18 | no | 102/89/127 |
-| 15 | Harp - soft | Red 4 → 19 | yes | 0/0/83 |
-| 16 | Harp - buzzy | Red 4 → 19 | yes | 0/89/89 |
-| 17 | Large InHarmonic Church Bells | Red 4 → 19 | yes | 89/127/127 |
-| 18 | Buzzy String Pad | Red 4 → 19 | yes | 25/127/127 |
-| 19 | Snare-like Wood Blocks | Red 4 → 19 | yes | 127/127/127 |
-| 20 | Wood Blocks | Red 4 → 19 | yes | 127/127/0 |
-| 21 | String Mutes | Red 4 → 19 | yes | 0/102/25 |
-| 22 | Steel Drum | Red 4 → 19 | yes | 102/127/51 |
-| 23 | Brass Section | Red 4 → 19 | yes | 13/127/83 |
-| 24 | Standing Bass | Red 4 → 19 | yes | 0/64/64 |
-| 25 | Slap Standing Bass | Red 4 → 19 | yes | 0/127/0 |
-| 26 | Glass Bells | Red 5 → 20 | yes | 127/45/51 |
-| 27 | Glass Bells hit with pencil | Red 5 → 20 | yes | 127/45/51 |
-| 28 | water dripping - low | Red 5 → 20 | yes | 25/127/0 |
-| 29 | Xylophone | Red 5 → 20 | yes | 127/64/51 |
-| 30 | wood sticks | Red 5 → 20 | yes | 127/127/0 |
-| 31 | Electronic popcorn | Red 5 → 20 | yes | 0/127/0 |
-| 32 | Space ships & Laser Beams | Red 5 → 20 | yes | 64/64/96 |
-| 33 | baby chicks | Red 5 → 20 | yes | 64/127/0 |
-| 34 | Resonant Bass | Red 5 → 20 | yes | 38/0/38 |
-| 35 | Toy Piano | Red 6 → 21 | yes | 64/0/64 |
-| 36 | Standing Bass Plucked | Red 6 → 21 | yes | 64/25/102 |
-| 37 | Emergency vehicle | Red 6 → 21 | yes | 127/64/127 |
-| 38 | snappy closed hi-hat | Red 7 → 22 | yes | 127/64/25 |
-| 39 | softer closed hi-hat | Red 7 → 22 | yes | 127/64/25 |
-| 40 | Snap a whip | Red 7 → 22 | yes | 127/64/51 |
-| 41 | Muted Strings | Red 7 → 22 | yes | 0/25/25 |
-| 42 | Frog Croak-ish | Red 7 → 22 | yes | 0/64/77 |
-| 43 | gun shot | Red 8 → 23 | yes | 127/0/70 |
-| 44 | trash can / pots & pans | Red 8 → 23 | yes | 45/64/70 |
-| 45 | great phaser gun | Red 8 → 23 | yes | 0/0/51 |
-| 46 | phaser laser gun | Red 8 → 23 | yes | 38/89/64 |
+| 1 | Orchestra tuning up poorly | Red 1 → 15 | no | 89/38/70 |
+| 2 | Bowed string Instrument harmonics | Red 1 → 15 | no | 25/25/64 |
+| 3 | Mosquito in your ear | Red 1 → 15 | no | 0/0/0 |
+| 4 | side-chainy string pluck (Bass - Guitar) | Red 1 → 15 | yes | 25/0/64 |
+| 5 | bouncing marimba mallets | Red 2 → 16 | yes | 127/25/89 |
+| 6 | noisy marimba | Red 2 → 16 | yes | 64/127/127 |
+| 7 | Bubbling liquid | Red 3 → 17 | no | 64/76/83 |
+| 8 | Puddle Walking / Dog Drinking | Red 3 → 17 | yes | 127/76/83 |
+| 9 | Walking through a cement tunnel | Red 3 → 17 | yes | 64/76/25 |
+| 10 | Wind Chimes | Red 3 → 17 | no | 64/25/127 |
+| 11 | water dripping | Red 3 → 17 | yes | 0/0/70 |
+| 12 | water dripping too | Red 3 → 17 | yes | 0/0/70 |
+| 13 | water dripping three | Red 3 → 17 | yes | 0/0/127 |
+| 14 | Computer Thinking noise | Red 3 → 17 | no | 102/89/127 |
+| 15 | Harp - soft | Red 4 → 18 | yes | 0/0/83 |
+| 16 | Harp - buzzy | Red 4 → 18 | yes | 0/89/89 |
+| 17 | Large InHarmonic Church Bells | Red 4 → 18 | yes | 89/127/127 |
+| 18 | Buzzy String Pad | Red 4 → 18 | yes | 25/127/127 |
+| 19 | Snare-like Wood Blocks | Red 4 → 18 | yes | 127/127/127 |
+| 20 | Wood Blocks | Red 4 → 18 | yes | 127/127/0 |
+| 21 | String Mutes | Red 4 → 18 | yes | 0/102/25 |
+| 22 | Steel Drum | Red 4 → 18 | yes | 102/127/51 |
+| 23 | Brass Section | Red 4 → 18 | yes | 13/127/83 |
+| 24 | Standing Bass | Red 4 → 18 | yes | 0/64/64 |
+| 25 | Slap Standing Bass | Red 4 → 18 | yes | 0/127/0 |
+| 26 | Glass Bells | Red 5 → 19 | yes | 127/45/51 |
+| 27 | Glass Bells hit with pencil | Red 5 → 19 | yes | 127/45/51 |
+| 28 | water dripping - low | Red 5 → 19 | yes | 25/127/0 |
+| 29 | Xylophone | Red 5 → 19 | yes | 127/64/51 |
+| 30 | wood sticks | Red 5 → 19 | yes | 127/127/0 |
+| 31 | Electronic popcorn | Red 5 → 19 | yes | 0/127/0 |
+| 32 | Space ships & Laser Beams | Red 5 → 19 | yes | 64/64/96 |
+| 33 | baby chicks | Red 5 → 19 | yes | 64/127/0 |
+| 34 | Resonant Bass | Red 5 → 19 | yes | 38/0/38 |
+| 35 | Toy Piano | Red 6 → 20 | yes | 64/0/64 |
+| 36 | Standing Bass Plucked | Red 6 → 20 | yes | 64/25/102 |
+| 37 | Emergency vehicle | Red 6 → 20 | yes | 127/64/127 |
+| 38 | snappy closed hi-hat | Red 7 → 21 | yes | 127/64/25 |
+| 39 | softer closed hi-hat | Red 7 → 21 | yes | 127/64/25 |
+| 40 | Snap a whip | Red 7 → 21 | yes | 127/64/51 |
+| 41 | Muted Strings | Red 7 → 21 | yes | 0/25/25 |
+| 42 | Frog Croak-ish | Red 7 → 21 | yes | 0/64/77 |
+| 43 | gun shot | Red 8 → 22 | yes | 127/0/70 |
+| 44 | trash can / pots & pans | Red 8 → 22 | yes | 45/64/70 |
+| 45 | great phaser gun | Red 8 → 22 | yes | 0/0/51 |
+| 46 | phaser laser gun | Red 8 → 22 | yes | 38/89/64 |
 | 47 | Bass - Plucky | Green 1 → 8 | yes | 64/64/64 |
 | 48 | Harmonium | Green 1 → 8 | yes | 64/64/64 |
 | 49 | Bass Drum | Green 1 → 8 | yes | 64/64/64 |
@@ -96,30 +96,19 @@ The model index is zero-based in firmware. The recipe bank order follows the sou
 | 76 | Arpegiatish | Green 7 → 14 | yes | 0/25/64 |
 | 77 | Piano Sweep | Green 7 → 14 | yes | 89/25/64 |
 | 78 | Congregation Organ | Green 7 → 14 | yes | 13/0/83 |
-| 79 | Dafty Punky | Green 8 → 15 | yes | 38/25/64 |
-| 80 | Oh Yeah | Green 8 → 15 | yes | 0/25/25 |
-| 81 | Oy! | Green 8 → 15 | yes | 0/25/64 |
-| 82 | Ah | Green 8 → 15 | yes | 0/64/0 |
-| 83 | Aye | Green 8 → 15 | yes | 0/64/83 |
-| 84 | Ayo | Green 8 → 15 | yes | 0/64/127 |
-| 85 | ROYGBIV Rainbow Colors | Green 8 → 15 | yes | 64/64/64 |
-| 86 | Counting one to ten | Green 8 → 15 | yes | 76/64/64 |
-| 87 | Alphabet | Green 8 → 15 | yes | 83/64/64 |
-| 88 | Radio Speak | Green 8 → 15 | yes | 89/64/64 |
-| 89 | Technical Jargon | Green 8 → 15 | yes | 102/64/64 |
-| 90 | Classic Synth Bass | Orange 1 → 0 | yes | 89/127/127 |
-| 91 | play your cheeks | Orange 1 → 0 | yes | 127/25/25 |
-| 92 | low horns section | Orange 1 → 0 | yes | 64/83/64 |
-| 93 | Choice of Bass | Orange 1 → 0 | yes | 64/102/25 |
-| 94 | Violin String Pluck | Orange 2 → 1 | yes | 127/0/127 |
-| 95 | Pure Electric strings | Orange 2 → 1 | yes | 127/127/0 |
-| 96 | Tuba or Airy Standing Bass | Orange 6 → 5 | yes | 64/25/25 |
-| 97 | Motor | Orange 6 → 5 | yes | 127/64/64 |
-| 98 | pulsing sidechain saw | Orange 6 → 5 | yes | 127/0/0 |
-| 99 | slow rise saw-chain | Orange 6 → 5 | yes | 95/127/127 |
-| 100 | Bass with Chords | Orange 7 → 6 | yes | 25/127/25 |
-| 101 | sidechained rhythmic house chords | Orange 7 → 6 | yes | 51/102/64 |
-| 102 | Your unexpected Arp | Orange 7 → 6 | yes | 13/114/64 |
+| 79 | Classic Synth Bass | Orange 1 → 0 | yes | 89/127/127 |
+| 80 | play your cheeks | Orange 1 → 0 | yes | 127/25/25 |
+| 81 | low horns section | Orange 1 → 0 | yes | 64/83/64 |
+| 82 | Choice of Bass | Orange 1 → 0 | yes | 64/102/25 |
+| 83 | Violin String Pluck | Orange 2 → 1 | yes | 127/0/127 |
+| 84 | Pure Electric strings | Orange 2 → 1 | yes | 127/127/0 |
+| 85 | Tuba or Airy Standing Bass | Orange 6 → 5 | yes | 64/25/25 |
+| 86 | Motor | Orange 6 → 5 | yes | 127/64/64 |
+| 87 | pulsing sidechain saw | Orange 6 → 5 | yes | 127/0/0 |
+| 88 | slow rise saw-chain | Orange 6 → 5 | yes | 95/127/127 |
+| 89 | Bass with Chords | Orange 7 → 6 | yes | 25/127/25 |
+| 90 | sidechained rhythmic house chords | Orange 7 → 6 | yes | 51/102/64 |
+| 91 | Your unexpected Arp | Orange 7 → 6 | yes | 13/114/64 |
 | 92 | All the Arpeggios | Orange 8 → 7 | yes | 64/64/64 |
 
 ## Translation notes and limitations
@@ -142,8 +131,8 @@ The source recipe sheet does not enumerate the three DX7-style six-op banks. HOR
 
 | # | Preset | Model index | Patch source |
 |---:|---|---:|---|
-| 104 | 6OP FM Bank I | 2 | Bundled default patch data |
-| 105 | 6OP FM Bank II | 3 | Bundled default patch data |
+| 93 | 6OP FM Bank I | 2 | Bundled default patch data |
+| 94 | 6OP FM Bank II | 3 | Bundled default patch data |
 | 95 | 6OP FM Bank III | 4 | Bundled default patch data |
 
 These are model-access presets, not named DX7 patch collections. The browser's three categories are the Plaits banks: ORNG (models 0–7), GREEN (8–15), and RED (16–23).
