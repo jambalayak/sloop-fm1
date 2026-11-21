@@ -70,7 +70,8 @@ jobs:
 
       - name: Run Plaits audio smoke test
         run: |
-          g++ -O2 -std=gnu++11 -DTEST -D_GNU_SOURCE -include /usr/include/c++/11/cmath \
+          g++ -O2 -std=gnu++11 -DTEST -D_GNU_SOURCE \
+            -include /usr/include/c++/11/cmath -include /usr/include/stdio.h \
             -Ifirmware/cxx -Ifirmware/src -Ithird_party -Ithird_party/eurorack \
             $(find third_party/eurorack/plaits/dsp -name '*.cc' -print) \
             third_party/eurorack/plaits/resources.cc \
