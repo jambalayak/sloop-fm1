@@ -124,7 +124,7 @@ def tc(tool, *args):
                     headers = tc(objdump, "-h", obj)
                     sections = []
                     for line in headers.splitlines():
-                        m = re.match(r"^\s*\d+\s+(\.pool\\S*)\s+([0-9a-fA-F]+)\b", line)
+                        m = re.match(r"^\s*\d+\s+(\.pool\S*)\s+([0-9a-fA-F]+)\b", line)
                         if m and int(m.group(2), 16):
                             sections.append((m.group(1), int(m.group(2), 16)))
                     if sections:
