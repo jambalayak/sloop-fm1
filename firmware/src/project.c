@@ -847,6 +847,7 @@ _Static_assert(__builtin_offsetof(persist_t, arrangement) == 48u && sizeof(arr_c
 static persist_t persist_saved;
 #ifndef HORATIO_PLAITS
 #ifndef HORATIO_PLAITS
+#ifndef HORATIO_PLAITS
 static void dsu_boot(void);
 #endif
 
