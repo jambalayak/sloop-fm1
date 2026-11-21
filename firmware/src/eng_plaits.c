@@ -14,9 +14,9 @@ static const char *const PL_MODEL_NAMES[HORATIO_PLAITS_MODELS] = {
     "SWARM", "NOISE", "PARTL", "STRNG", "MODAL", "B-DRM", "SNR", "HIHAT"
 };
 
-/* H/T/M percentages from HORATIO-1-FACTORY-PRESET-BANK.md are converted
- * to the Plaits 0..127 range. The ADSR and FX values are practical starting
- * translations of the sound-design targets, not hardware-validated claims. */
+/* Rochefsky's clock-face Harmonics, Timbre and Morph positions are translated
+ * to Plaits 0..127. Other source instructions are documented in the companion
+ * recipe-bank file where the current preset schema cannot represent them. */
 /* 103 complete Rochefsky recipes. Clock-face controls are translated to 0..127;
  * CV attenuators, pitch ranges, trigger-patch state and envelope LED counts are
  * retained in the companion recipe-bank document where the current preset
