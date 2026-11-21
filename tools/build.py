@@ -100,6 +100,17 @@ def tc(tool, *args):
         global LAST_ERR
         LAST_ERR = r.stdout + r.stderr
         sys.stderr.write(LAST_ERR)
+        # Preserve useful linker diagnostics when a section overflows. The
+        # map is especially important for the HORATIO POOL budget: it shows
+        # which input objects contribute bytes to the output section.
+        map_path = OUT / "felucca.map"
+        if tool.endswith("/ld") and map_path.exists():
+            map_text = map_path.read_text(errors="replace")
+            pool_lines = [line for line in map_text.splitlines()
+                          if ".pool" in line or "POOL" in line]
+            if pool_lines:
+                sys.stderr.write("\\nPOOL linker map entries:\\n")
+                sys.stderr.write("\\n".join(pool_lines) + "\\n")
         raise SystemExit(f"build: {tool} failed")
     if r.stderr.strip():
         sys.stderr.write(r.stderr)
@@ -260,7 +271,8 @@ def build_app():
            ("cc", *flags, "-c", FW / "src" / "felucca.c", "-o", OUT / "felucca.o"))
     cxx_objs = build_cxx()
     elf = OUT / "felucca.elf"
-    link = ["pi32v2/bin/ld", *(["--gc-sections"] if cxx_objs else []), "-T", FW / "app.ld", OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o",
+    link = ["pi32v2/bin/ld", *(["--gc-sections"] if cxx_objs else []),
+            "-Map=build/felucca.map", "-T", FW / "app.ld", OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o",
             OUT / "fm1_cpu1.o", OUT / "felucca.o", *cxx_objs]
     if cxx_objs:
         link += ["--start-group", tc_path("pi32v2/lib/r3/libm.a"),
