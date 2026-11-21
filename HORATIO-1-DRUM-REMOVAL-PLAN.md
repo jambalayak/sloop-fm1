@@ -66,3 +66,17 @@ The `plaits-development` branch already has some of the target architecture, but
 5. Run both workflow builds, keyboard-scale tests, preset validation, project-format tests, and package generation before calling the removal complete.
 
 No drum source, kit, sample, or compatibility reader was deleted in this audit-only update.
+
+
+## 2026-11-21 — Plaits POOL / low-RAM follow-up
+
+A second pass checked the actual HORATIO adapter and linker memory map before moving any buffers.
+
+- `firmware/cxx/horatio_plaits.cc` places the four `PlaitsSlot` objects in `.pool`. Each slot contains a 4096-byte allocator arena plus a Plaits frame FIFO and small state. The separate placement storage for `plaits::Voice` objects is currently ordinary BSS.
+- `firmware/app.ld` defines POOL as 0x54000 bytes (344,064 bytes). The known failing link reports an overflow of 29,984 bytes.
+- The `.lowram` region is only 0x7F00 bytes (32,512 bytes) total, not 32 KiB free. It already contains the second-core stacks (3,072 bytes), the reverb delay lines (17,368 bytes), two mix accumulators, per-core part scratch, and preset-crossfade scratch. Moving all four Plaits slots there is therefore not safe and cannot fit.
+- `main.c` explicitly probes and zeroes the entire `.lowram` region at boot; its safety depends on all linker-placed content staying within the declared region.
+- The audio scope buffers are ordinary BSS, not POOL. They are not an obvious way to reclaim the overflowing section.
+- The latest linker-map diagnostic was added to `tools/build.py`, but the previous failing CI run predates that diagnostic. Its log therefore contains no POOL input-object breakdown. The new `--print-memory-usage` option is also not yet confirmed by a run.
+
+Decision: do not move Plaits slots into `.lowram`, do not enlarge POOL across the fixed stack-guard addresses, and do not delete drum compatibility data as a speculative memory fix. Next valid step is to obtain a fresh link map from the current source revision, then identify the largest individual `.pool` contributors and make a measured allocation change. Preserve all 16 Plaits models and four shared voice slots.
