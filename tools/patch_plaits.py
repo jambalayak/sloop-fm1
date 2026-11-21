@@ -3,6 +3,20 @@
 """Apply the small, documented FM-1 sample-rate adaptation to the pinned Plaits tree."""
 from pathlib import Path
 
+
+def patch_file(path, replacements, label):
+    """Apply required source substitutions, accepting an already-patched file."""
+    source = path.read_text()
+    changed = False
+    for old, new in replacements:
+        if old in source:
+            source = source.replace(old, new, 1)
+            changed = True
+        elif new not in source:
+            raise SystemExit(f"{label} source changed: expected patch anchor was not found")
+    if changed:
+        path.write_text(source)
+
 root = Path(__file__).resolve().parents[1]
 header = root / "third_party" / "eurorack" / "plaits" / "dsp" / "dsp.h"
 if not header.exists():
@@ -26,7 +40,7 @@ header.write_text(source)
 print("Plaits sample rate adapted to HORATIO-1: 44.1 kHz")
 
 # HORATIO-1 exposes the complete 24-model Plaits 1.2 set: the eight
-# orange-bank additions followed by the original red and green banks.
+# orange-bank additions followed by the original green and red banks.
 # The pinned upstream voice.cc already registers these in model order:
 # VA VCF, phase distortion, three 6-op FM banks, wave terrain,
 # string machine, chiptune, then the original 16 engines.
