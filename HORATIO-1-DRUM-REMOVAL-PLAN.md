@@ -99,12 +99,9 @@ Large source-level POOL allocations worth accounting for in the fresh map:
 
 Do not infer that every listed object survives the HORATIO link: compile-time guards and section garbage collection can change the final contribution. The new linker-failure diagnostics now try to print both map entries and per-object `.pool` sections/symbols, so the next real HORATIO build can settle the exact contributors before a memory-affecting edit.
 
-### 2026-11-21 — Safe graphics-canvas right-sizing candidate
+### 2026-11-21 — Graphics-canvas reduction rejected
 
-`firmware/src/gfx.c` previously reserved `240 × 124` RGB565 pixels (59,520 B) for `cv_px`. Inspection of the renderer and generated font source shows the canvas is used by `draw_text_box()`, whose only generated fonts are S (16 px high) and L (32 px high); the LCD is 240 px wide. The maximum required text canvas is therefore `240 × 32` pixels (15,360 B).
-
-The allocation has been reduced to `240 × 32`, saving 44,160 B (43.1 KiB) of POOL without changing font data, UI layout, delay time, effects, Plaits models, or polyphony. `cv_begin()` already clips its height against `CV_MAX / w`, so the allocation remains bounded for narrower boxes too. This change must still be confirmed by both the SLOOP reference build and HORATIO linker/post-link memory checks; no build success is claimed yet.
-
+A 240 × 32 canvas looked sufficient when considering only the generated fonts (S = 16 px, L = 32 px), but `cv_px` is shared with the visualiser. `ui_vis.c::vis_draw()` renders the 240 × 240 display in two 240 × 120 bands, so reducing the shared canvas to 32 rows would clip most visualiser content. The proposed change was reverted before validation. The current 240 × 124 RGB565 allocation remains 59,520 B; **no POOL saving is claimed**. A future reduction must preserve the full visualiser output and be measured with the linker map and post-link checks.
 
 ## Rejected canvas reduction (2026-11-21)
 
