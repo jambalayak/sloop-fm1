@@ -8,7 +8,7 @@
 struct HoratioProbeSlot {
     uint8_t allocator_storage[sizeof(stmlib::BufferAllocator)] __attribute__((aligned(8)));
     plaits::Voice::Frame frames[plaits::kBlockSize];
-    uint8_t arena[2048] __attribute__((aligned(8)));
+    uint8_t arena[4096] __attribute__((aligned(8)));
     uint32_t rng;
     int32_t pitch_q7;
     uint16_t harmonics, timbre, morph, decay, lpg_colour, aux_mix, level;
