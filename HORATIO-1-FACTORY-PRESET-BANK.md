@@ -1,6 +1,6 @@
 # HORATIO-1 Factory Preset Bank
 
-**Factory bank:** 95 entries: 92 complete Rochefsky Plaits 1.2 recipes plus three six-op FM bank selectors. The PRESETS browser exposes every entry in source-sheet order and groups them by Plaits bank (ORNG, GREEN, RED).
+**Factory bank:** 191 entries: 92 complete Rochefsky Plaits 1.2 recipes, three six-op FM bank selectors, and all 96 bundled DX7-format patches (32 in each of Plaits' three FM banks). The PRESETS browser exposes every entry in source-sheet order and groups them by Plaits bank (ORNG, GREEN, RED).
 
 **Source:** [Rochefsky — Plaits sound-design recipes](https://www.rochefsky.com/learnings/plaits), shared spreadsheet/PDF supplied for this project.
 
@@ -147,3 +147,16 @@ The source recipe sheet does not enumerate the three DX7-style six-op banks. HOR
 | 95 | 6OP FM Bank III | 4 | Bundled default patch data |
 
 These are model-access presets, not named DX7 patch collections. The browser's three categories are the Plaits banks: ORNG (models 0–7), GREEN (8–15), and RED (16–23).
+
+
+## Built-in six-operator FM patch banks
+
+HORATIO exposes the 96 factory patches already bundled with the pinned Plaits v1.2 source. These are real DX7-format patch records unpacked by Plaits' six-op engine, not newly invented names or blank bank selectors.
+
+- **DX1** uses Plaits model 2 and contains 32 bass/synth patches.
+- **DX2** uses Plaits model 3 and contains 32 electric piano, keyboard, bell and percussion patches.
+- **DX3** uses Plaits model 4 and contains 32 organ, pad, string and brass patches.
+
+Each browser entry selects its own model and maps HARMONICS to one of the 32 factory patch slots. The embedded patch names are prefixed with the bank and slot number (for example, `DX2-01 E.PIANO 1`) so names remain unique and the bank/slot is always visible.
+
+The six-op engine's internal operator envelopes, algorithms, feedback, LFO and keyboard scaling remain intact. HORATIO's ordinary HARMONICS/TIMBRE/MORPH controls continue to affect the engine as designed; the factory preset sets a neutral starting point for TIMBRE and MORPH. No external SysEx upload mechanism is required for these built-in patches.
