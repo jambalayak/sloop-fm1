@@ -55,4 +55,4 @@ glass_bell_model = model_ids[firmware_names.index("Glass Bell")]
 if glass_bell_model != 12:
     raise SystemExit(f"Glass Bell must use Plaits Modal (model 12), got {glass_bell_model}")
 
-print("HORATIO-1 factory bank validated: 45 unique presets, stable original IDs, 16-model range")
+print("HORATIO-1 factory bank validated: 45 unique presets, approved ID gaps, 16-model range")
