@@ -23,7 +23,7 @@ Target model translations:
 
 Do not substitute Plaits' bass drum, snare or hi-hat models for any entry. Percussive character is made with pitched/synth models and envelopes. Filter, envelope, LFO and FX notes below are sound-design targets, not yet validated register values. Translate them to controls actually supported by HORATIO-1. If LFO 2, stereo sends, a specific modulation destination or a requested chord voicing is unavailable, document the closest supported sound rather than inventing controls.
 
-## Synthwave (01–17; five original IDs are intentionally unused across the full bank)
+## Synthwave (01–17)
 
 | # | Name | Model | H/T/M % | Filter, envelope, modulation and FX target |
 |---:|---|---|---:|---|
