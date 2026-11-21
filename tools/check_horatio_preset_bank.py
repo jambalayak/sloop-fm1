@@ -35,7 +35,7 @@ if len(set(names)) != len(names):
 if [name for _, name in bank] != names:
     raise SystemExit("Factory browser names/order do not match the Plaits preset table")
 
-models = {int(model) for _, model in presets}
+models = {int(row[1]) for row in presets}
 expected = set(range(23))
 if models != expected:
     raise SystemExit(f"Factory preset bank does not cover all 23 models: missing {sorted(expected - models)}")
