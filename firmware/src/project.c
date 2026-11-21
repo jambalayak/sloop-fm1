@@ -846,8 +846,6 @@ _Static_assert(__builtin_offsetof(persist_t, arrangement) == 48u && sizeof(arr_c
 #if FELUCCA_FLASH
 static persist_t persist_saved;
 #ifndef HORATIO_PLAITS
-#ifndef HORATIO_PLAITS
-#ifndef HORATIO_PLAITS
 static void dsu_boot(void);
 #endif
 
@@ -1048,6 +1046,7 @@ UI_SMALL static int settings_write(const persist_t *p)
     memcpy(midi_saved, mp, sizeof midi_saved);
     return 0;
 }
+#ifndef HORATIO_PLAITS
 static void dsu_boot(void)                          /* the SYN kits (and the MIDI part) from the settings object, else */
 {                                                   /* the defaults */
     st_hdr_t h;
