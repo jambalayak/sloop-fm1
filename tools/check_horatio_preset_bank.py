@@ -33,7 +33,7 @@ if all(env == (0, 0, 0, 0) for env in envelopes):
 
 # Prevent sustained instruments from collapsing into short clicks. Deliberately
 # percussive recipes may use zero sustain, but still need a usable decay/release.
-percussive = re.compile(r"drip|marimba|mallet|chime|bell|wood block|snare|steel drum|xylophone|hi.hat|whip|gun|laser|pew pew|popcorn|stick|percuss|bouncing|mosquito|emergency vehicle|space ship|computer thinking|bubbling liquid|puddle walking|dog drinking|motor\\b", re.I)
+percussive = re.compile(r"drip|marimba|mallet|chime|bell|wood block|snare|steel drum|xylophone|hi.hat|whip|gun|laser|pew pew|popcorn|stick|percuss|bouncing|mosquito|emergency vehicle|space ship|computer thinking|bubbling liquid|puddle walking|dog drinking|motor\b", re.I)
 pads = re.compile(r"pad|string|orchestra|cello|violin|harmonium|organ|drone|church|choir|slow rise|sidechain|side.chain|chord|saw.chain", re.I)
 for name, env in zip(names, envelopes):
     attack, decay, sustain, release = env
