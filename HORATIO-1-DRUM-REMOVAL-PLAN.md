@@ -92,7 +92,7 @@ The failed HORATIO link overflowed POOL by 29,984 B. The build's post-link polic
 
 Large source-level POOL allocations worth accounting for in the fresh map:
 - FX tempo delay: 65,536 int16 samples = 131,072 B
-- Graph/visualiser canvas: 240 × 124 RGB565 = 59,520 B
+- Graph/visualiser canvas: 240 × 120 RGB565 = 57,600 B
 - Slicer recording: NTRK × 4,096 int16 samples = 32,768 B (HORATIO has three active synth parts plus one retired compatibility slot; the fourth buffer is a possible 8 KB compile-time saving, but the synth slicer itself remains useful)
 - Plaits slots: four fixed-size PlaitsSlot records, each with a 4 KB arena and frame FIFO
 - Visualiser FFT/spectrogram scratch: 4,608 B total
@@ -101,8 +101,8 @@ Do not infer that every listed object survives the HORATIO link: compile-time gu
 
 ### 2026-11-21 — Graphics-canvas reduction rejected
 
-A 240 × 32 canvas looked sufficient when considering only the generated fonts (S = 16 px, L = 32 px), but `cv_px` is shared with the visualiser. `ui_vis.c::vis_draw()` renders the 240 × 240 display in two 240 × 120 bands, so reducing the shared canvas to 32 rows would clip most visualiser content. The proposed change was reverted before validation. The current 240 × 124 RGB565 allocation remains 59,520 B; **no POOL saving is claimed**. A future reduction must preserve the full visualiser output and be measured with the linker map and post-link checks.
+A 240 × 32 canvas looked sufficient when considering only the generated fonts (S = 16 px, L = 32 px), but `cv_px` is shared with the visualiser. `ui_vis.c::vis_draw()` renders the 240 × 240 display in two 240 × 120 bands, so reducing the shared canvas to 32 rows would clip most visualiser content. The 32-row proposal was reverted before validation. A smaller, safe trim then removed only the four unused rows below the 120-row visualiser band: `CV_MAX` is now 240 × 120 RGB565 = 57,600 B, saving 1,920 B (1.875 KiB) while preserving the full visualiser band. This modest estimate still needs confirmation from the linker map and post-link checks.
 
 ## Rejected canvas reduction (2026-11-21)
 
-A proposed reduction of `CV_MAX` from `240 * 124` to `240 * 32` was audited and reverted before validation. Although generated fonts are at most 32 pixels high, the same shared canvas also renders the visualiser in 240 x 120-pixel bands (`ui_vis.c::vis_draw`). The 32-pixel limit would silently clip those screens. Keep the 120-pixel visualiser canvas until a separate, measured rendering/memory design is implemented. No memory saving from this proposal should be counted, and no build success is implied.
+A proposed reduction of `CV_MAX` from `240 * 124` to `240 * 32` was audited and reverted before validation. Although generated fonts are at most 32 pixels high, the same shared canvas also renders the visualiser in 240 x 120-pixel bands (`ui_vis.c::vis_draw`). The 32-pixel limit would silently clip those screens. Keep the full 120-pixel visualiser canvas. The accepted trim from 124 to 120 rows saves only 1,920 B; the rejected 32-row proposal contributes no saving. No build success is implied.
