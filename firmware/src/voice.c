@@ -3,6 +3,12 @@
 /* Voice allocation, envelopes, LFO and per-track rendering. Runs in the
  * audio ISR. The fourth track index is a legacy project-compatibility slot. */
 #ifdef HORATIO_PLAITS
+/* The legacy block hook remains for fx.c compatibility. Each Plaits slot's
+ * gate is now forwarded directly by eng_plaits.c when its voice renders. */
+void horatio_plaits_block(void) { }
+#endif
+
+#ifdef HORATIO_PLAITS
 #include "horatio_plaits.h"
 #endif
 static uint32_t vage;                                   /* voice ages: one clock for every part */
