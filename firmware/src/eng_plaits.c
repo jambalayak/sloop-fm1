@@ -125,6 +125,11 @@ static const preset_t PL_PRESETS[] = {
     {"sidechained rhythmic house chords", {6, 51, 102, 64, 64, 64, 64, 127}, {0, 0, 0, 0}, 0, 0, {0, 0, 0, 0}, {0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0}},
     {"Your unexpected Arp", {6, 13, 114, 64, 64, 64, 64, 127}, {0, 0, 0, 0}, 0, 0, {0, 0, 0, 0}, {0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0}},
     {"All the Arpeggios", {7, 64, 64, 64, 64, 64, 64, 127}, {0, 0, 0, 0}, 0, 0, {0, 0, 0, 0}, {0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0}},
+    /* The Rochefsky sheet does not enumerate DX7 patches; these three entries
+     * expose each Plaits 1.2 six-op bank using its bundled default patch data. */
+    {"6OP FM Bank I", {2, 64, 64, 64, 64, 64, 0, 127}, {0, 0, 0, 0}, 0, 0, {0, 0, 0, 0}, {0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0}},
+    {"6OP FM Bank II", {3, 64, 64, 64, 64, 64, 0, 127}, {0, 0, 0, 0}, 0, 0, {0, 0, 0, 0}, {0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0}},
+    {"6OP FM Bank III", {4, 64, 64, 64, 64, 64, 0, 127}, {0, 0, 0, 0}, 0, 0, {0, 0, 0, 0}, {0, 0, 0, 0}, 0, {0, 0, 0, 0, 0, 0, 0, 0}},
 };
 
 static uint16_t plaits_q15(int32_t value) {
