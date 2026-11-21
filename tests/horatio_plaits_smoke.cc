@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * HORATIO-1 host-side Plaits audio smoke test.
  * Exercises the same fixed-memory adapter used by the FM-1 target. */
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include "horatio_plaits.h"
