@@ -124,7 +124,7 @@ def tc(tool, *args):
                     headers = tc(objdump, "-h", obj)
                     sections = []
                     for line in headers.splitlines():
-                        m = re.match(r"^\s*\d+\s+(\.(?:pool|bss|lowram)\S*)\s+([0-9a-fA-F]+)\b", line)
+                        m = re.match(r"^\s*\d+\s+(\.(?:pool|data|bss|lowram)\S*)\s+([0-9a-fA-F]+)\b", line)
                         if m and int(m.group(2), 16):
                             sections.append((m.group(1), int(m.group(2), 16)))
                     if sections:
@@ -133,7 +133,7 @@ def tc(tool, *args):
                             sys.stderr.write(f"  {name}: {size} B\n")
                         symbols = tc(objdump, "-t", obj)
                         ram_symbols = [line for line in symbols.splitlines()
-                                       if re.search(r"\s\.(?:pool|bss|lowram)\S*\s", line)]
+                                       if re.search(r"\s\.(?:pool|data|bss|lowram)\S*\s", line)]
                         if ram_symbols:
                             sys.stderr.write("  RAM symbols:\n" + "\n".join(ram_symbols) + "\n")
                 except (SystemExit, OSError):
