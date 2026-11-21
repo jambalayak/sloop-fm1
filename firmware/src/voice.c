@@ -784,65 +784,11 @@ static int32_t env_tick(track_t *t, voice_t *v)
     return v->env >> 9;
 }
 #ifdef HORATIO_PLAITS
-/* One paraphonic ADSR for the four Plaits slots across all three synth parts.
- * The first held note latches the envelope settings; adding notes does not retrigger it. */
-static int32_t horatio_shared_env_q24;
-static int32_t horatio_shared_sustain_q24;
-static uint32_t horatio_shared_env_k[3];
-static uint8_t horatio_shared_gate;
-static uint8_t horatio_shared_stage;
-
+/* Each Plaits slot follows its SLOOP voice gate independently. The normal
+ * per-voice ADSR in env_tick() shapes its output; this forwards the note gate
+ * to Plaits' internal LPG/model trigger. */
 void horatio_plaits_block(void) {
-    track_t *first = 0;
     uint32_t p, i, slot;
-    uint8_t gate = 0;
-    for (p = 0; p < NPART; ++p) {
-        for (i = 0; i < NVOICE; ++i) {
-            voice_t *v = &trk[p].v[i];
-            if (v->active && v->gate && ENGINES[trk[p].engine] == &ENG_PLAITS) {
-                gate = 1;
-                if (!first) first = &trk[p];
-            }
-        }
-    }
-    if (gate && (!horatio_shared_gate || horatio_shared_stage == 3u)) {
-        if (first) {
-            const uint32_t *ek;
-            esync_coef(first);
-            ek = esync_k[(uint32_t)(first - trk) % NTRK];
-            horatio_shared_env_k[0] = ek[0];
-            horatio_shared_env_k[1] = ek[1];
-            horatio_shared_env_k[2] = ek[2];
-            horatio_shared_sustain_q24 = (int32_t)first->p[P_SUS] << 17;
-        }
-        horatio_shared_stage = 1u;
-    } else if (!gate && horatio_shared_gate) {
-        horatio_shared_stage = 3u;
-    }
-    horatio_shared_gate = gate;
-    switch (horatio_shared_stage) {
-    case 1:
-        horatio_shared_env_q24 += (int32_t)horatio_shared_env_k[0];
-        if (horatio_shared_env_q24 >= (1 << 24)) {
-            horatio_shared_env_q24 = 1 << 24;
-            horatio_shared_stage = 2u;
-        }
-        break;
-    case 2:
-        horatio_shared_env_q24 += mulq16(horatio_shared_sustain_q24 -
-                                         horatio_shared_env_q24, horatio_shared_env_k[1]);
-        break;
-    case 3:
-        horatio_shared_env_q24 -= mulq16(horatio_shared_env_q24, horatio_shared_env_k[2]);
-        if (horatio_shared_env_q24 < (1 << 12)) {
-            horatio_shared_env_q24 = 0;
-            horatio_shared_stage = 0u;
-        }
-        break;
-    default:
-        if (!gate) horatio_shared_env_q24 = 0;
-        break;
-    }
     for (slot = 0; slot < HORATIO_PLAITS_VOICES; ++slot)
         horatio_plaits_gate(slot, 0u);
     for (p = 0; p < NPART; ++p) {
@@ -851,17 +797,9 @@ void horatio_plaits_block(void) {
             uint32_t id = (uint32_t)v->s[7];
             if (v->active && ENGINES[trk[p].engine] == &ENG_PLAITS &&
                 id >= 1u && id <= HORATIO_PLAITS_VOICES)
-                horatio_plaits_gate(id - 1u, gate);
+                horatio_plaits_gate(id - 1u, v->gate);
         }
     }
-}
-
-int32_t horatio_plaits_shared_amp(void) {
-    return horatio_shared_env_q24 >> 9;
-}
-
-int horatio_plaits_shared_done(void) {
-    return !horatio_shared_gate && !horatio_shared_env_q24;
 }
 #endif
 
