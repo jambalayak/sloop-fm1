@@ -845,6 +845,7 @@ _Static_assert(__builtin_offsetof(persist_t, arrangement) == 48u && sizeof(arr_c
 #endif
 #if FELUCCA_FLASH
 static persist_t persist_saved;
+#ifndef HORATIO_PLAITS
 static void dsu_boot(void);
 #endif
 
@@ -945,7 +946,11 @@ UI_SMALL static int project_used(uint32_t slot) { return proj_ok(&proj_slot[slot
  * the default (nothing learned, channels 1 2 3 10, OTHER SEL, BEND 2): else the object is exactly 2.5's. 2.6 test
  * builds wrote 32 (the map) or 36 bytes (and the channels) */
 #define MIDI_PART (2u * ML_N + 8u)
+#ifndef HORATIO_PLAITS
 _Static_assert(sizeof(persist_t) + sizeof(dsu_bank_t) + MIDI_PART <= ST_PAYLOAD_MAX, "the settings object fits its sector");
+#else
+_Static_assert(sizeof(persist_t) + MIDI_PART <= ST_PAYLOAD_MAX, "the HORATIO settings object fits its sector");
+#endif
 static uint8_t midi_saved[MIDI_PART];
 static uint8_t drch_seed;                           /* a settings object as 2.5 wrote it: the drum channel was the
                                                      * project's then (autosave_resume takes it from a 2.5 autosave) */               /* the part as flash has it (settings_save: written when it differs) */
@@ -1018,19 +1023,25 @@ UI_SMALL static int settings_write(const persist_t *p)
 {
     uint8_t mp[MIDI_PART];
     int rc;
-    if (!dsu_valid(&dsu))
-        dsu_defaults();
     midi_part_fill(mp);
-    /* the third part only when it is not the default: without, the object is exactly 2.5's (2.5 reads it whole, SYN
-     * kits included; with it, it takes the object for one without them). 2.7: the theme in the side record */
     side_fill(&side_out);
     st_side = &side_out;
     st_side_len = sizeof side_out;
+#ifndef HORATIO_PLAITS
+    if (!dsu_valid(&dsu))
+        dsu_defaults();
+    /* SLOOP stores its editable drum-synth bank between persist_t and MIDI settings. */
     rc = st_save3(OBJ_SETTINGS, p, sizeof *p, &dsu, sizeof dsu, mp, midi_part_default(mp) ? 0u : sizeof mp);
+#else
+    /* HORATIO has no drum-synth bank: persist settings, then the optional MIDI map/settings. */
+    rc = st_save3(OBJ_SETTINGS, p, sizeof *p, mp, midi_part_default(mp) ? 0u : sizeof mp, 0, 0);
+#endif
     st_side = 0;
     if (rc)
         return -1;
+#ifndef HORATIO_PLAITS
     dsu_dirty = 0;
+#endif
     fav_dirty = 0;
     memcpy(midi_saved, mp, sizeof midi_saved);
     return 0;
@@ -1054,7 +1065,7 @@ static void dsu_boot(void)                          /* the SYN kits (and the MID
     }
     midi_part_fill(midi_saved);
     dsu_dirty = 0;
-}
+}#endif /* !HORATIO_PLAITS */
 #endif
 
 UI_SMALL static void persist_fill(persist_t *p)              /* the settings as they are now */
