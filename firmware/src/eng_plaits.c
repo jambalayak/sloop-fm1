@@ -170,6 +170,7 @@ static void plaits_render(track_t *t, voice_t *v, int32_t *out,
     pitch_q7 = m->pitch16 * 8 + m->fine / 32;
     vca = plaits_q15(p[P_E7]);
     level = (uint16_t)(((uint32_t)v->vel * 258u * vca + 16383u) / 32767u);
+    horatio_plaits_gate(id - 1u, v->gate);
     horatio_plaits_configure(id - 1u, (uint32_t)clamp(p[P_E0], 0, 23),
         pitch_q7, plaits_q15(p[P_E1]), plaits_q15(p[P_E2]),
         plaits_q15(p[P_E3]), plaits_q15(p[P_E4]), plaits_q15(p[P_E5]),
