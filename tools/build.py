@@ -272,7 +272,7 @@ def build_app():
     cxx_objs = build_cxx()
     elf = OUT / "felucca.elf"
     link = ["pi32v2/bin/ld", *(["--gc-sections"] if cxx_objs else []),
-            "-Map=build/felucca.map", "-T", FW / "app.ld", OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o",
+            "--print-memory-usage", "-Map=build/felucca.map", "-T", FW / "app.ld", OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o",
             OUT / "fm1_cpu1.o", OUT / "felucca.o", *cxx_objs]
     if cxx_objs:
         link += ["--start-group", tc_path("pi32v2/lib/r3/libm.a"),
