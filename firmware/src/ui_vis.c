@@ -224,8 +224,7 @@ static void vis_update(void)
         pk[i] = trk[i].peak;
         trk[i].peak = 0;
     }
-    pk[3] = drums.peak;
-    drums.peak = 0;
+    pk[3] = 0;                         /* HORATIO has no drum meter or drum voices. */
     hit = vis_hit;
     vis_hit = 0;
     fm1_irq_on();
