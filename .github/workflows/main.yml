@@ -22,6 +22,9 @@ jobs:
         with:
           submodules: true
 
+      - name: Apply HORATIO Plaits String memory patch
+        run: python3 tools/patch_horatio_plaits_string.py
+
       - name: Install dependencies
         run: |
           sudo apt-get update
