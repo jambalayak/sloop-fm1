@@ -125,6 +125,10 @@ void horatio_plaits_configure(uint32_t slot, uint32_t model, int32_t pitch_q7,
     PlaitsSlot *s = &slots[slot];
     if (model >= HORATIO_PLAITS_MODELS) model = HORATIO_PLAITS_MODELS - 1u;
     if (harmonics > 32767u) harmonics = 32767u;
+    /* LPC word-bank decoding needs a 1024-frame workspace (>6 KB).
+     * Until that workspace is provisioned per voice, keep Speech in its
+     * safe formant/SAM/LPC-vowel range rather than entering word-bank mode. */
+    if (model == 15u && harmonics > 10922u) harmonics = 10922u;
     if (timbre > 32767u) timbre = 32767u;
     if (morph > 32767u) morph = 32767u;
     if (aux_mix > 32767u) aux_mix = 32767u;
