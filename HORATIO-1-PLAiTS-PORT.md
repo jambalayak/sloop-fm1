@@ -375,3 +375,26 @@ prefer a clean implementation using HORATIO-1's existing scale/chord routines.
 - This is the first implementation pass. It must pass the new host test and
   firmware build before being treated as validated; the installed FM-1 has not
   been updated.
+
+## Four-voice Plaits memory adaptation — 21 November 2026
+
+The first four-instance HORATIO target link exposed a 29,984-byte overflow in
+the FM-1 .pool region. The SLOOP reference build and the keyboard mapping
+host test completed before that HORATIO link step.
+
+To preserve four independent Plaits voices and all 16 original models without
+sharing or removing the Particle model's state, the build-time Plaits patch
+now reduces the Particle diffuser from 8,192 to 2,048 samples per voice.
+All seven diffuser delay lines remain, with their reserved lengths and
+modulation ranges scaled to one quarter. This retains independent diffuser
+state per note, but gives the Particle model shorter diffusion/decay times
+than stock Plaits. The per-voice scratch arena is set to 4 KiB; the Particle
+diffuser consumes that arena, while the other original models use smaller
+scratch allocations.
+
+This is a measured-memory candidate, not yet a validated release change.
+The updated target build must confirm pool headroom and linker success, and
+the Particle model must be auditioned on the FM-1 for sound quality. If the
+reduced diffusion is not musically acceptable, revisit the memory design
+rather than silently removing one of the 16 models or reducing four-note
+paraphony.
