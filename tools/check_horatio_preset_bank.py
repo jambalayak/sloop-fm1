@@ -29,14 +29,14 @@ if [name for _, name in bank] != names:
     raise SystemExit("Factory browser names/order do not match the Plaits preset table")
 
 models = {int(model) for _, model in presets}
-expected = set(range(24))
+expected = set(range(23))
 if models != expected:
     raise SystemExit(f"Factory preset bank does not cover all 24 models: missing {sorted(expected - models)}")
 
 for (name, model_text), (kind, bank_name) in zip(presets, bank):
     model = int(model_text)
-    expected_kind = "BK_BASS" if model < 8 else "BK_KEYS" if model < 16 else "BK_ORGAN"
+    expected_kind = "BK_BASS" if model < 8 else "BK_KEYS" if model < 15 else "BK_ORGAN"
     if kind != expected_kind:
         raise SystemExit(f"{bank_name}: expected {expected_kind} for model {model}, got {kind}")
 
-print(f"HORATIO factory browser OK: {len(bank)} unique presets cover all 24 Plaits models.")
+print(f"HORATIO factory browser OK: {len(bank)} unique presets cover all 23 HORATIO models.")
