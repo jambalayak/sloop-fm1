@@ -846,6 +846,7 @@ _Static_assert(__builtin_offsetof(persist_t, arrangement) == 48u && sizeof(arr_c
 #if FELUCCA_FLASH
 static persist_t persist_saved;
 #ifndef HORATIO_PLAITS
+#ifndef HORATIO_PLAITS
 static void dsu_boot(void);
 #endif
 
@@ -1065,7 +1066,8 @@ static void dsu_boot(void)                          /* the SYN kits (and the MID
     }
     midi_part_fill(midi_saved);
     dsu_dirty = 0;
-}#endif /* !HORATIO_PLAITS */
+}
+#endif /* !HORATIO_PLAITS */
 #endif
 
 UI_SMALL static void persist_fill(persist_t *p)              /* the settings as they are now */
