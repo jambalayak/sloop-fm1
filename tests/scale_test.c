@@ -196,6 +196,48 @@ static void black_key_chord_test(void)
     puts("scales: black-key triads, independent key-up and MIDI note-offs ok");
 }
 
+
+/* The black-key triads must remain diatonic for every supported root and scale. */
+static void black_key_chord_matrix_test(void)
+{
+    track_t *t = &trk[0];
+    uint8_t notes[4];
+    uint32_t scale, root, k, i, p, steps;
+    memset(trk, 0, sizeof trk);
+    memset(&song, 0, sizeof song);
+    host_tracks_init();
+    song.octave = 0;
+    t->p[P_QUANT] = 2;
+    for (scale = 0; scale < NSCALES; scale++) {
+        t->p[P_SCALE] = (int16_t)scale;
+        for (root = 0; root < 12u; root++) {
+            uint32_t mask;
+            t->p[P_ROOT] = (int16_t)root;
+            mask = scale_mask(t);
+            for (k = 0; k < 27u; k++) {
+                int degree = kb_black_index(k);
+                if (degree < 0)
+                    continue;
+                assert(kb_black_chord(t, k, notes) == 3u);
+                for (i = 0; i < 3u; i++) {
+                    uint32_t rel = (notes[i] + 120u - 60u - root) % 12u;
+                    assert(mask & (1u << rel));
+                    if (i) {
+                        assert(notes[i] > notes[i - 1u]);
+                        steps = 0;
+                        for (p = (uint32_t)notes[i - 1u] + 1u; p <= notes[i]; p++) {
+                            rel = (p + 120u - 60u - root) % 12u;
+                            steps += (mask >> rel) & 1u;
+                        }
+                        assert(steps == 2u);
+                    }
+                }
+            }
+        }
+    }
+    puts("scales: all black-key triads are diatonic for all 16 scales and 12 roots ok");
+}
+
 static void arp_modes_test(void)
 {
     static const struct { int mode; uint8_t want[8]; } M[] = {
@@ -432,6 +474,7 @@ int main(void)
     mapping_test();
     key_events_test();
     black_key_chord_test();
+    black_key_chord_matrix_test();
     arp_modes_test();
     arp_swing_test();
     clkout_test();
