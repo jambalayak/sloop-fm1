@@ -124,17 +124,17 @@ def tc(tool, *args):
                     headers = tc(objdump, "-h", obj)
                     sections = []
                     for line in headers.splitlines():
-                        m = re.match(r"^\\s*\\d+\\s+(\\.pool\\S*)\\s+([0-9a-fA-F]+)\\b", line)
+                        m = re.match(r"^\s*\d+\s+(\.pool\\S*)\s+([0-9a-fA-F]+)\b", line)
                         if m and int(m.group(2), 16):
                             sections.append((m.group(1), int(m.group(2), 16)))
                     if sections:
-                        sys.stderr.write("\\nPOOL input sections in " + str(obj.relative_to(SRC)) + ":\\n")
+                        sys.stderr.write("\nPOOL input sections in " + str(obj.relative_to(SRC)) + ":\n")
                         for name, size in sections:
-                            sys.stderr.write(f"  {name}: {size} B\\n")
+                            sys.stderr.write(f"  {name}: {size} B\n")
                         symbols = tc(objdump, "-t", obj)
                         pool_symbols = [line for line in symbols.splitlines() if ".pool" in line]
                         if pool_symbols:
-                            sys.stderr.write("  symbols:\\n" + "\\n".join(pool_symbols) + "\\n")
+                            sys.stderr.write("  symbols:\n" + "\n".join(pool_symbols) + "\n")
                 except (SystemExit, OSError):
                     pass
         raise SystemExit(f"build: {tool} failed")
