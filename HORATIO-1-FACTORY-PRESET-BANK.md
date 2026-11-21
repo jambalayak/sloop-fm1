@@ -1,6 +1,6 @@
 # HORATIO-1 Factory Preset Bank
 
-**Factory bank:** 106 entries: 103 complete Rochefsky Plaits 1.2 recipes plus three six-op FM bank selectors. The PRESETS browser exposes every entry in source-sheet order and groups them by Plaits bank (ORNG, GREEN, RED).
+**Factory bank:** 95 entries: 92 complete Rochefsky Plaits 1.2 recipes plus three six-op FM bank selectors. The PRESETS browser exposes every entry in source-sheet order and groups them by Plaits bank (ORNG, GREEN, RED).
 
 **Source:** [Rochefsky — Plaits sound-design recipes](https://www.rochefsky.com/learnings/plaits), shared spreadsheet/PDF supplied for this project.
 
@@ -120,7 +120,7 @@ The model index is zero-based in firmware. The recipe bank order follows the sou
 | 100 | Bass with Chords | Orange 7 → 6 | yes | 25/127/25 |
 | 101 | sidechained rhythmic house chords | Orange 7 → 6 | yes | 51/102/64 |
 | 102 | Your unexpected Arp | Orange 7 → 6 | yes | 13/114/64 |
-| 103 | All the Arpeggios | Orange 8 → 7 | yes | 64/64/64 |
+| 92 | All the Arpeggios | Orange 8 → 7 | yes | 64/64/64 |
 
 ## Translation notes and limitations
 
@@ -144,6 +144,6 @@ The source recipe sheet does not enumerate the three DX7-style six-op banks. HOR
 |---:|---|---:|---|
 | 104 | 6OP FM Bank I | 2 | Bundled default patch data |
 | 105 | 6OP FM Bank II | 3 | Bundled default patch data |
-| 106 | 6OP FM Bank III | 4 | Bundled default patch data |
+| 95 | 6OP FM Bank III | 4 | Bundled default patch data |
 
 These are model-access presets, not named DX7 patch collections. The browser's three categories are the Plaits banks: ORNG (models 0–7), GREEN (8–15), and RED (16–23).
