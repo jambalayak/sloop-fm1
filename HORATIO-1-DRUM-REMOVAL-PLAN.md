@@ -106,3 +106,10 @@ A 240 × 32 canvas looked sufficient when considering only the generated fonts (
 ## Rejected canvas reduction (2026-11-21)
 
 A proposed reduction of `CV_MAX` from `240 * 124` to `240 * 32` was audited and reverted before validation. Although generated fonts are at most 32 pixels high, the same shared canvas also renders the visualiser in 240 x 120-pixel bands (`ui_vis.c::vis_draw`). The 32-pixel limit would silently clip those screens. Keep the full 120-pixel visualiser canvas. The accepted trim from 124 to 120 rows saves only 1,920 B; the rejected 32-row proposal contributes no saving. No build success is implied.
+
+
+### 2026-11-21 — Remove the retired drum slicer recording slot from HORATIO
+
+The shared slicer recording buffer was sl_buf[NTRK][SL_LEN]: four 4,096-sample int16_t recordings (32,768 B total). HORATIO's audio mixer calls slicer_track() only for the three active synth parts (mix_part() iterates NPART); the fourth track is legacy project compatibility, not a live drum part. slicer_start() now sizes its state loop to SL_TRACKS, which is NPART under HORATIO_PLAITS and NTRK in SLOOP. The drum-only slicer_drums() path and its scratch buffer are excluded from HORATIO, while remaining intact for SLOOP.
+
+**Estimated HORATIO POOL saving: 8,192 B** (one 4,096 × 16-bit recording slot). Synth-track SLICER GATE/STUT behavior is retained. This depends on the confirmed call graph: HORATIO's mix_part() uses only tracks 0–2, and the only drum-track caller was slicer_drums(), now compiled only for SLOOP. The next HORATIO build must confirm the reduced .pool size and run all existing regression, SLOOP-reference, keyboard, preset, and package checks. No build success is claimed yet.
