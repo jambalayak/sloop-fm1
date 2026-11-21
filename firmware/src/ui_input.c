@@ -1206,10 +1206,11 @@ UI_SMALL static void ui_input(void)
         ui.zoom = (uint8_t)(clamp((int32_t)(int8_t)ui.zoom + (s > 0 ? 1 : -1), -1, 2));
         ui.force = 1;
     }
-    if ((s = panel_enc(EN_PRESET)) != 0 && (ui.home || cur_page()->graph == GR_BROWSE || cur_fam() == FAM_TRK)) {
-        /* PRESETS browses the selected part's presets (all engines, then user presets) on HOME, the PRESETS
-         * page and TRACKS only (the drum track: its kits); elsewhere a stray turn would throw away the sound
-         * being edited. Every detent counts */
+    if ((s = panel_enc(EN_PRESET)) != 0 && !on_notes_page() &&
+        (ui.home || cur_page()->scope == SC_TRK || cur_page()->graph == GR_BROWSE || cur_fam() == FAM_TRK)) {
+        /* PRESETS browses the selected part's sounds from every track-editing page,
+         * including ENV, LFO, SCALE and engine pages. The NOTES page keeps this encoder
+         * for zoom; every detent on the other track pages loads the next/previous preset. */
         uint32_t total, cur = preset_pos(&total);
         if (total)
             preset_go((uint32_t)(((int32_t)cur + s % (int32_t)total + (int32_t)total) % (int32_t)total));
