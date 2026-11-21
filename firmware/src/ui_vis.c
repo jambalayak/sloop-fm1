@@ -7,7 +7,7 @@
  * It reads what the audio already leaves for the UI: the scope buffers (audio.c, the mix at 22 kHz, left and
  * right, as if MASTER were all the way up: the picture does not follow the volume knob, even at 0), the tracks' peaks (fx.c / drums.c, as the TRACKS meters read them), the notes that started
  * (voice.c vis_hit) and the transport clock. Everything is drawn in the main loop, every other frame, in two
- * bands of 120 rows (the canvas holds 124): no cost to the audio. */
+ * bands of 120 rows (the canvas holds 120): no cost to the audio. */
 #define VIS_N 12u
 static const char *const VIS_NAME[VIS_N] = {"OSCILLOSCOPE", "SPECTRUM", "SPECTROGRAM", "LISSAJOUS", "VU METERS",
                                             "CIRCLE", "TAPE", "LCD", "BOUNCE", "ORBIT", "WIRES", "SLOOP"};
