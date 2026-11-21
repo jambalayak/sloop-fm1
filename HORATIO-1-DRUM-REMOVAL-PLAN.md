@@ -104,3 +104,8 @@ Do not infer that every listed object survives the HORATIO link: compile-time gu
 `firmware/src/gfx.c` previously reserved `240 × 124` RGB565 pixels (59,520 B) for `cv_px`. Inspection of the renderer and generated font source shows the canvas is used by `draw_text_box()`, whose only generated fonts are S (16 px high) and L (32 px high); the LCD is 240 px wide. The maximum required text canvas is therefore `240 × 32` pixels (15,360 B).
 
 The allocation has been reduced to `240 × 32`, saving 44,160 B (43.1 KiB) of POOL without changing font data, UI layout, delay time, effects, Plaits models, or polyphony. `cv_begin()` already clips its height against `CV_MAX / w`, so the allocation remains bounded for narrower boxes too. This change must still be confirmed by both the SLOOP reference build and HORATIO linker/post-link memory checks; no build success is claimed yet.
+
+
+## Rejected canvas reduction (2026-11-21)
+
+A proposed reduction of `CV_MAX` from `240 * 124` to `240 * 32` was audited and reverted before validation. Although generated fonts are at most 32 pixels high, the same shared canvas also renders the visualiser in 240 x 120-pixel bands (`ui_vis.c::vis_draw`). The 32-pixel limit would silently clip those screens. Keep the 120-pixel visualiser canvas until a separate, measured rendering/memory design is implemented. No memory saving from this proposal should be counted, and no build success is implied.
