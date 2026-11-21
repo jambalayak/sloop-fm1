@@ -718,9 +718,8 @@ UI_SMALL static void select_engine(uint32_t e)
     ui.force = 1;
 }
 
-/* the factory presets as one list by kind (basses, keys, organs, pads, leads, plucks and bells, stabs,
- * the rest), then the used user presets: the PRESETS knob and the PRESETS page browse it. By name: an
- * engine's preset table may change order; tests/ui_pages_test.c checks every preset is here once */
+/* Factory presets are browsed as one list, then the used user presets. SLOOP groups by sound kind;
+ * HORATIO groups by Plaits model bank. Names resolve against each engine's preset table. */
 enum { BK_BASS, BK_KEYS, BK_ORGAN, BK_PAD, BK_LEAD, BK_PLUCK, BK_STAB, BK_FX };
 #ifdef HORATIO_PLAITS
 static const char *const BANK_KIND[] = {"ORNG", "GREEN", "RED"};
