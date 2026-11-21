@@ -3,11 +3,13 @@
  * Four global DSP slots, one paraphonic amp envelope, no drum track or kit system. */
 #include "horatio_plaits.h"
 
+/* The FM-1 value field is five characters wide. Keep these compact so
+ * every model remains distinguishable instead of being silently truncated. */
 static const char *const PL_MODEL_NAMES[HORATIO_PLAITS_MODELS] = {
-    "01 VIRTUAL ANALOG", "02 WAVESHAPING", "03 2-OP FM", "04 GRANULAR FORMANT",
-    "05 ADDITIVE", "06 WAVETABLE", "07 CHORDS", "08 SPEECH",
-    "09 SWARM", "10 NOISE", "11 PARTICLE NOISE", "12 INHARMONIC STRING",
-    "13 MODAL RESONATOR", "14 BASS DRUM", "15 SNARE DRUM", "16 HI-HAT"
+    "V-ANL", "W-SHP", "2-OP", "FORMT",
+    "ADDIT", "W-TBL", "CHORD", "SPECH",
+    "SWARM", "NOISE", "PARTL", "STRNG",
+    "MODAL", "B-DRM", "SNR", "HIHAT"
 };
 
 /* H/T/M percentages from HORATIO-1-FACTORY-PRESET-BANK.md are converted
