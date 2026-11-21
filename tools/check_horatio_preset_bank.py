@@ -40,7 +40,8 @@ winds = re.compile(r"brass|horn|trumpet|trombone|sax|flute|clarinet|reed|voice|v
 textures = re.compile(r"noise|texture|evolving|atmosphere|ambient|windy|static", re.I)
 for name, env in zip(names, envelopes):
     attack, decay, sustain, release = env
-    if percussive.search(name) and not pads.search(name):
+    bell_like = re.search(r"bell|chime|marimba|mallet|xylophone|steel drum|wood block|snare|hi.hat", name, re.I)
+    if percussive.search(name) and (not pads.search(name) or bell_like):
         if decay < 64 or release < 44:
             raise SystemExit(f"{name}: percussive envelope is too short to avoid a click")
     elif pads.search(name) and not plucked.search(name):
