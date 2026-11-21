@@ -46,7 +46,12 @@ static const uint16_t SL_PAT[SL_NPAT] = {
 };
 static const uint8_t SL_DEN[6] = {2, 4, 8, 3, 6, 12};   /* P_SLRATE (N_SLDIV): a step = 1 / DEN beats */
 
-static int16_t sl_buf[NTRK][SL_LEN] __attribute__((section(".pool")));
+#ifdef HORATIO_PLAITS
+#define SL_TRACKS NPART             /* HORATIO has three live synth parts; no drum slicer */
+#else
+#define SL_TRACKS NTRK
+#endif
+static int16_t sl_buf[SL_TRACKS][SL_LEN] __attribute__((section(".pool")));
 typedef struct {
     uint32_t pos, len;           /* clock units into the step, its length */
     uint32_t base;               /* the step without swing (units) */
@@ -60,13 +65,15 @@ typedef struct {
     uint8_t bit;                 /* this step's pattern bit (latched at its start) */
     uint8_t rec_on;              /* recording this step */
 } sl_t;
-static sl_t sl[NTRK];
+static sl_t sl[SL_TRACKS];
+#ifndef HORATIO_PLAITS
 static int32_t sl_dbuf[CTL];     /* the drum track's dry mono signal (slicer_drums) */
+#endif
 
 static void slicer_start(uint32_t pos)   /* seq_start: step 0 of every track, pos units in */
 {
     uint32_t k;
-    for (k = 0; k < NTRK; k++) {
+    for (k = 0; k < SL_TRACKS; k++) {
         sl[k].idx = 15;
         sl[k].pos = pos;
         sl[k].len = 0;
@@ -175,6 +182,7 @@ static int slicer_busy(const track_t *t)
     return s->w || (t->p[P_SLCR] == SL_STUT && s->loop);
 }
 
+#ifndef HORATIO_PLAITS
 /* the drum track: as drums_render, through the SLICER when it is on (or still fading) */
 static void slicer_drums(int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dly, uint32_t n)
 {
@@ -204,3 +212,4 @@ static void slicer_drums(int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dly, u
         }
     }
 }
+#endif  /* SLOOP's drum-track slicer */
