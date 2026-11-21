@@ -213,7 +213,8 @@ static void black_key_chord_matrix_test(void)
         for (root = 0; root < 12u; root++) {
             uint32_t mask;
             t->p[P_ROOT] = (int16_t)root;
-            mask = scale_mask(t);
+            /* CHR uses the C-minor chord map, matching kb_black_chord(). */
+            mask = scale ? scale_mask(t) : SCALE_MASK[2];
             for (k = 0; k < 27u; k++) {
                 int degree = kb_black_index(k);
                 if (degree < 0)
