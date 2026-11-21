@@ -1,5 +1,97 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+#ifdef HORATIO_PLAITS
+/* HORATIO has no drum runtime. Keep only the tiny data helpers required to read
+ * historical drum patterns/projects; no drum voices, kits, sample renderer or
+ * synthesised drum DSP are linked into this build. */
+#define DRUM_KITS 1u
+#define DRUM_DEFAULT_KIT 0u
+#define DRUM_TUNE_MIN (-8)
+#define DRUM_TUNE_MAX 7
+#define DRUM_DEC_MIN (-4)
+#define DRUM_DEC_MAX 3
+static const char *const DRUM_KIT_NAMES[] = {"NONE"};
+static int8_t drum_tune[DRUM_LANES], drum_dec[DRUM_LANES];
+
+/* Shared level/pan ramp helper used by the synth mixer. */
+static int32_t mix_glide(int32_t from, int32_t to)
+{
+    int32_t d = to - from;
+    return d <= 8 && d >= -8 ? to : from + d / 4;
+}
+
+/* There is no active drum sample set in HORATIO. */
+static int32_t drum_set(void) { return -1; }
+static void drum_on(uint32_t note, uint32_t vel) { (void)note; (void)vel; }
+
+static const uint8_t LANE_NOTE[DRUM_LANES] = {
+    36, 35, 38, 39, 42, 46, 44, 37, 40, 43, 48, 49, 51, 70, 63, 56
+};
+static const uint8_t LANE_OF_GM[81 - 35 + 1] = {
+    1, 0, 7, 2, 3, 8, 9, 4, 9, 6,
+    9, 5, 10, 10, 11, 10, 12, 11, 12, 13,
+    11, 15, 11, 13, 12, 14, 14, 14, 14, 14,
+    14, 14, 15, 15, 13, 13, 15, 15, 13, 13,
+    7, 7, 7, 14, 14, 15, 15
+};
+static uint32_t lane_of_note(uint32_t note)
+{
+    return note < 35u ? 0u : note > 81u ? 13u : LANE_OF_GM[note - 35u];
+}
+static uint32_t lane_of_key(uint32_t k)
+{
+    static const int8_t W[12] = {0, -1, 1, -1, 2, -1, 3, 4, -1, 5, -1, 6};
+    int32_t i = W[k % 12u];
+    if (i < 0)
+        i = W[(k - 1u) % 12u];
+    return (uint32_t)((int32_t)(k / 12u) * 7 + i) & 15u;
+}
+static uint32_t key_of_lane(uint32_t l)
+{
+    static const uint8_t K[7] = {0, 2, 4, 6, 7, 9, 11};
+    return (l / 7u) * 12u + K[l % 7u];
+}
+
+static int dstep_has(const dstep_t *s, uint32_t l)
+{
+    return (s->on[(l >> 3) & 1u] >> (l & 7u)) & 1u;
+}
+static uint32_t dstep_lvl(const dstep_t *s, uint32_t l)
+{
+    return (s->lvl[(l >> 2) & 3u] >> ((l & 3u) * 2u)) & 3u;
+}
+static uint32_t dstep_rat(const dstep_t *s, uint32_t l)
+{
+    return (s->rat[(l >> 2) & 3u] >> ((l & 3u) * 2u)) & 3u;
+}
+static uint32_t dstep_mask(const dstep_t *s)
+{
+    return (uint32_t)s->on[0] | (uint32_t)s->on[1] << 8;
+}
+static void dstep_set(dstep_t *s, uint32_t l, uint32_t lvl, uint32_t rat)
+{
+    uint32_t sh = (l & 3u) * 2u, b = (l >> 2) & 3u;
+    s->on[(l >> 3) & 1u] |= (uint8_t)(1u << (l & 7u));
+    s->lvl[b] = (uint8_t)((s->lvl[b] & ~(3u << sh)) | (lvl & 3u) << sh);
+    s->rat[b] = (uint8_t)((s->rat[b] & ~(3u << sh)) | (rat & 3u) << sh);
+}
+static void dstep_clr(dstep_t *s, uint32_t l)
+{
+    uint32_t sh = (l & 3u) * 2u, b = (l >> 2) & 3u;
+    s->on[(l >> 3) & 1u] &= (uint8_t)~(1u << (l & 7u));
+    s->lvl[b] &= (uint8_t)~(3u << sh);
+    s->rat[b] &= (uint8_t)~(3u << sh);
+}
+static uint32_t lvl_vel(uint32_t lvl, uint32_t vel)
+{
+    static const uint8_t V[4] = {0, 42, 72, 127};
+    return lvl & 3u ? V[lvl & 3u] : vel;
+}
+static uint32_t vel_lvl(uint32_t vel)
+{
+    return vel < 56u ? LV_GHOST : vel < 88u ? LV_SOFT : vel < 116u ? LV_NORM : LV_HARD;
+}
+#else
 /* GM drum part (track 4): the SAMPLE engine's KIT set (General MIDI percussion map,
  * tools/gen_samples.py GM_KIT), played by its step pattern, the keys when track 4
  * is selected, and its own MIDI channel (GLO -> DRUMS, default 10). Its own voices
@@ -436,3 +528,5 @@ static inline void drums_mix(int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dl
 }
 static void drums_render(int32_t *ml, int32_t *mr, int32_t *rev, int32_t *dly, uint32_t n) { drums_mix(ml, mr, rev, dly, 0, n); }
 static void drums_render_mono(int32_t *mono, uint32_t n) { drums_mix(0, 0, 0, 0, mono, n); }
+
+#endif /* HORATIO_PLAITS drum-runtime exclusion */
