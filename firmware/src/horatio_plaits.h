@@ -11,7 +11,7 @@ extern "C" {
 void horatio_plaits_block(void);
 
 #define HORATIO_PLAITS_VOICES 4u
-#define HORATIO_PLAITS_MODELS 24u
+#define HORATIO_PLAITS_MODELS 23u
 
 void horatio_plaits_init(void);
 void horatio_plaits_configure(uint32_t slot, uint32_t model, int32_t pitch_q7,
