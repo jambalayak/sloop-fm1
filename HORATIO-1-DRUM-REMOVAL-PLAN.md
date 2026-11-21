@@ -43,3 +43,26 @@ The current implementation is cross-cutting:
 ## Completion criteria
 
 Do not call drum removal complete until the firmware builds, the package is generated, project compatibility tests pass, and inspection confirms there is no dedicated drum track, kit, drum voice, drum MIDI route or drum UI left. Report any retained compatibility-only code explicitly.
+
+
+## HORATIO Plaits branch audit (2026-11-21)
+
+The `plaits-development` branch already has some of the target architecture, but the drum implementation is not yet removed:
+
+- `core.h` defines three live synth parts and a fourth legacy compatibility slot. The fourth slot remains in the in-memory track array for old project conversion; it is not a live drum track.
+- `seq.c` rejects legacy fourth-track keyboard and incoming MIDI drum input, and the UI parameter page filter hides the DRUMS configuration page. The drum-related sequencing, MIDI mapping, and editor compatibility code is still present in the translation unit and needs a deliberate compile-time separation.
+- `metronome.c` is already independent and `fx.c` mixes its click separately. Preserve this implementation; do not retain the drum mixer just to keep the click.
+- `fx.c` already omits kick-triggered sidechain ducking and sizes its track-filter / insert state for `NPART`, but its mixer comments and other legacy drum references need auditing before removing the drum source.
+- Under `HORATIO_PLAITS`, `engines.c` exposes only `ENG_PLAITS`; the legacy engine table and shared GRAIN/FM6/PHYS arena are excluded. The sample engine source is still included for sample/drum data declarations during migration, so its remaining dependencies must be separated rather than deleting the file blindly.
+- `project.c` already declares the HORATIO FUN7 three-synth-track format and contains converters for historical drum-bearing formats. Keep those historical readers and converters; new-format serialization must remain three-track.
+- The build workflow runs a SLOOP reference build first, then a clean `HORATIO_PLAITS=1` build. Any conditional compilation must preserve the reference build unchanged.
+
+### Updated safe-removal sequence
+
+1. Add HORATIO-only compile-time boundaries around drum audio/kit implementation while retaining the independent metronome and historical project conversion. Keep the SLOOP reference build unchanged.
+2. Remove drum references from sequencer/MIDI/UI paths in the HORATIO build, using explicit legacy no-op handling only where required by old file formats or editor protocol.
+3. Remove drum-kit generation and assets from the HORATIO build only after no included source references the generated header or sample zones.
+4. Compare the linker map and POOL usage before/after each stage. Do not assume deleting a preset label or source file saves RAM: verify the linked sections.
+5. Run both workflow builds, keyboard-scale tests, preset validation, project-format tests, and package generation before calling the removal complete.
+
+No drum source, kit, sample, or compatibility reader was deleted in this audit-only update.
