@@ -724,6 +724,8 @@ UI_SMALL static void select_engine(uint32_t e)
 enum { BK_BASS, BK_KEYS, BK_ORGAN, BK_PAD, BK_LEAD, BK_PLUCK, BK_STAB, BK_FX };
 static const char *const BANK_KIND[] = {"BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK", "STAB", "FX"};
 #ifdef HORATIO_PLAITS
+/* Keep this list in exact one-to-one correspondence with ENG_PLAITS presets.
+ * The category is the sound's browsing kind, not a separate synth/model bank. */
 static const struct { uint8_t kind, e; const char *name; } BANK[] = {
     {BK_BASS, 0, "Outrun Sub"},
     {BK_BASS, 0, "Kavinsky Growl"},
@@ -740,12 +742,10 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
     {BK_PAD, 0, "Miami Horizon"},
     {BK_PAD, 0, "Neon Poly"},
     {BK_PAD, 0, "Sunset Strings"},
-    {BK_PAD, 0, "Vangelis Swell"},
     {BK_PAD, 0, "Midnight Skyline"},
     {BK_PAD, 0, "VHS Choir"},
     {BK_PAD, 0, "Macintosh Pad"},
     {BK_PAD, 0, "Crystal Fountain"},
-    {BK_PAD, 0, "Late Night Weather"},
     {BK_PAD, 0, "Hypnagogic Drift"},
     {BK_PAD, 0, "Slowed Flute"},
     {BK_PAD, 0, "Liquid Formant"},
@@ -758,12 +758,9 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
     {BK_LEAD, 0, "Dreamcast Menu"},
     {BK_LEAD, 0, "Acid 303-FM"},
     {BK_LEAD, 0, "FM Metallic Ping"},
-    {BK_PLUCK, 0, "Retrowave Bell"},
     {BK_PLUCK, 0, "Seapunk Pluck"},
     {BK_PLUCK, 0, "Arcade Octaver"},
     {BK_PLUCK, 0, "Poolside Marimba"},
-    {BK_PLUCK, 0, "Elevator Chime"},
-    {BK_PLUCK, 0, "Glass Wire"},
     {BK_PLUCK, 0, "Inharmonic Bell"},
     {BK_PLUCK, 0, "Fractured Chord"},
     {BK_STAB, 0, "Juno Brass 84"},
@@ -772,7 +769,7 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
     {BK_FX, 0, "Eccojam Loop"},
     {BK_FX, 0, "Autechre Grain"},
     {BK_FX, 0, "Aphex Rubber"},
-    {BK_FX, 0, "Micro-Glitch Dust"},
+    {BK_FX, 0, "Glass Bell"},
     {BK_FX, 0, "Data Stream"},
     {BK_FX, 0, "Static Geiger"},
 };
