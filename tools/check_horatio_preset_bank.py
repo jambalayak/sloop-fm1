@@ -37,6 +37,7 @@ percussive = re.compile(r"drip|marimba|mallet|chime|bell|wood block|snare|steel 
 plucked = re.compile(r"bass|guitar|piano|pluck|mandolin|oud|sitar|epiano|e\\. piano|clav|rhodes", re.I)
 pads = re.compile(r"pad|string|orchestra|cello|violin|harmonium|organ|drone|church|choir|slow rise|sidechain|side.chain|chord|saw.chain|ensemble", re.I)
 winds = re.compile(r"brass|horn|trumpet|trombone|sax|flute|clarinet|reed|voice|vocal", re.I)
+textures = re.compile(r"noise|texture|evolving|atmosphere|ambient|windy|static", re.I)
 for name, env in zip(names, envelopes):
     attack, decay, sustain, release = env
     if percussive.search(name) and not pads.search(name):
@@ -51,6 +52,9 @@ for name, env in zip(names, envelopes):
     elif winds.search(name):
         if attack > 18 or decay < 68 or sustain < 70 or release < 42:
             raise SystemExit(f"{name}: wind/brass envelope does not sustain naturally")
+    elif textures.search(name):
+        if attack > 24 or decay < 48 or release < 40:
+            raise SystemExit(f"{name}: evolving texture envelope is too short")
     elif attack > 24 or decay < 60 or release < 40:
         raise SystemExit(f"{name}: general synth envelope is outside the useful range")
 if len(set(envelopes)) != len(envelopes):
