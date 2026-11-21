@@ -109,8 +109,8 @@ def tc(tool, *args):
             pool_lines = [line for line in map_text.splitlines()
                           if ".pool" in line or "POOL" in line]
             if pool_lines:
-                sys.stderr.write("\\nPOOL linker map entries:\\n")
-                sys.stderr.write("\\n".join(pool_lines) + "\\n")
+                sys.stderr.write("\nPOOL linker map entries:\n")
+                sys.stderr.write("\n".join(pool_lines) + "\n")
         raise SystemExit(f"build: {tool} failed")
     if r.stderr.strip():
         sys.stderr.write(r.stderr)
