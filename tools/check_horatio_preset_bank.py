@@ -34,7 +34,7 @@ if all(env == (0, 0, 0, 0) for env in envelopes):
 # Envelope checks are based on each sound's identity, not broad bass/lead/pad classes.
 # The table is authored per preset; identical ADSR tuples are rejected.
 percussive = re.compile(r"drip|marimba|mallet|chime|bell|wood block|snare|steel drum|xylophone|hi.hat|whip|gun|laser|pew pew|popcorn|stick|percuss|bouncing|mosquito|emergency vehicle|space ship|bubbling liquid|puddle walking|dog drinking|motor\\b|toy piano|harp|mandolin|oud|plucked|pluck|sitar|piano", re.I)
-plucked = re.compile(r"bass(?!.*drone)|guitar|piano|pluck|mandolin|oud|sitar|epiano|e\\. piano|clav|rhodes", re.I)
+plucked = re.compile(r"bass(?!.*drone)(?!.*with chords)|guitar|piano|pluck|mandolin|oud|sitar|epiano|e\\. piano|clav|rhodes", re.I)
 pads = re.compile(r"pad|string|orchestra|cello|violin|harmonium|organ|drone|church|choir|slow rise|sidechain|side.chain|chord|saw.chain|ensemble", re.I)
 winds = re.compile(r"brass|horn|trumpet|trombone|sax|flute|clarinet|reed|voice|vocal", re.I)
 textures = re.compile(r"noise|texture|evolving|atmosphere|ambient|windy|static|spaceship|space.ship|chaos", re.I)
