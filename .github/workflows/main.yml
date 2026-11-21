@@ -11,8 +11,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: horatio-1-build-${{ github.ref }}
-  cancel-in-progress: true
+  group: horatio-1-build-${{ github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   build:
