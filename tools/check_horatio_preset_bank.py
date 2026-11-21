@@ -64,6 +64,21 @@ if len(set(names)) != len(names):
 if [name for _, name in bank] != names:
     raise SystemExit("Factory browser names/order do not match the Plaits preset table")
 
+
+# The three Plaits 1.2 six-op models each contain 32 real DX7-format factory patches.
+fm_rows = re.findall(r'\{"(DX([1-3])-([0-9]{2}) [^"]+)",\s*\{\s*(\d+)\s*,\s*(\d+)', preset_block)
+if len(fm_rows) != 96:
+    raise SystemExit(f"Expected 96 named bundled DX patches, found {len(fm_rows)}")
+for name, bank_text, slot_text, model_text, harmonics_text in fm_rows:
+    bank_no, slot, model, harmonics = int(bank_text), int(slot_text), int(model_text), int(harmonics_text)
+    expected_harmonics = round((slot - 1) * 127 / 31)
+    if model != bank_no + 1:
+        raise SystemExit(f"{name}: expected Plaits six-op model {bank_no + 1}, got {model}")
+    if harmonics != expected_harmonics:
+        raise SystemExit(f"{name}: expected patch selector {expected_harmonics}, got {harmonics}")
+if len({row[0] for row in fm_rows}) != 96:
+    raise SystemExit("DX factory patch names must be unique")
+
 models = {int(row[1]) for row in presets}
 expected = set(range(23))
 if models != expected:
