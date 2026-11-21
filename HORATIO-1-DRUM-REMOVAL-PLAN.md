@@ -80,3 +80,21 @@ A second pass checked the actual HORATIO adapter and linker memory map before mo
 - The latest linker-map diagnostic was added to `tools/build.py`, but the previous failing CI run predates that diagnostic. Its log therefore contains no POOL input-object breakdown. The new `--print-memory-usage` option is also not yet confirmed by a run.
 
 Decision: do not move Plaits slots into `.lowram`, do not enlarge POOL across the fixed stack-guard addresses, and do not delete drum compatibility data as a speculative memory fix. Next valid step is to obtain a fresh link map from the current source revision, then identify the largest individual `.pool` contributors and make a measured allocation change. Preserve all 16 Plaits models and four shared voice slots.
+
+### Linker-log figures and largest buffer candidates
+
+The archived CI log from the last SLOOP reference build provides the baseline figures:
+- `.pool`: 333,900 / 344,064 B (10,164 B spare)
+- `.bss` RAM: 55,180 / 98,304 B (43,124 B spare)
+- `.lowram`: 22,260 / 29,384 B (7,124 B spare)
+
+The failed HORATIO link overflowed POOL by 29,984 B. The build's post-link policy requires at least 8,192 B of spare POOL, so a successful fix needs roughly 38,176 B of POOL relief, not merely 29,984 B. The Plaits C++ voice-storage probe reports about 14.9 KB for four Voice objects in ordinary BSS; this is separate from the four PlaitsSlot objects in POOL. The exact HORATIO BSS total still needs a successful link or object-section accounting.
+
+Large source-level POOL allocations worth accounting for in the fresh map:
+- FX tempo delay: 65,536 int16 samples = 131,072 B
+- Graph/visualiser canvas: 240 × 124 RGB565 = 59,520 B
+- Slicer recording: NTRK × 4,096 int16 samples = 32,768 B (HORATIO has three active synth parts plus one retired compatibility slot; the fourth buffer is a possible 8 KB compile-time saving, but the synth slicer itself remains useful)
+- Plaits slots: four fixed-size PlaitsSlot records, each with a 4 KB arena and frame FIFO
+- Visualiser FFT/spectrogram scratch: 4,608 B total
+
+Do not infer that every listed object survives the HORATIO link: compile-time guards and section garbage collection can change the final contribution. The new linker-failure diagnostics now try to print both map entries and per-object `.pool` sections/symbols, so the next real HORATIO build can settle the exact contributors before a memory-affecting edit.
