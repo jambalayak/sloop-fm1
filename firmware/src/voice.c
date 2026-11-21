@@ -783,25 +783,7 @@ static int32_t env_tick(track_t *t, voice_t *v)
     }
     return v->env >> 9;
 }
-#ifdef HORATIO_PLAITS
-/* Each Plaits slot follows its SLOOP voice gate independently. The normal
- * per-voice ADSR in env_tick() shapes its output; this forwards the note gate
- * to Plaits' internal LPG/model trigger. */
-void horatio_plaits_block(void) {
-    uint32_t p, i, slot;
-    for (slot = 0; slot < HORATIO_PLAITS_VOICES; ++slot)
-        horatio_plaits_gate(slot, 0u);
-    for (p = 0; p < NPART; ++p) {
-        for (i = 0; i < NVOICE; ++i) {
-            const voice_t *v = &trk[p].v[i];
-            uint32_t id = (uint32_t)v->s[7];
-            if (v->active && ENGINES[trk[p].engine] == &ENG_PLAITS &&
-                id >= 1u && id <= HORATIO_PLAITS_VOICES)
-                horatio_plaits_gate(id - 1u, v->gate);
-        }
-    }
-}
-#endif
+
 
 
 /* render one block of a part into out (cleared here); returns the voices rendered */
