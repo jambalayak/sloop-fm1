@@ -37,7 +37,7 @@ percussive = re.compile(r"drip|marimba|mallet|chime|bell|wood block|snare|steel 
 plucked = re.compile(r"bass(?!.*drone)|guitar|piano|pluck|mandolin|oud|sitar|epiano|e\\. piano|clav|rhodes", re.I)
 pads = re.compile(r"pad|string|orchestra|cello|violin|harmonium|organ|drone|church|choir|slow rise|sidechain|side.chain|chord|saw.chain|ensemble", re.I)
 winds = re.compile(r"brass|horn|trumpet|trombone|sax|flute|clarinet|reed|voice|vocal", re.I)
-textures = re.compile(r"noise|texture|evolving|atmosphere|ambient|windy|static", re.I)
+textures = re.compile(r"noise|texture|evolving|atmosphere|ambient|windy|static|spaceship|space.ship|chaos", re.I)
 for name, env in zip(names, envelopes):
     attack, decay, sustain, release = env
     bell_like = re.search(r"bell|chime|marimba|mallet|xylophone|steel drum|wood block|snare|hi.hat", name, re.I)
