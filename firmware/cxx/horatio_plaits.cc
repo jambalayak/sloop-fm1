@@ -124,7 +124,8 @@ void horatio_plaits_configure(uint32_t slot, uint32_t model, int32_t pitch_q7,
     if (!initialized || slot >= kVoiceCount) return;
     PlaitsSlot *s = &slots[slot];
     if (model >= HORATIO_PLAITS_MODELS) model = HORATIO_PLAITS_MODELS - 1u;
-    /* Public IDs follow upstream order: eight additions, then all 16 originals. */
+    /* Keep Speech out of the browser; public IDs 15+ skip upstream Speech (15). */
+    if (model >= 15u) ++model;
     if (harmonics > 32767u) harmonics = 32767u;
     if (timbre > 32767u) timbre = 32767u;
     if (morph > 32767u) morph = 32767u;
