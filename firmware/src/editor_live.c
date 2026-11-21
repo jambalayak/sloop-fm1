@@ -166,7 +166,7 @@ UI_SMALL static void ed_live(const uint8_t *a, uint32_t na)
     ed_b(arrangement.entry[arrangement_clock.index % ARR_STEPS].bars);
     ed_b(arrangement_ready() & 15u);
     for (i = 0; i < NTRK; i++) {
-        int32_t pk = i == TRK_DRUM ? drums.peak : trk[i].peak, lg = 0;
+        int32_t pk = trk[i].peak, lg = 0;   /* HORATIO's fourth compatibility lane is silent. */
         ed_b(trk[i].seq_idx);
         ed_b(trk_len(&trk[i]));
         if (pk >= 64) {
