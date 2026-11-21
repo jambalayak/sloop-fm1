@@ -8,6 +8,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+void horatio_plaits_block(void);
 
 #define HORATIO_PLAITS_VOICES 4u
 #define HORATIO_PLAITS_MODELS 23u
