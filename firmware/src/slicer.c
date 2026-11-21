@@ -51,7 +51,12 @@ static const uint8_t SL_DEN[6] = {2, 4, 8, 3, 6, 12};   /* P_SLRATE (N_SLDIV): a
 #else
 #define SL_TRACKS NTRK
 #endif
+#ifdef HORATIO_PLAITS
+/* HORATIO's three synth slicers use ordinary RAM; keep POOL for Plaits and long FX buffers. */
+static int16_t sl_buf[SL_TRACKS][SL_LEN];
+#else
 static int16_t sl_buf[SL_TRACKS][SL_LEN] __attribute__((section(".pool")));
+#endif
 typedef struct {
     uint32_t pos, len;           /* clock units into the step, its length */
     uint32_t base;               /* the step without swing (units) */
