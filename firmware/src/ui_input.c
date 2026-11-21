@@ -1207,10 +1207,11 @@ UI_SMALL static void ui_input(void)
         ui.force = 1;
     }
     if ((s = panel_enc(EN_PRESET)) != 0 && !on_notes_page() &&
-        (ui.home || cur_page()->scope == SC_TRK || cur_page()->graph == GR_BROWSE || cur_fam() == FAM_TRK)) {
-        /* PRESETS browses the selected part's sounds from every track-editing page,
-         * including ENV, LFO, SCALE and engine pages. The NOTES page keeps this encoder
-         * for zoom; every detent on the other track pages loads the next/previous preset. */
+        (ui.home || cur_page()->scope == SC_TRACK || cur_page()->scope == SC_ENGINE ||
+         cur_page()->scope == SC_TRK || cur_page()->graph == GR_BROWSE || cur_fam() == FAM_TRK)) {
+        /* PRESETS browses the selected part's sounds from track and engine pages,
+         * including ENV, LFO, SCALE and PL MODEL. Global settings stay untouched;
+         * NOTES keeps this encoder for zoom. Every detent loads one preset. */
         uint32_t total, cur = preset_pos(&total);
         if (total)
             preset_go((uint32_t)(((int32_t)cur + s % (int32_t)total + (int32_t)total) % (int32_t)total));
