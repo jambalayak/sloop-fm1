@@ -65,6 +65,18 @@ jobs:
           rm -rf build
           HORATIO_PLAITS=1 ./build.sh
 
+      - name: Run Plaits audio smoke test
+        run: |
+          g++ -O2 -std=gnu++11 -DTEST \
+            -Ifirmware/cxx -Ifirmware/src -Ithird_party -Ithird_party/eurorack \
+            $(find third_party/eurorack/plaits/dsp -name '*.cc' -print) \
+            third_party/eurorack/plaits/resources.cc \
+            third_party/stmlib/dsp/units.cc \
+            third_party/stmlib/utils/random.cc \
+            firmware/cxx/horatio_plaits.cc tests/horatio_plaits_smoke.cc \
+            -lm -o build/horatio_plaits_smoke
+          ./build/horatio_plaits_smoke
+
       - name: Save HORATIO-1 package
         uses: actions/upload-artifact@v4
         with:
