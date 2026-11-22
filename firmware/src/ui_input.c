@@ -451,6 +451,25 @@ UI_SMALL static void project_new(void)
     ui.force = 1;
 }
 
+/* The old FUZZ, CRUSH and FLANGER IDs remain reserved in saved projects, but
+ * are not choices in the live INSERT menu. Step over those IDs in either direction. */
+UI_SMALL static int32_t insert_type_turn(int32_t v, int32_t steps)
+{
+    while (steps > 0 && v < 8) {
+        v++;
+        if (v == 4 || v == 5 || v == 7)
+            v++;
+        steps--;
+    }
+    while (steps < 0 && v > 0) {
+        v--;
+        if (v == 4 || v == 5 || v == 7)
+            v--;
+        steps++;
+    }
+    return v;
+}
+
 UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
 {
     int16_t *vp;
@@ -517,7 +536,8 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
     d = page_desc(pg, slot, &vp);
     if (!d || !vp || d->max == d->min)
         return;
-    v = d->names == ESYNC_NAMES || d->names == N_IBITS || d->names == N_IRATE ? names_turn(d, *vp, steps)   /* (a name a detent) */
+    v = id == P_ITYPE ? insert_type_turn(*vp, steps) :
+        d->names == ESYNC_NAMES || d->names == N_IBITS || d->names == N_IRATE ? names_turn(d, *vp, steps)   /* (a name a detent) */
                                     : clamp(*vp + accel(EN_K1 + slot, steps, d->names ? 0 : d->max - d->min), d->min, d->max);
     *vp = (int16_t)v;
     if (pg->scope != SC_GLOBAL && p_lockable(id))
