@@ -2101,6 +2101,34 @@ int main(int argc, char **argv)
         TDRUM->p[P_SLEN] = 16;
         go_home(); song.sel = 0; frame();
     }
+    {   /* HORATIO: BEADS page encoder regression; SIZE (KNOB 4) must increment and decrement like DENS (KNOB 3). */
+        uint32_t j;
+        int16_t size0, dens0;
+        int ok = 1;
+        song.sel = 0;
+        go_home(); frames(2);
+        for (j = 0; j < NPAGES; j++) if (!strcmp(PAGES[j].title, "BEADS")) break;
+        if (j >= NPAGES) {
+            ok = 0;
+        } else {
+            ui.page = (uint8_t)j; ui.home = 0; ui.fam_last[FAM_FX] = (uint8_t)j; page_entered(); ui.force = 1; frames(2);
+            song.g[G_BD_SIZE] = 64;
+            size0 = song.g[G_BD_SIZE];
+            encs[panel.enc[EN_K4]] = 1; frame();
+            ok &= song.g[G_BD_SIZE] == size0 + 1;
+            encs[panel.enc[EN_K4]] = -1; frame();
+            ok &= song.g[G_BD_SIZE] == size0;
+            song.g[G_BD_DENS] = 64;
+            dens0 = song.g[G_BD_DENS];
+            encs[panel.enc[EN_K3]] = 1; frame();
+            ok &= song.g[G_BD_DENS] == dens0 + 1;
+            encs[panel.enc[EN_K3]] = -1; frame();
+            ok &= song.g[G_BD_DENS] == dens0;
+            check(ok, "HORATIO BEADS: SIZE on KNOB 4 and DENS on KNOB 3 both increment and decrement");
+            song.g[G_BD_SIZE] = 64; song.g[G_BD_DENS] = 64;
+        }
+        go_home(); frames(2);
+    }
     {   /* fuzz: 20000 frames of random buttons (held or tapped), knobs and keys, with the audio running
          * between frames; every draw stays on the screen (lcd_blit / lcd_fill assert it) */
         uint32_t f, seed = 777, held = 0;
