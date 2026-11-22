@@ -159,6 +159,7 @@ typedef struct {
                                   * (glide, pitch / LFO modulation, voice mode...: preset_extras) */
     int8_t lfo[11];              /* optional preset modulation: enabled, rate, wave, fade, sync, trig, polarity,
                                   * destination 1, depth 1, destination 2, depth 2; all zero = LFO off */
+    int8_t octave;               /* HORATIO: preset pitch offset in octaves, -2..+2; 0 = unchanged */
 } preset_t;
 #define FX(d, c, dl, r) .fx = {(d) + 1, (c) + 1, (dl) + 1, (r) + 1}
 #define ARP(m, rt, o, g) .arp = {(m) + 1, (rt) + 1, (o) + 1, (g) + 1}
@@ -245,6 +246,7 @@ enum { FC_NORM, FC_FILL, FC_NOFILL };     /* (3: as FC_NORM) */
 typedef struct track {
     int16_t p[P_COUNT];
     uint8_t engine, preset;      /* engine: what the audio ISR renders */
+    int8_t preset_octave;        /* preset register offset; separate from ROOT / track TRANSPOSE */
     uint8_t eng_req;             /* engine the UI asked for (the ISR switches at a block start) */
     uint8_t user;                /* user preset slot + 1 the sound came from (UI), 0 = none */
     voice_t v[NVOICE];
