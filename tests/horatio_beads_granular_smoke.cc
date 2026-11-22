@@ -35,7 +35,7 @@ static uint32_t captured_after_one_second_at_host_rate(uint32_t rate,
     return horatio_granular_recorded_samples();
 }
 
-static void render_position_variant(float time, uint32_t reverse,
+static void render_position_variant(float time, float pitch, uint32_t reverse,
                                     int32_t *left, int32_t *right,
                                     uint32_t samples) {
     const uint32_t sr = 48000u;
@@ -56,7 +56,7 @@ static void render_position_variant(float time, uint32_t reverse,
     }
 
     /* Freeze the full buffer so each comparison reads the same recorded audio. */
-    horatio_granular_set(45.0f, time, 0.55f, 0.0f, 0.65f, 0.0f, 1u, reverse, HORATIO_GRANULAR_RATE_16K);
+    horatio_granular_set(45.0f, time, 0.55f, pitch, 0.65f, 0.0f, 1u, reverse, HORATIO_GRANULAR_RATE_16K);
     for (uint32_t offset = 0; offset < samples; offset += 128u) {
         for (uint32_t i = 0; i < 128u; ++i) in_l[i] = in_r[i] = 0;
         horatio_granular_process(in_l, in_r, out_l, out_r, 128u);
@@ -187,13 +187,16 @@ int main() {
         int32_t base_l[4096], base_r[4096];
         int32_t moved_l[4096], moved_r[4096];
         int32_t reverse_l[4096], reverse_r[4096];
-        uint64_t time_difference, reverse_difference;
+        int32_t pitched_l[4096], pitched_r[4096];
+        uint64_t time_difference, reverse_difference, pitch_difference;
 
-        render_position_variant(0.08f, 0u, base_l, base_r, compare_samples);
-        render_position_variant(0.92f, 0u, moved_l, moved_r, compare_samples);
-        render_position_variant(0.08f, 1u, reverse_l, reverse_r, compare_samples);
+        render_position_variant(0.08f, 0.0f, 0u, base_l, base_r, compare_samples);
+        render_position_variant(0.92f, 0.0f, 0u, moved_l, moved_r, compare_samples);
+        render_position_variant(0.08f, 0.0f, 1u, reverse_l, reverse_r, compare_samples);
+        render_position_variant(0.08f, 12.0f, 0u, pitched_l, pitched_r, compare_samples);
         time_difference = compare_audio(base_l, base_r, moved_l, moved_r, compare_samples);
         reverse_difference = compare_audio(base_l, base_r, reverse_l, reverse_r, compare_samples);
+        pitch_difference = compare_audio(base_l, base_r, pitched_l, pitched_r, compare_samples);
         if (time_difference < 100000u) {
             fprintf(stderr, "TIME control did not materially change granular playback: %llu\\n",
                     static_cast<unsigned long long>(time_difference));
@@ -203,6 +206,11 @@ int main() {
             fprintf(stderr, "REVERSE control did not materially change granular playback: %llu\\n",
                     static_cast<unsigned long long>(reverse_difference));
             return 6;
+        }
+        if (pitch_difference < 100000u) {
+            fprintf(stderr, "PITCH control did not materially change granular playback: %llu\\n",
+                    static_cast<unsigned long long>(pitch_difference));
+            return 12;
         }
     }
 
