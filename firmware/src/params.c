@@ -419,7 +419,7 @@ static const page_t PAGES[] = {
     {"FILTER", FAM_FX, SC_TRACK, GR_NONE, {P_TFLT, 0xFF, 0xFF, 0xFF}},   /* the track's filter (drum track too) */
     {"BEADS", FAM_FX, SC_GLOBAL, GR_NONE, {G_BD_ON, G_BD_MIX, G_BD_DENS, G_BD_SIZE}},
     {"BEADS 2", FAM_FX, SC_GLOBAL, GR_BEADS, {G_BD_SHAPE, G_BD_PITCH, G_BD_FB, 0xFF}},
-    {"BEADS 3", FAM_FX, SC_GLOBAL, GR_NONE, {G_BD_TIME, G_BD_FREEZE, G_BD_REVERSE, 0xFF}},
+    {"BEADS 3", FAM_FX, SC_GLOBAL, GR_NONE, {G_BD_TIME, G_BD_FREEZE, G_BD_REVERSE, G_BD_RATE}},
     {"SLICER", FAM_FX, SC_TRACK, GR_SLCR, {P_SLCR, P_SLPAT, P_SLRATE, P_SLDEPTH}},   /* drum track too */
     {"INSERT", FAM_FX, SC_TRACK, GR_INS, {P_ITYPE, P_IA, P_IB, P_IC}},   /* 2.6 (Felucca 1.5): the track's INSERT (fx.c), */
     {"INSERT 2", FAM_FX, SC_TRACK, GR_INS, {P_IMIX, 0xFF, 0xFF, 0xFF}},  /* .. its dry / wet; the drum track too */
