@@ -423,10 +423,10 @@ static void tflt_run(djf_t *f, const tsvf_t *c, int32_t *b, uint32_t n, uint32_t
  * The drum track (SLOOP): its left, right, reverb send and delay send each through their own state, the same settings
  * (fx.c mix_block). State in RAM (.bss): 580 B a channel; noinline, its own loops */
 enum { IT_OFF, IT_SOFT, IT_HARD, IT_FOLD, IT_FUZZ, IT_CRUSH, IT_PHASER, IT_FLANGER, IT_CHORUS, IT_N };
+/* FUZZ, CRUSH and FLANGER retain their stored IDs for old projects, but are retired. */
 _Static_assert(IT_N == sizeof N_ITYPE / sizeof N_ITYPE[0], "the INSERT's types as params.c names them");
 #define IL_LEN 256u                     /* FLANG / CHOR: the line, samples (a power of 2: masked) */
 #define PH_ST 4u                        /* PHASR: all-pass stages (two notches, the classic pedal's) */
-static const uint8_t INS_HOLD[16] = {64, 48, 40, 32, 24, 20, 16, 12, 10, 8, 6, 5, 4, 3, 2, 1};   /* CRUSH RATE */
 /* PHASR: the stages' coefficient over the sweep (Q14), 33 points */
 static const int16_t PH_A[33] = {
     -16038, -15998, -15955, -15906, -15853, -15793, -15727, -15653, -15572, -15481, -15381, -15270, -15147, -15012,
@@ -456,7 +456,7 @@ static int32_t ins_lpk(int32_t c)
     return (int32_t)((g << 16) / (4096u + g));
 }
 /* the drives' and CRUSH's shape of v (a voice's full scale 32768; v already through DRIVE) */
-static inline int32_t ins_shape(uint32_t ty, int32_t v, uint32_t sh)
+static inline int32_t ins_shape(uint32_t ty, int32_t v)
 {
     switch (ty) {
     case IT_SOFT:
@@ -468,10 +468,6 @@ static inline int32_t ins_shape(uint32_t ty, int32_t v, uint32_t sh)
         u = 16384 - (u < 0 ? -u : u);
         return u + (u >> 1);                            /* x 1.5 (no divide) */
     }
-    case IT_FUZZ:
-        return v > 0 ? (v > 20000 ? 20000 : v) : softclip(v) >> 1;
-    case IT_CRUSH:                                      /* sh: 16 - BITS; to the nearest step */
-        return sh ? ((v + (1 << (sh - 1u))) >> sh) << sh : v;
     default:
         return v;
     }
@@ -482,49 +478,25 @@ static inline uint32_t ins_bits_sh(int32_t a) { return 15u - (uint32_t)(clamp(a,
  * in locals for the block (b may alias it as far as the compiler knows: no load / store a sample), written back */
 static __attribute__((noinline)) void ins_drive(ins_t *s, const int16_t *p, int32_t *b, uint32_t n, int32_t tw)
 {
-    uint32_t i, ty = s->type, sh = ins_bits_sh(p[P_IA]);
-    uint32_t hold = INS_HOLD[clamp(p[P_IB], 0, 127) >> 3];
+    uint32_t i, ty = s->type;
     int32_t a = clamp(p[P_IA], 0, 127), g = 4096 + a * a * 3;   /* DRIVE, Q12: 1x .. 12.8x, gentle at first */
     int32_t w = s->w, lp1 = s->lp1, lp2 = s->lp2, x, y, v;
-    if (ty == IT_CRUSH) {
-        uint32_t k = (uint32_t)ins_lpk(p[P_IC]), cnt = s->cnt;
-        int32_t hd = s->hold;
-        for (i = 0; i < n; i++) {
-            x = b[i];
-            w += clamp(tw - w, -SL_SLOPE, SL_SLOPE);
-            if (!cnt) {
-                hd = ins_shape(IT_CRUSH, clamp(x, -262144, 262143), sh);
-                cnt = hold;
-            }
-            cnt--;
-            y = hd << 4;                                /* (x16: the low cutoffs' rounding leaves no offset) */
-            v = mulq16(y - lp1, k);                     /* LPF: two one-pole low-passes */
-            y = v + lp1;
-            lp1 = y + v;
-            v = mulq16(y - lp2, k);
-            y = v + lp2;
-            lp2 = y + v;
-            b[i] = ins_mix(x, (y + 8) >> 4, w);
-        }
-        s->cnt = (uint8_t)cnt;
-        s->hold = hd;
-    } else {
+    {
         uint32_t k = (uint32_t)ins_lpk(p[P_IB]);
         int32_t lvl = LEVEL_Q12[p[P_IC] & 127], hp = s->hp, dc = s->dc;
         for (i = 0; i < n; i++) {
             x = b[i];
             w += clamp(tw - w, -SL_SLOPE, SL_SLOPE);
-            hp += ((x << 8) - hp) >> 8;                 /* ~27 Hz low cut (Q8: no offset left by the rounding) */
+            hp += ((x << 8) - hp) >> 8;
             v = clamp(x - (hp >> 8), -230000, 230000);
-            y = ins_shape(ty, ((v >> 3) * g) >> 9, 0) << 4;   /* (>> 3 first: 32 bits; x16 as CRUSH) */
-            v = mulq16(y - lp1, k);                     /* TONE: two one-pole low-passes */
+            y = ins_shape(ty, ((v >> 3) * g) >> 9) << 4;
+            v = mulq16(y - lp1, k);
             y = v + lp1;
             lp1 = y + v;
             v = mulq16(y - lp2, k);
             y = v + lp2;
-            lp2 = y + v;
-            y = (((y + 8) >> 4) * lvl) >> 12;           /* LEVEL */
-            dc += ((y << 8) - dc) >> 9;                 /* DC blocker, ~14 Hz (FUZZ's lopsided halves) */
+            y = (((y + 8) >> 4) * lvl) >> 12;
+            dc += ((y << 8) - dc) >> 9;
             b[i] = ins_mix(x, y - (dc >> 8), w);
         }
         s->hp = hp;
@@ -565,19 +537,14 @@ static __attribute__((noinline)) void ins_swept(ins_t *s, const int16_t *p, int3
         s->fb = fb;
         s->ph += n * inc;
     } else {
-        int32_t chorus = s->type == IT_CHORUS, fbk = c * (chorus ? 103 : 219);   /* 0 .. 0.4 / 0 .. 0.85, Q15 */
-        uint32_t dq = dep * 516u, ph = s->ph, wp = s->wp; /* DEPTH, Q16 */
+        int32_t fbk = c * 103;                    /* CHORUS feedback 0 .. 0.4, Q15 */
+        uint32_t ph = s->ph, wp = s->wp;
         int16_t *line = s->line;
         for (i = 0; i < n; i++, ph += inc) {
             int32_t x = b[i], r0, r1, v, fr;
             uint32_t d;                                 /* the delay, Q16 samples */
             w += clamp(tw - w, -SL_SLOPE, SL_SLOPE);
-            if (chorus) {
-                d = (uint32_t)((140 << 16) + ((osc_sine(ph) * (int32_t)dep * 50) >> 5));   /* 3.2 +- 2.3 ms */
-            } else {
-                uint32_t tr = ins_tri(ph), sw = (tr * tr) >> 16;   /* longer near the short end */
-                d = (11u << 16) + 209u * (((sw >> 1) * dq) >> 15);  /* 0.25 .. 5 ms */
-            }
+            d = (uint32_t)((140 << 16) + ((osc_sine(ph) * (int32_t)dep * 50) >> 5));   /* 3.2 +- 2.3 ms */
             r0 = (int32_t)(wp - (d >> 16)) & (int32_t)(IL_LEN - 1u);
             r1 = (r0 - 1) & (int32_t)(IL_LEN - 1u);
             fr = (int32_t)((d >> 1) & 0x7FFFu);
@@ -599,6 +566,7 @@ static __attribute__((noinline)) void ins_swept(ins_t *s, const int16_t *p, int3
 static __attribute__((noinline)) int ins_run(ins_t *s, const int16_t *p, int32_t *b, uint32_t n)
 {
     int32_t ty = clamp(p[P_ITYPE], 0, IT_N - 1), tw;
+    if (ty == IT_FUZZ || ty == IT_CRUSH || ty == IT_FLANGER) ty = IT_OFF;
     if (s->type != ty && !s->w)                         /* faded out: the new type from rest */
         s->type = (uint8_t)ty;
     tw = s->type == ty && ty ? ins_mixq(p[P_IMIX]) : 0;
