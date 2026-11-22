@@ -7,8 +7,9 @@
  * beads/dsp/delay_grain.h, grain.h, grain_envelope.h,
  * voice_stealing_envelope.h and delay_line.h.
  *
- * HORATIO uses an 8192-sample mono recording line, captured at 24 kHz from the 48 kHz master stream, and eight grains.
- * This is a compact adaptation, not a port of the complete Beads processor.
+ * HORATIO uses an 8192-sample mono recording line, captured at 16 kHz from the
+ * 44.1 kHz master stream, and eight grains. This is a compact adaptation, not
+ * a port of the complete Beads processor.
  */
 #include "horatio_beads_granular.h"
 
@@ -25,6 +26,7 @@ static const int kMaxDelay = HORATIO_GRANULAR_BUFFER_SAMPLES;
 static const int kSafety = beads::DelayGrain::head_crossing_safety_zone + 1;
 static const size_t kBankBytes = (kMaxDelay + 4u) * sizeof(int16_t);
 static const size_t kAllocatedBytes = HORATIO_GRANULAR_BUFFER_BYTES;
+static const uint32_t kCaptureRate = 16000u;
 
 typedef beads::DelayLine<beads::RESOLUTION_16_BIT, kMaxDelay, 1,
                          kBankBytes, 1> CompactDelayLine;
@@ -36,7 +38,7 @@ static uint32_t sample_rate = 48000u;
 static uint32_t recorded_samples;
 static float capture_l;
 static float capture_r;
-static uint8_t capture_phase;
+static uint32_t capture_phase;
 static uint32_t next_grain;
 static float trigger_phase;
 static float density_hz;
@@ -91,8 +93,9 @@ static void start_grain(void) {
         time_position * static_cast<float>(usable);
     const float duration_seconds = 0.012f + 0.065f * grain_size;
     const float duration = duration_seconds * static_cast<float>(sample_rate);
-    /* The recording line advances at 24 kHz while the audio callback is 48 kHz. */
-    float speed = 0.5f * powf(2.0f, pitch_semitones * (1.0f / 12.0f));
+    /* The recording line advances at 16 kHz; compensate for the host rate. */
+    float speed = (static_cast<float>(kCaptureRate) / static_cast<float>(sample_rate)) *
+                  powf(2.0f, pitch_semitones * (1.0f / 12.0f));
     if (reverse) speed = -speed;
 
     const float amplitude = 1.0f / sqrtf(static_cast<float>(active + 1u));
@@ -162,16 +165,16 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
         input.l = clamp_float(in_l + previous_wet_l * feedback, -1.0f, 1.0f);
         input.r = clamp_float(in_r + previous_wet_r * feedback, -1.0f, 1.0f);
 
-        /* Two-tap averaging is the 2:1 anti-alias filter before 24 kHz capture. */
-        if (!capture_phase) {
-            capture_l = input.l;
-            capture_r = input.r;
-            capture_phase = 1u;
-        } else {
-            input.l = 0.5f * (capture_l + input.l);
-            input.r = 0.5f * (capture_r + input.r);
+        /* One-pole anti-alias filtering, then rational-rate 16 kHz capture.
+         * The phase accumulator also works when the host runs at 44.1 kHz. */
+        capture_l += 0.65f * (input.l - capture_l);
+        capture_r += 0.65f * (input.r - capture_r);
+        capture_phase += kCaptureRate;
+        if (capture_phase >= sample_rate) {
+            capture_phase -= sample_rate;
+            input.l = capture_l;
+            input.r = capture_r;
             delay_line.Write(input, frozen != 0u);
-            capture_phase = 0u;
             if (!frozen && recorded_samples < static_cast<uint32_t>(kMaxDelay))
                 ++recorded_samples;
         }
