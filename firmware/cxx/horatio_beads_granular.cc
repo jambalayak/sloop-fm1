@@ -14,6 +14,7 @@
 
 #include <math.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "beads/dsp/delay_grain.h"
