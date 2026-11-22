@@ -110,7 +110,8 @@ enum {                          /* global parameters */
                                  * while SYNC is INT (seq.c clkout_block; a setting of the FM-1, kept in DR MAP's byte) */
     G_FXFADE,                   /* SLOOP 2.7.2, the FX layer (FX held), SELECT: how fast a punch-in FX fades in and out, 0 (instant, as
                                  * before) .. 15 (punch.c; a setting of the FM-1, kept in BEND's byte) */
-    G_BD_ON, G_BD_MIX, G_BD_DENS, G_BD_SIZE, G_BD_SHAPE, G_BD_PITCH, G_BD_FB, /* HORATIO compact Beads-derived granular bus; device settings */
+    G_BD_ON, G_BD_MIX, G_BD_DENS, G_BD_SIZE, G_BD_SHAPE, G_BD_PITCH, G_BD_FB,
+    G_BD_FREEZE, G_BD_REVERSE, /* HORATIO granular capture controls; device settings, outside project data */
     G_COUNT
 };
 
