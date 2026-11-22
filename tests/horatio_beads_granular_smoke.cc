@@ -6,6 +6,19 @@
 #include <math.h>
 
 
+static uint32_t captured_after_one_second(uint32_t rate) {
+    const uint32_t sr = 48000u;
+    int32_t in_l[128], in_r[128], out_l[128], out_r[128];
+    horatio_granular_init(sr);
+    horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
+                         0u, 0u, rate);
+    for (uint32_t block = 0; block < 375u; ++block) {
+        for (uint32_t i = 0; i < 128u; ++i) in_l[i] = in_r[i] = 0;
+        horatio_granular_process(in_l, in_r, out_l, out_r, 128u);
+    }
+    return horatio_granular_recorded_samples();
+}
+
 static void render_position_variant(float time, uint32_t reverse,
                                     int32_t *left, int32_t *right,
                                     uint32_t samples) {
@@ -61,6 +74,18 @@ int main() {
         HORATIO_GRANULAR_BUFFER_BYTES > 20u * 1024u) {
         fprintf(stderr, "compact Beads memory budget changed unexpectedly\n");
         return 1;
+    }
+
+    {
+        const uint32_t samples_16k = captured_after_one_second(HORATIO_GRANULAR_RATE_16K);
+        const uint32_t samples_8k = captured_after_one_second(HORATIO_GRANULAR_RATE_8K);
+        const uint32_t samples_4k = captured_after_one_second(HORATIO_GRANULAR_RATE_4K);
+        if (samples_16k != HORATIO_GRANULAR_BUFFER_SAMPLES ||
+            samples_8k != 8000u || samples_4k != 4000u) {
+            fprintf(stderr, "capture-rate duration mismatch: 16k=%u 8k=%u 4k=%u\n",
+                    samples_16k, samples_8k, samples_4k);
+            return 7;
+        }
     }
 
     horatio_granular_init(sr);
