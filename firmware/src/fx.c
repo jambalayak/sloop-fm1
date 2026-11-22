@@ -3,6 +3,7 @@
 /* Effects: per-track DIST insert, then sends into three shared buses (chorus, tempo delay, reverb).
  * Stereo dry mix; the chorus and the reverb come back in stereo, the delay in the middle. */
 #ifdef HORATIO_PLAITS
+#include <math.h>
 #include "horatio_plaits.h"
 #include "horatio_beads_granular.h"
 #endif
@@ -1125,9 +1126,34 @@ static void mix_block(int32_t *out, uint32_t n)
                              (float)clamp(song.g[G_BD_SHAPE], 0, 127) * (1.0f / 127.0f),
                              (float)clamp(song.g[G_BD_FB], 0, 127) * (0.85f / 127.0f), 0u, 0u);
         horatio_granular_process(mix_l, mix_r, wet_l, wet_r, n);
-        for (i = 0; i < n; i++) {
-            mix_l[i] = (mix_l[i] * (127 - amount) + wet_l[i] * amount) / 127;
-            mix_r[i] = (mix_r[i] * (127 - amount) + wet_r[i] * amount) / 127;
+        {
+            /* Match the granular return to the dry mix over time. The previous linear
+             * crossfade cut both signals at intermediate MIX settings; equal-power
+             * gains preserve perceived level while the bounded RMS trim compensates
+             * for quieter grain clouds. The master limiter remains the peak safety net. */
+            static float beads_wet_gain = 1.0f;
+            float dry_energy = 0.0f, wet_energy = 0.0f;
+            float dry_gain, wet_mix_gain, target_gain;
+            for (i = 0; i < n; i++) {
+                float dl = (float)mix_l[i] * (1.0f / 32768.0f);
+                float dr = (float)mix_r[i] * (1.0f / 32768.0f);
+                float wl = (float)wet_l[i] * (1.0f / 32768.0f);
+                float wr = (float)wet_r[i] * (1.0f / 32768.0f);
+                dry_energy += dl * dl + dr * dr;
+                wet_energy += wl * wl + wr * wr;
+            }
+            if (dry_energy > 0.000001f && wet_energy > 0.000001f) {
+                target_gain = sqrtf(dry_energy / wet_energy);
+                if (target_gain < 0.75f) target_gain = 0.75f;
+                if (target_gain > 1.80f) target_gain = 1.80f;
+                beads_wet_gain += (target_gain - beads_wet_gain) * 0.125f;
+            }
+            dry_gain = sqrtf((float)(127 - amount) * (1.0f / 127.0f));
+            wet_mix_gain = sqrtf((float)amount * (1.0f / 127.0f)) * beads_wet_gain;
+            for (i = 0; i < n; i++) {
+                mix_l[i] = (int32_t)((float)mix_l[i] * dry_gain + (float)wet_l[i] * wet_mix_gain);
+                mix_r[i] = (int32_t)((float)mix_r[i] * dry_gain + (float)wet_r[i] * wet_mix_gain);
+            }
         }
     }
 #endif
