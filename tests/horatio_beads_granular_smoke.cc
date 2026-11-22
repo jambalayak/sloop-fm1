@@ -110,7 +110,7 @@ int main() {
         int32_t base_l[4096], base_r[4096];
         int32_t moved_l[4096], moved_r[4096];
         int32_t reverse_l[4096], reverse_r[4096];
-        const uint64_t time_difference, reverse_difference;
+        uint64_t time_difference, reverse_difference;
 
         render_position_variant(0.08f, 0u, base_l, base_r, compare_samples);
         render_position_variant(0.92f, 0u, moved_l, moved_r, compare_samples);
