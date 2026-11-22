@@ -210,6 +210,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_BD_SIZE] = PD("SIZE", F_PCT, 0, 127, 64),
     [G_BD_SHAPE] = PD("SHAPE", F_PCT, 0, 127, 64),
     [G_BD_PITCH] = PD("PITCH", F_SEMI, -24, 24, 0),
+    [G_BD_FB] = PD("FEEDBACK", F_PCT, 0, 127, 22),
 };
 
 static const param_desc_t DRUM_KIT_DESC = PE("KIT", DRUM_KIT_NAMES, 0);
