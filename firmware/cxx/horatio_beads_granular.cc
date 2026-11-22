@@ -22,7 +22,7 @@ namespace {
 
 static const int kMaxDelay = HORATIO_GRANULAR_BUFFER_SAMPLES;
 static const int kSafety = beads::DelayGrain::head_crossing_safety_zone + 1;
-static const size_t kBankBytes = 10248u;
+static const size_t kBankBytes = (kMaxDelay + 4u) * sizeof(int16_t);
 static const size_t kAllocatedBytes = HORATIO_GRANULAR_BUFFER_BYTES;
 
 typedef beads::DelayLine<beads::RESOLUTION_16_BIT, kMaxDelay, 1,
