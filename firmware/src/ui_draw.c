@@ -230,30 +230,31 @@ UI_SMALL static void graph_lfo(const track_t *t, uint16_t c)
  * The curve is a live shape preview, not a generic percentage meter. */
 UI_SMALL static void graph_beads_shape(uint16_t c)
 {
-    const float shape = (float)clamp(song.g[G_BD_SHAPE], 0, 127) * (1.0f / 127.0f);
-    const float size = (float)clamp(song.g[G_BD_SIZE], 0, 127) * (1.0f / 127.0f);
-    const float duration = 0.012f + 0.065f * size;
-    float sustain = 1.0f - 3.0f * shape;
-    float attack, release, smoothness, a, s, r, total;
+    /* Fixed-point preview of Beads GrainEnvelope: no floating-point
+     * integer conversions (the FM-1 runtime has no __floatsisf helper). */
+    int32_t shape = clamp(song.g[G_BD_SHAPE], 0, 127) * 1000 / 127;
+    int32_t sustain = 1000 - 3 * shape;
+    int32_t attack, release, smoothness, total;
     int32_t i, px = 0, py = 0;
-    if (sustain < 0.0f) sustain = 0.0f;
-    {
-        float morph = (shape - 0.33333333f) * 1.5f;
-        if (morph < 0.0f) morph = 0.0f;
-        else if (morph < 0.5f) morph = morph * morph * morph * 4.0f;
-        attack = morph;
+    if (sustain < 0) sustain = 0;
+    attack = shape > 333 ? (shape - 333) * 3 / 2 : 0;
+    if (attack > 500) {
+        int32_t q = attack;
+        attack = q * q / 1000;
+        attack = attack * q / 1000;
+        attack = attack * 4;
+        if (attack > 1000) attack = 1000;
     }
-    release = (1.0f - attack) * (1.0f - sustain);
-    smoothness = attack < 0.5f ? 2.0f * attack : 2.0f - 2.0f * attack;
-    /* GrainEnvelope's minimum attack/release times, expressed as fractions
-     * of this processor's current grain duration. */
-    a = attack > 0.0005f * (1.0f + 3.0f * sustain) / duration
-        ? attack : 0.0005f * (1.0f + 3.0f * sustain) / duration;
-    s = sustain > 2.0f / (duration * (float)FS)
-        ? sustain : 2.0f / (duration * (float)FS);
-    r = release > 0.010f / duration ? release : 0.010f / duration;
-    total = a + s + r;
-    a /= total; s /= total; r /= total;
+    release = (1000 - attack) * (1000 - sustain) / 1000;
+    smoothness = attack < 500 ? 2 * attack : 2000 - 2 * attack;
+    /* Include Beads' minimum attack/release durations approximately. */
+    if (attack < 20) attack = 20;
+    if (sustain < 2) sustain = 2;
+    if (release < 100) release = 100;
+    total = attack + sustain + release;
+    attack = attack * 1000 / total;
+    sustain = sustain * 1000 / total;
+    release = 1000 - attack - sustain;
 
     cv_text(5, 2, &FONT_S, "SQR", C_GRAY);
     cv_text(61, 2, &FONT_S, "DECAY", C_GRAY);
@@ -262,24 +263,24 @@ UI_SMALL static void graph_beads_shape(uint16_t c)
     cv_line(7, 94, 233, 94, C_LINE);
     cv_line(7, 17, 7, 94, C_LINE);
     for (i = 0; i <= 120; ++i) {
-        const float t = (float)i * (1.0f / 120.0f);
-        float value;
-        int32_t x = 8 + i * 224 / 120;
-        int32_t y;
-        if (t < a) {
-            float u = t / a;
-            float base = u;
-            float smooth = u * u * (3.0f - 2.0f * u);
-            value = base + (smooth - base) * smoothness;
-        } else if (t < a + s) {
-            value = 1.0f;
+        int32_t t = i * 1000 / 120;
+        int32_t value, x = 8 + i * 224 / 120, y;
+        if (t < attack) {
+            int32_t u = t * 1000 / attack;
+            int32_t smooth = u * u / 1000 * (3000 - 2 * u) / 1000;
+            value = u + (smooth - u) * smoothness / 1000;
+        } else if (t < attack + sustain) {
+            value = 1000;
         } else {
-            float u = (1.0f - (t - a - s) / r);
-            float base = u * u * u * u;
-            float smooth = u * u * (3.0f - 2.0f * u);
-            value = base + (smooth - base) * smoothness;
+            int32_t u = (1000 - t) * 1000 / release;
+            int32_t base = u * u / 1000;
+            base = base * base / 1000;
+            {
+                int32_t smooth = u * u / 1000 * (3000 - 2 * u) / 1000;
+                value = base + (smooth - base) * smoothness / 1000;
+            }
         }
-        y = 92 - (int32_t)(value * 68.0f);
+        y = 92 - value * 68 / 1000;
         if (i) cv_line(px, py, x, y, c);
         px = x; py = y;
     }
