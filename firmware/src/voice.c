@@ -299,6 +299,11 @@ static void glide_set(track_t *t, voice_t *v, int glide)
 #define VP_OFF 2u
 #define VP_GLIDE 4u
 #define VP_UNI 8u   /* (after Clipper 1.2) an extra UNISON voice: its start spread (unison_spread) */
+static int32_t preset_pitch16(const track_t *t, uint32_t note)
+{
+    return ((int32_t)note + (int32_t)t->preset_octave * 12) * 16;
+}
+
 static void voice_start(track_t *t, voice_t *v, uint32_t note, uint32_t vel, int glide)
 {
     const engine_t *e = ENGINES[t->engine];
@@ -326,7 +331,7 @@ static void voice_start(track_t *t, voice_t *v, uint32_t note, uint32_t vel, int
     v->active = 1;
     v->stage = 1;
     v->age = ++vage;
-    v->pitch16 = (int32_t)note * 16;
+    v->pitch16 = preset_pitch16(t, note);
     glide_set(t, v, glide);
     v->penv = 32767;                                    /* the pitch envelope starts over (not on legato) */
     if (!sounding) {
