@@ -14,7 +14,7 @@ static void render_position_variant(float time, uint32_t reverse,
     uint32_t noise = 0x13579bdu;
 
     horatio_granular_init(sr);
-    horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f, 0u, 0u);
+    horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f, 0u, 0u, HORATIO_GRANULAR_RATE_16K);
 
     /* Fill the complete capture line with repeatable, non-periodic material. */
     for (uint32_t block = 0; block < 200u; ++block) {
@@ -27,7 +27,7 @@ static void render_position_variant(float time, uint32_t reverse,
     }
 
     /* Freeze the full buffer so each comparison reads the same recorded audio. */
-    horatio_granular_set(45.0f, time, 0.55f, 0.0f, 0.65f, 0.0f, 1u, reverse);
+    horatio_granular_set(45.0f, time, 0.55f, 0.0f, 0.65f, 0.0f, 1u, reverse, HORATIO_GRANULAR_RATE_16K);
     for (uint32_t offset = 0; offset < samples; offset += 128u) {
         for (uint32_t i = 0; i < 128u; ++i) in_l[i] = in_r[i] = 0;
         horatio_granular_process(in_l, in_r, out_l, out_r, 128u);
@@ -64,7 +64,7 @@ int main() {
     }
 
     horatio_granular_init(sr);
-    horatio_granular_set(30.0f, 0.45f, 0.55f, 0.0f, 0.65f, 0.15f, 0u, 0u);
+    horatio_granular_set(30.0f, 0.45f, 0.55f, 0.0f, 0.65f, 0.15f, 0u, 0u, HORATIO_GRANULAR_RATE_16K);
 
     uint32_t phase = 0u;
     for (uint32_t block = 0; block < 120u; ++block) {
@@ -83,7 +83,7 @@ int main() {
         }
     }
 
-    horatio_granular_set(30.0f, 0.45f, 0.55f, 7.0f, 0.7f, 0.1f, 1u, 0u);
+    horatio_granular_set(30.0f, 0.45f, 0.55f, 7.0f, 0.7f, 0.1f, 1u, 0u, HORATIO_GRANULAR_RATE_16K);
     for (uint32_t block = 0; block < 16u; ++block) {
         for (uint32_t i = 0; i < 128u; ++i) in_l[i] = in_r[i] = 0;
         horatio_granular_process(in_l, in_r, out_l, out_r, 128u);
