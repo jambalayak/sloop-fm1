@@ -5,6 +5,50 @@
 #include <stdlib.h>
 #include <math.h>
 
+
+static void render_position_variant(float time, uint32_t reverse,
+                                    int32_t *left, int32_t *right,
+                                    uint32_t samples) {
+    const uint32_t sr = 48000u;
+    int32_t in_l[128], in_r[128], out_l[128], out_r[128];
+    uint32_t noise = 0x13579bdu;
+
+    horatio_granular_init(sr);
+    horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f, 0u, 0u);
+
+    /* Fill the complete capture line with repeatable, non-periodic material. */
+    for (uint32_t block = 0; block < 200u; ++block) {
+        for (uint32_t i = 0; i < 128u; ++i) {
+            noise = noise * 1664525u + 1013904223u;
+            const int32_t x = static_cast<int32_t>((noise >> 16) & 0x7fffu) - 16384;
+            in_l[i] = in_r[i] = x;
+        }
+        horatio_granular_process(in_l, in_r, out_l, out_r, 128u);
+    }
+
+    /* Freeze the full buffer so each comparison reads the same recorded audio. */
+    horatio_granular_set(45.0f, time, 0.55f, 0.0f, 0.65f, 0.0f, 1u, reverse);
+    for (uint32_t offset = 0; offset < samples; offset += 128u) {
+        for (uint32_t i = 0; i < 128u; ++i) in_l[i] = in_r[i] = 0;
+        horatio_granular_process(in_l, in_r, out_l, out_r, 128u);
+        for (uint32_t i = 0; i < 128u && offset + i < samples; ++i) {
+            left[offset + i] = out_l[i];
+            right[offset + i] = out_r[i];
+        }
+    }
+}
+
+static uint64_t compare_audio(const int32_t *a_l, const int32_t *a_r,
+                              const int32_t *b_l, const int32_t *b_r,
+                              uint32_t samples) {
+    uint64_t difference = 0u;
+    for (uint32_t i = 0; i < samples; ++i) {
+        difference += static_cast<uint64_t>(abs(a_l[i] - b_l[i]));
+        difference += static_cast<uint64_t>(abs(a_r[i] - b_r[i]));
+    }
+    return difference;
+}
+
 int main() {
     const uint32_t sr = 48000u;
     int32_t in_l[128], in_r[128], out_l[128], out_r[128];
@@ -58,6 +102,31 @@ int main() {
     if (peak > 32767) {
         fprintf(stderr, "output exceeded Q15 bounds: %d\n", peak);
         return 4;
+    }
+
+
+    {
+        const uint32_t compare_samples = 4096u;
+        int32_t base_l[4096], base_r[4096];
+        int32_t moved_l[4096], moved_r[4096];
+        int32_t reverse_l[4096], reverse_r[4096];
+        const uint64_t time_difference, reverse_difference;
+
+        render_position_variant(0.08f, 0u, base_l, base_r, compare_samples);
+        render_position_variant(0.92f, 0u, moved_l, moved_r, compare_samples);
+        render_position_variant(0.08f, 1u, reverse_l, reverse_r, compare_samples);
+        time_difference = compare_audio(base_l, base_r, moved_l, moved_r, compare_samples);
+        reverse_difference = compare_audio(base_l, base_r, reverse_l, reverse_r, compare_samples);
+        if (time_difference < 100000u) {
+            fprintf(stderr, "TIME control did not materially change granular playback: %llu\\n",
+                    static_cast<unsigned long long>(time_difference));
+            return 5;
+        }
+        if (reverse_difference < 100000u) {
+            fprintf(stderr, "REVERSE control did not materially change granular playback: %llu\\n",
+                    static_cast<unsigned long long>(reverse_difference));
+            return 6;
+        }
     }
 
     printf("HORATIO compact Beads granular smoke: PASS (audible=%u freeze=%u peak=%d, buffer=%u B, grains=%u)\n",
