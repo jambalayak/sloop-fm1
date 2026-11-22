@@ -68,12 +68,18 @@ static void start_grain(void) {
     if (recorded_samples <= static_cast<uint32_t>(kSafety + 32)) return;
 
     uint32_t active = 0;
-    for (uint32_t i = 0; i < HORATIO_GRANULAR_MAX_GRAINS; ++i) {
-        if (!grains[i].done()) ++active;
+    uint32_t slot = HORATIO_GRANULAR_MAX_GRAINS;
+    for (uint32_t offset = 0; offset < HORATIO_GRANULAR_MAX_GRAINS; ++offset) {
+        const uint32_t candidate = (next_grain + offset) % HORATIO_GRANULAR_MAX_GRAINS;
+        if (grains[candidate].done()) {
+            if (slot == HORATIO_GRANULAR_MAX_GRAINS) slot = candidate;
+        } else {
+            ++active;
+        }
     }
+    if (slot == HORATIO_GRANULAR_MAX_GRAINS) return;
 
-    beads::DelayGrain &grain = grains[next_grain];
-    grain.FadeOut(128);
+    beads::DelayGrain &grain = grains[slot];
 
     const uint32_t usable = recorded_samples > static_cast<uint32_t>(kSafety)
         ? recorded_samples - static_cast<uint32_t>(kSafety) : 0u;
@@ -85,11 +91,11 @@ static void start_grain(void) {
     if (reverse) speed = -speed;
 
     const float amplitude = 1.0f / sqrtf(static_cast<float>(active + 1u));
-    const float pan = static_cast<float>((next_grain * 5u) & 7u) / 7.0f;
+    const float pan = static_cast<float>((slot * 5u) & 7u) / 7.0f;
     grain.Start(&delay_line, delay, speed, duration, grain_shape,
                 amplitude, pan, 0.0f);
 
-    next_grain = (next_grain + 1u) % HORATIO_GRANULAR_MAX_GRAINS;
+    next_grain = (slot + 1u) % HORATIO_GRANULAR_MAX_GRAINS;
 }
 
 }  // namespace
