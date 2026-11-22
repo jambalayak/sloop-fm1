@@ -190,6 +190,10 @@ void horatio_granular_set(float density, float time, float size,
     reverse = rev != 0u;
 }
 
+uint32_t horatio_granular_recorded_samples(void) {
+    return recorded_samples;
+}
+
 void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
                               int32_t *output_l, int32_t *output_r,
                               uint32_t samples) {
