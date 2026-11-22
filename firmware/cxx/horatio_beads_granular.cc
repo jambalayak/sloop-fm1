@@ -49,6 +49,11 @@ static float grain_shape;
 static float feedback;
 static float previous_wet_l;
 static float previous_wet_r;
+static float feedback_dc_l;
+static float feedback_dc_r;
+static float feedback_peak;
+static float feedback_peak_lp;
+static float feedback_decay;
 static uint8_t frozen;
 static uint8_t reverse;
 static uint8_t initialized;
@@ -133,6 +138,9 @@ void horatio_granular_init(uint32_t requested_sample_rate) {
     grain_shape = 0.5f;
     feedback = 0.0f;
     previous_wet_l = previous_wet_r = 0.0f;
+    feedback_dc_l = feedback_dc_r = 0.0f;
+    feedback_peak = feedback_peak_lp = 0.5f;
+    feedback_decay = 1.0f / static_cast<float>(sample_rate);
     frozen = reverse = 0u;
     initialized = 1u;
 }
@@ -146,7 +154,7 @@ void horatio_granular_set(float density, float time, float size,
     grain_size = clamp_unit(size);
     pitch_semitones = clamp_float(pitch, -24.0f, 24.0f);
     grain_shape = clamp_unit(shape);
-    feedback = clamp_float(fb, 0.0f, 0.85f);
+    feedback = clamp_unit(fb);
     frozen = freeze != 0u;
     reverse = rev != 0u;
 }
@@ -161,9 +169,27 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
         const float in_l = input_l ? static_cast<float>(input_l[i]) * (1.0f / 32768.0f) : 0.0f;
         const float in_r = input_r ? static_cast<float>(input_r[i]) * (1.0f / 32768.0f) : in_l;
 
+        /* Beads' digital-resolution feedback path feeds the previous, DC-blocked
+         * granular return back into the recording input with a squared control
+         * law and 3x loop gain. Its input limiter keeps resonant settings stable. */
+        const float feedback_gain = feedback * feedback * 3.0f;
         beads::FloatFrame input;
-        input.l = clamp_float(in_l + previous_wet_l * feedback, -1.0f, 1.0f);
-        input.r = clamp_float(in_r + previous_wet_r * feedback, -1.0f, 1.0f);
+        input.l = in_l + previous_wet_l * feedback_gain;
+        input.r = in_r + previous_wet_r * feedback_gain;
+        {
+            float peak = fabsf(input.l);
+            float right_peak = fabsf(input.r);
+            float gain;
+            if (right_peak > peak) peak = right_peak;
+            if (peak > 40.0f) peak = 40.0f;
+            feedback_peak += (peak - feedback_peak) *
+                (peak > feedback_peak ? 0.1f : feedback_decay);
+            feedback_peak_lp += (feedback_peak - feedback_peak_lp) *
+                (feedback_peak > feedback_peak_lp ? 0.5f : feedback_decay);
+            gain = feedback_peak_lp > 0.95f ? 0.95f / feedback_peak_lp : 1.0f;
+            input.l *= gain;
+            input.r *= gain;
+        }
 
         /* One-pole anti-alias filtering, then rational-rate 16 kHz capture.
          * The phase accumulator also works when the host runs at 44.1 kHz. */
@@ -191,8 +217,12 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
         for (uint32_t g = 0; g < HORATIO_GRANULAR_MAX_GRAINS; ++g)
             grains[g].Render<beads::HEAD_CROSSING_POLICY_STOP, true>(&delay_line, &wet);
 
-        previous_wet_l = wet.l;
-        previous_wet_r = wet.r;
+        /* Beads stores a high-passed version of the wet return for feedback,
+         * preventing DC from accumulating in the recirculating loop. */
+        feedback_dc_l += 0.005f * (wet.l - feedback_dc_l);
+        feedback_dc_r += 0.005f * (wet.r - feedback_dc_r);
+        previous_wet_l = wet.l - feedback_dc_l;
+        previous_wet_r = wet.r - feedback_dc_r;
         output_l[i] = to_q15(wet.l);
         output_r[i] = to_q15(wet.r);
     }
