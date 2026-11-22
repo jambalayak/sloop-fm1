@@ -257,14 +257,16 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
             start_grain();
         }
 
-        /* HORATIO slews active grain read speeds so pitch changes are continuous. */
+        /* Keep the pitch glide at 20 ms on every supported host sample rate. */
+        const float speed_slew = 1.0f - expf(
+            -1.0f / (0.020f * static_cast<float>(sample_rate)));
         beads::FloatFrame wet;
         wet.l = 0.0f;
         wet.r = 0.0f;
         for (uint32_t g = 0; g < HORATIO_GRANULAR_MAX_GRAINS; ++g) {
             if (!grains[g].done()) {
-                /* ~20 ms exponential slew, without restarting the grain envelope. */
-                grain_speed[g] += (target_speed - grain_speed[g]) * 0.001f;
+                /* Exponential 20 ms slew, without restarting the grain envelope. */
+                grain_speed[g] += (target_speed - grain_speed[g]) * speed_slew;
                 grains[g].SetSpeed(grain_speed[g]);
             }
             grains[g].Render<beads::HEAD_CROSSING_POLICY_STOP, true>(
