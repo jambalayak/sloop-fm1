@@ -410,7 +410,7 @@ static void tflt_run(djf_t *f, const tsvf_t *c, int32_t *b, uint32_t n, uint32_t
  * as before (nothing runs). MIX glides (2.9 ms, SL_SLOPE); a TYPE change fades the old one out, clears the state,
  * fades the new one in; so does a start from MIX 0 (no stale line or filter).
  * The drum track (SLOOP): its left, right, reverb send and delay send each through their own state, the same settings
- * (fx.c mix_block). State in RAM (.bss): 580 B a channel; noinline, its own loops */
+ * State in RAM (.bss): 580 B per track; noinline, its own loops */
 enum { IT_OFF, IT_SOFT, IT_HARD, IT_FOLD, IT_FUZZ, IT_CRUSH, IT_PHASER, IT_FLANGER, IT_CHORUS, IT_N };
 /* FUZZ, CRUSH and FLANGER retain their stored IDs for old projects, but are retired. */
 _Static_assert(IT_N == sizeof N_ITYPE / sizeof N_ITYPE[0], "the INSERT's types as params.c names them");
@@ -554,6 +554,7 @@ static __attribute__((noinline)) int ins_run(ins_t *s, const int16_t *p, int32_t
 {
     int32_t ty = clamp(p[P_ITYPE], 0, IT_N - 1), tw;
     if (ty == IT_FUZZ || ty == IT_CRUSH || ty == IT_FLANGER) ty = IT_OFF;
+    if (s->type == IT_FUZZ || s->type == IT_CRUSH || s->type == IT_FLANGER) s->type = IT_OFF;
     if (s->type != ty && !s->w)                         /* faded out: the new type from rest */
         s->type = (uint8_t)ty;
     tw = s->type == ty && ty ? ins_mixq(p[P_IMIX]) : 0;
