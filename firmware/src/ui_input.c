@@ -183,6 +183,7 @@ UI_SMALL static void ui_leds(void)
 {
     uint8_t nl[FM1_NCOL] = {0}, dl[FM1_NCOL] = {0}, bl[FM1_NCOL] = {0};
     uint32_t k, c, keys, guide, back;
+    int octave = (int)song.octave + (int)TSEL->preset_octave;
     static uint8_t ready;
     if (!ready) {
         led_pos_init();
@@ -198,8 +199,9 @@ UI_SMALL static void ui_leds(void)
         led_put(nl, panel.btn[B_OCTDN], ((thr_req | thr_ed) & 1u) != 0u);
         led_put(nl, panel.btn[B_OCTUP], ((thr_req | thr_ed) & 2u) != 0u);
     } else {
-        led_put(nl, panel.btn[B_OCTDN], song.octave < 0);
-        led_put(nl, panel.btn[B_OCTUP], song.octave > 0);
+        /* Show the effective shift: manual song octave plus the selected preset's register. */
+        led_put(nl, panel.btn[B_OCTDN], octave < 0);
+        led_put(nl, panel.btn[B_OCTUP], octave > 0);
     }
     keys = keys_lit();
     guide = (keys_guide() | keys_notes_dim()) & ~keys;
