@@ -647,6 +647,7 @@ UI_SMALL static void apply_preset_to(track_t *t, uint32_t pi)
         return;
     pi %= e->npresets;
     t->preset = (uint8_t)pi;
+    t->preset_octave = (int8_t)clamp(e->presets[pi].octave, -2, 2);
     for (i = 0; i < P_E0; i++)                        /* the rest of the sound to its defaults: a preset */
         if (!param_kept(i) && !(keep_arp && arp_param(i)) && !(kbd_hold && i == P_AHOLD))
             t->p[i] = TP[i].def;                     /* sounds the same after any edit (not the pattern, not the mix) */
