@@ -124,7 +124,7 @@ int main() {
         horatio_granular_init(48000u);
         horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
                              0u, 0u, HORATIO_GRANULAR_RATE_16K);
-        for (uint32_t block = 0; block < 64u; ++block)
+        for (uint32_t block = 0; block < 192u; ++block)
             horatio_granular_process(zeros, zeros, out_l, out_r, 128u);
         if (horatio_granular_recorded_samples() != 8192u) return 9;
         horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
