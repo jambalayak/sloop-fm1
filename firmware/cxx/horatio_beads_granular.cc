@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "beads/dsp/delay_grain.h"
+#include "horatio_delay_grain.h"
 
 namespace {
 
@@ -34,6 +34,7 @@ typedef beads::DelayLine<beads::RESOLUTION_16_BIT, kMaxDelay, 1,
 static uint8_t recording_buffer[kAllocatedBytes] __attribute__((aligned(8)));
 static CompactDelayLine delay_line;
 static beads::DelayGrain grains[HORATIO_GRANULAR_MAX_GRAINS];
+static float grain_speed[HORATIO_GRANULAR_MAX_GRAINS];
 static uint32_t sample_rate = 48000u;
 static uint32_t recorded_samples;
 static float capture_l;
@@ -107,6 +108,7 @@ static void start_grain(void) {
     const float pan = static_cast<float>((slot * 5u) & 7u) / 7.0f;
     grain.Start(&delay_line, delay, speed, duration, grain_shape,
                 amplitude, pan, 0.0f);
+    grain_speed[slot] = speed;
 
     next_grain = (slot + 1u) % HORATIO_GRANULAR_MAX_GRAINS;
 }
@@ -123,8 +125,10 @@ void horatio_granular_init(uint32_t requested_sample_rate) {
     memset(recording_buffer, 0, sizeof(recording_buffer));
     delay_line.Init(recording_buffer, sizeof(recording_buffer));
 
-    for (uint32_t i = 0; i < HORATIO_GRANULAR_MAX_GRAINS; ++i)
+    for (uint32_t i = 0; i < HORATIO_GRANULAR_MAX_GRAINS; ++i) {
         grains[i].Init(static_cast<float>(sample_rate));
+        grain_speed[i] = 0.0f;
+    }
 
     recorded_samples = 0u;
     capture_l = capture_r = 0.0f;
@@ -211,11 +215,23 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
             start_grain();
         }
 
+        /* HORATIO slews active grain read speeds so pitch changes are continuous. */
+        float target_speed = (static_cast<float>(kCaptureRate) /
+                              static_cast<float>(sample_rate)) *
+                             powf(2.0f, pitch_semitones * (1.0f / 12.0f));
+        if (reverse) target_speed = -target_speed;
+
         beads::FloatFrame wet;
         wet.l = 0.0f;
         wet.r = 0.0f;
-        for (uint32_t g = 0; g < HORATIO_GRANULAR_MAX_GRAINS; ++g)
+        for (uint32_t g = 0; g < HORATIO_GRANULAR_MAX_GRAINS; ++g) {
+            if (!grains[g].done()) {
+                /* ~20 ms exponential slew, without restarting the grain envelope. */
+                grain_speed[g] += (target_speed - grain_speed[g]) * 0.001f;
+                grains[g].SetSpeed(grain_speed[g]);
+            }
             grains[g].Render<beads::HEAD_CROSSING_POLICY_STOP, true>(&delay_line, &wet);
+        }
 
         /* Beads stores a high-passed version of the wet return for feedback,
          * preventing DC from accumulating in the recirculating loop. */
