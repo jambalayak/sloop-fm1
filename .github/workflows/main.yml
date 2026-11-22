@@ -77,6 +77,9 @@ jobs:
       - name: Check HORATIO preset-specific LFO profiles
         run: python3 tools/check_horatio_preset_lfo.py
 
+      - name: Check HORATIO Plaits factory ADSR loading
+        run: python3 tools/check_horatio_preset_adsr.py
+
       - name: Run Plaits audio smoke test
         run: |
           g++ -O1 -g -fsanitize=address -fno-omit-frame-pointer -std=gnu++11 -DTEST -D_GNU_SOURCE \
