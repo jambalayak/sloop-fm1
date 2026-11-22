@@ -15,6 +15,7 @@ static const char *const N_MOTH[] = {"SEL", "OFF"};
 /* GLO > TEXTURE (2.6, fx.c texture_*): the bed's sources (the user slots last), its movement's length, when it plays */
 static const char *const N_TXSRC[] = {"OFF", "VINYL", "TAPE", "RAIN", "WIND", "RADIO", "ROOM", "USR1", "USR2", "USR3", "USR4"};
 static const char *const N_TXRATE[] = {"1BAR", "2BAR", "4BAR", "8BAR", "16BAR"};
+static const char *const N_BDRATE[] = {"16K", "8K", "4K"};
 static const char *const N_TXWHEN[] = {"PLAY", "ALWAYS"};
 /* ANALOG's filter TYPE (eng_analog.c): the SVF's low-pass (as always), band-pass, high-pass output */
 static const char *const N_FTYPE[] = {"LP", "BP", "HP"};
