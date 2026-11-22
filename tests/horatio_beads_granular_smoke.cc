@@ -19,6 +19,22 @@ static uint32_t captured_after_one_second(uint32_t rate) {
     return horatio_granular_recorded_samples();
 }
 
+static uint32_t captured_after_one_second_at_host_rate(uint32_t rate,
+                                                               uint32_t host_rate) {
+    int32_t in_l[128], in_r[128], out_l[128], out_r[128];
+    uint32_t remaining = host_rate;
+    horatio_granular_init(host_rate);
+    horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
+                         0u, 0u, rate);
+    while (remaining != 0u) {
+        const uint32_t count = remaining > 128u ? 128u : remaining;
+        for (uint32_t i = 0; i < count; ++i) in_l[i] = in_r[i] = 0;
+        horatio_granular_process(in_l, in_r, out_l, out_r, count);
+        remaining -= count;
+    }
+    return horatio_granular_recorded_samples();
+}
+
 static void render_position_variant(float time, uint32_t reverse,
                                     int32_t *left, int32_t *right,
                                     uint32_t samples) {
@@ -85,6 +101,42 @@ int main() {
             fprintf(stderr, "capture-rate duration mismatch: 16k=%u 8k=%u 4k=%u\n",
                     samples_16k, samples_8k, samples_4k);
             return 7;
+        }
+    }
+
+    {
+        const uint32_t samples_16k = captured_after_one_second_at_host_rate(
+            HORATIO_GRANULAR_RATE_16K, 44100u);
+        const uint32_t samples_8k = captured_after_one_second_at_host_rate(
+            HORATIO_GRANULAR_RATE_8K, 44100u);
+        const uint32_t samples_4k = captured_after_one_second_at_host_rate(
+            HORATIO_GRANULAR_RATE_4K, 44100u);
+        if (samples_16k != 16000u || samples_8k != 8000u ||
+            samples_4k != 4000u) {
+            fprintf(stderr, "44.1 kHz host capture-rate mismatch: %u %u %u\\n",
+                    samples_16k, samples_8k, samples_4k);
+            return 8;
+        }
+    }
+
+    {
+        int32_t zeros[128] = {0}, out_l[128], out_r[128];
+        horatio_granular_init(48000u);
+        horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
+                             0u, 0u, HORATIO_GRANULAR_RATE_16K);
+        for (uint32_t block = 0; block < 64u; ++block)
+            horatio_granular_process(zeros, zeros, out_l, out_r, 128u);
+        if (horatio_granular_recorded_samples() != 8192u) return 9;
+        horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
+                             0u, 0u, HORATIO_GRANULAR_RATE_4K);
+        if (horatio_granular_recorded_samples() != 0u) {
+            fprintf(stderr, "changing capture rate did not clear old recording\\n");
+            return 10;
+        }
+        horatio_granular_process(zeros, zeros, out_l, out_r, 128u);
+        if (horatio_granular_recorded_samples() != 10u) {
+            fprintf(stderr, "4 kHz capture did not resume after rate change\\n");
+            return 11;
         }
     }
 
