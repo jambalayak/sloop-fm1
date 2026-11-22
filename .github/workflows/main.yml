@@ -71,6 +71,9 @@ jobs:
       - name: Check HORATIO factory preset browser
         run: python3 tools/check_horatio_preset_bank.py
 
+      - name: Check HORATIO Plaits model map and Speech exclusion
+        run: python3 tools/check_horatio_model_map.py
+
       - name: Check HORATIO PRESET encoder scope
         run: python3 tools/check_horatio_preset_encoder.py
 
