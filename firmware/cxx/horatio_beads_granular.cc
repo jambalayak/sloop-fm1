@@ -7,7 +7,7 @@
  * beads/dsp/delay_grain.h, grain.h, grain_envelope.h,
  * voice_stealing_envelope.h and delay_line.h.
  *
- * HORATIO uses a reduced 4096-sample mono recording line and eight grains.
+ * HORATIO uses an 8192-sample mono recording line, captured at 24 kHz from the 48 kHz master stream, and eight grains.
  * This is a compact adaptation, not a port of the complete Beads processor.
  */
 #include "horatio_beads_granular.h"
@@ -34,6 +34,9 @@ static CompactDelayLine delay_line;
 static beads::DelayGrain grains[HORATIO_GRANULAR_MAX_GRAINS];
 static uint32_t sample_rate = 48000u;
 static uint32_t recorded_samples;
+static float capture_l;
+static float capture_r;
+static uint8_t capture_phase;
 static uint32_t next_grain;
 static float trigger_phase;
 static float density_hz;
@@ -88,7 +91,8 @@ static void start_grain(void) {
         time_position * static_cast<float>(usable);
     const float duration_seconds = 0.012f + 0.065f * grain_size;
     const float duration = duration_seconds * static_cast<float>(sample_rate);
-    float speed = powf(2.0f, pitch_semitones * (1.0f / 12.0f));
+    /* The recording line advances at 24 kHz while the audio callback is 48 kHz. */
+    float speed = 0.5f * powf(2.0f, pitch_semitones * (1.0f / 12.0f));
     if (reverse) speed = -speed;
 
     const float amplitude = 1.0f / sqrtf(static_cast<float>(active + 1u));
@@ -115,6 +119,8 @@ void horatio_granular_init(uint32_t requested_sample_rate) {
         grains[i].Init(static_cast<float>(sample_rate));
 
     recorded_samples = 0u;
+    capture_l = capture_r = 0.0f;
+    capture_phase = 0u;
     next_grain = 0u;
     trigger_phase = 0.0f;
     density_hz = 0.0f;
@@ -155,9 +161,20 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
         beads::FloatFrame input;
         input.l = clamp_float(in_l + previous_wet_l * feedback, -1.0f, 1.0f);
         input.r = clamp_float(in_r + previous_wet_r * feedback, -1.0f, 1.0f);
-        delay_line.Write(input, frozen != 0u);
-        if (!frozen && recorded_samples < static_cast<uint32_t>(kMaxDelay))
-            ++recorded_samples;
+
+        /* Two-tap averaging is the 2:1 anti-alias filter before 24 kHz capture. */
+        if (!capture_phase) {
+            capture_l = input.l;
+            capture_r = input.r;
+            capture_phase = 1u;
+        } else {
+            input.l = 0.5f * (capture_l + input.l);
+            input.r = 0.5f * (capture_r + input.r);
+            delay_line.Write(input, frozen != 0u);
+            capture_phase = 0u;
+            if (!frozen && recorded_samples < static_cast<uint32_t>(kMaxDelay))
+                ++recorded_samples;
+        }
 
         trigger_phase += density_hz / static_cast<float>(sample_rate);
         if (trigger_phase >= 1.0f) {
