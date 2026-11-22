@@ -1135,7 +1135,8 @@ static void mix_block(int32_t *out, uint32_t n)
                              (float)clamp(song.g[G_BD_PITCH], -24, 24),
                              (float)clamp(song.g[G_BD_SHAPE], 0, 127) * (1.0f / 127.0f),
                              (float)clamp(song.g[G_BD_FB], 0, 127) * (1.0f / 127.0f),
-                              song.g[G_BD_FREEZE] != 0, song.g[G_BD_REVERSE] != 0);
+                              song.g[G_BD_FREEZE] != 0, song.g[G_BD_REVERSE] != 0,
+                              16000u >> clamp(song.g[G_BD_RATE], 0, 2));
         horatio_granular_process(mix_l, mix_r, wet_l, wet_r, n);
         {
             /* Match the granular return to the dry mix over time. The previous linear
