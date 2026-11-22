@@ -200,6 +200,13 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
     if (!output_l || !output_r) return;
     if (!initialized) horatio_granular_init(48000u);
 
+    /* Pitch is a block-rate control. Calculate its exponential ratio once
+     * per audio block, not once per sample on the embedded CPU. */
+    float target_speed = (static_cast<float>(capture_rate) /
+                          static_cast<float>(sample_rate)) *
+                         powf(2.0f, pitch_semitones * (1.0f / 12.0f));
+    if (reverse) target_speed = -target_speed;
+
     for (uint32_t i = 0; i < samples; ++i) {
         const float in_l = input_l ? static_cast<float>(input_l[i]) * (1.0f / 32768.0f) : 0.0f;
         const float in_r = input_r ? static_cast<float>(input_r[i]) * (1.0f / 32768.0f) : in_l;
@@ -247,11 +254,6 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
         }
 
         /* HORATIO slews active grain read speeds so pitch changes are continuous. */
-        float target_speed = (static_cast<float>(capture_rate) /
-                              static_cast<float>(sample_rate)) *
-                             powf(2.0f, pitch_semitones * (1.0f / 12.0f));
-        if (reverse) target_speed = -target_speed;
-
         beads::FloatFrame wet;
         wet.l = 0.0f;
         wet.r = 0.0f;
