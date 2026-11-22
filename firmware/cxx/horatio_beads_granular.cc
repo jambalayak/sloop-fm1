@@ -7,9 +7,9 @@
  * beads/dsp/delay_grain.h, grain.h, grain_envelope.h,
  * voice_stealing_envelope.h and delay_line.h.
  *
- * HORATIO uses an 8192-sample mono recording line, captured at 16 kHz from the
- * 44.1 kHz master stream, and eight grains. This is a compact adaptation, not
- * a port of the complete Beads processor.
+ * HORATIO uses an 8192-sample mono recording line, captured at selectable
+ * 16, 8 or 4 kHz from the host stream, and eight grains. This is a compact
+ * adaptation, not a port of the complete Beads processor.
  */
 #include "horatio_beads_granular.h"
 
