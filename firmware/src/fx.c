@@ -402,20 +402,9 @@ static void tflt_run(djf_t *f, const tsvf_t *c, int32_t *b, uint32_t n, uint32_t
         b[i] <<= 2;
 }
 
-/* INSERT (SLOOP 2.6, after Felucca 1.5 by Leo Kuroshita, Discussions #78 and #177): one effect per track, after DIST
- * and before the SLICER, with a dry / wet MIX. TYPE (P_ITYPE, N_ITYPE; stored, append-only) and its three values A B C
- * (P_IA .. P_IC, what they mean: params.c ins_desc):
- *   SOFT HARD FOLD FUZZ  DRIVE (1x .. ~13x, squared), TONE (two one-pole low-passes at F_CUTOFF), LEVEL (F_DB, as the
- *                        track's LEVEL: 112 is 0 dB). A slow low cut in front (~27 Hz), a DC blocker after (FUZZ is
- *                        lopsided). SOFT tanh, HARD a flat clip at a voice's level, FOLD a triangle folder (the wave
- *                        reflected at +-16384: every fold more harmonics), FUZZ a hard top and a soft, halved bottom;
- *   CRUSH                BITS (1 .. 16, of a voice's full scale), RATE (a held sample, 689 Hz .. 44.1 kHz, INS_HOLD:
- *                        aliasing as the old samplers), LPF (two one-pole low-passes at F_CUTOFF after them);
- *   PHASR                RATE (F_LFOHZ), DEPTH (the sweep around ~850 Hz: 0 still .. the whole 150 Hz .. 4.8 kHz),
- *                        FDBK (0 .. 0.7): four all-pass stages, mono, per track;
- *   FLANG CHOR           RATE, DEPTH, FDBK: a 256-sample line per track (5.8 ms); FLANG swept 0.25 .. 5 ms (a squared
- *                        triangle), feedback 0 .. 0.85; CHOR a sine around 3.2 ms (+-2.3 ms at DEPTH 127), feedback
- *                        0 .. 0.4. A DC blocker on the swept copy (a clipped loud input is lopsided).
+/* HORATIO INSERT: one effect per track, after DIST and before the SLICER, with a dry / wet MIX. The stored IDs for
+ * FUZZ, CRUSH and FLANGER are retained for project compatibility but now resolve to OFF. Available types are
+ * SOFT, HARD, FOLD, PHASR and CHORUS. The type's A B C values are described by params.c ins_desc.
  * The swept ones are the pedals': their wet is (dry + swept) / 2, the notches need both, so MIX 100 % is the whole
  * effect and less a lighter one. MIX (P_IMIX) blends dry and wet linearly; MIX 0 or TYPE OFF: the track bit for bit
  * as before (nothing runs). MIX glides (2.9 ms, SL_SLOPE); a TYPE change fades the old one out, clears the state,
@@ -472,10 +461,8 @@ static inline int32_t ins_shape(uint32_t ty, int32_t v)
         return v;
     }
 }
-static inline uint32_t ins_bits_sh(int32_t a) { return 15u - (uint32_t)(clamp(a, 0, 127) >> 3); }   /* BITS 1..16 */
 
-/* SOFT .. FUZZ: low cut -> DRIVE -> shape -> TONE -> LEVEL -> DC blocker; CRUSH: held sample -> bits -> LPF. The state
- * in locals for the block (b may alias it as far as the compiler knows: no load / store a sample), written back */
+/* SOFT / HARD / FOLD: low cut -> DRIVE -> shape -> TONE -> LEVEL -> DC blocker. State is kept in locals per block. */
 static __attribute__((noinline)) void ins_drive(ins_t *s, const int16_t *p, int32_t *b, uint32_t n, int32_t tw)
 {
     uint32_t i, ty = s->type;
@@ -507,7 +494,7 @@ static __attribute__((noinline)) void ins_drive(ins_t *s, const int16_t *p, int3
     s->lp2 = lp2;
 }
 
-/* PHASR, FLANG, CHOR: the sweep at RATE (one LFO per state), DEPTH, FDBK; the state in locals for the block */
+/* PHASR and CHOR: the sweep at RATE (one LFO per state), DEPTH, FDBK; state kept in locals per block. */
 static __attribute__((noinline)) void ins_swept(ins_t *s, const int16_t *p, int32_t *b, uint32_t n, int32_t tw)
 {
     uint32_t i, inc = LFO_INC[clamp(p[P_IA], 0, 127)] / CTL, dep = (uint32_t)clamp(p[P_IB], 0, 127);
