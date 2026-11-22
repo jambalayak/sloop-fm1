@@ -476,7 +476,7 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
     const page_t *pg = cur_page();
     const param_desc_t *d;
     uint32_t id = pg->id[slot];
-    int32_t v;
+    int32_t v, before;
     if (pg->scope == SC_STEP) {
         step_edit(slot, steps);
         return;
@@ -536,18 +536,22 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
     d = page_desc(pg, slot, &vp);
     if (!d || !vp || d->max == d->min)
         return;
-    v = id == P_ITYPE ? insert_type_turn(*vp, steps) :
-        d->names == ESYNC_NAMES || d->names == N_IBITS || d->names == N_IRATE ? names_turn(d, *vp, steps)   /* (a name a detent) */
-                                    : clamp(*vp + accel(EN_K1 + slot, steps, d->names ? 0 : d->max - d->min), d->min, d->max);
+    before = *vp;
+    v = id == P_ITYPE ? insert_type_turn(before, steps) :
+        d->names == ESYNC_NAMES || d->names == N_IBITS || d->names == N_IRATE ? names_turn(d, before, steps)   /* (a name a detent) */
+                                    : clamp(before + accel(EN_K1 + slot, steps, d->names ? 0 : d->max - d->min), d->min, d->max);
     *vp = (int16_t)v;
-    /* HORATIO diagnostic: show the actual K4 detents and raw Beads SIZE value.
-     * Temporary, display-only instrumentation; it does not alter the parameter. */
+    /* HORATIO diagnostic: show encoder steps, value before/after edit, and descriptor maximum. */
     if (id == G_BD_SIZE) {
-        char b[24];
+        char b[32];
         str_cpy(b, "K4 ", sizeof b);
-        fmt_int(b + 3, steps);
-        str_cpy(b + str_len(b), " SIZE ", sizeof b - str_len(b));
-        fmt_int(b + str_len(b), *vp);
+        fmt_int(b + str_len(b), steps);
+        str_cpy(b + str_len(b), " ", sizeof b - str_len(b));
+        fmt_int(b + str_len(b), before);
+        str_cpy(b + str_len(b), ">", sizeof b - str_len(b));
+        fmt_int(b + str_len(b), v);
+        str_cpy(b + str_len(b), "/", sizeof b - str_len(b));
+        fmt_int(b + str_len(b), d->max);
         ui_message(b);
     }
     if (pg->scope != SC_GLOBAL && p_lockable(id))
