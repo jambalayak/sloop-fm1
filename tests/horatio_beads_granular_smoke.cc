@@ -111,8 +111,8 @@ int main() {
             HORATIO_GRANULAR_RATE_8K, 44100u);
         const uint32_t samples_4k = captured_after_one_second_at_host_rate(
             HORATIO_GRANULAR_RATE_4K, 44100u);
-        if (samples_16k != 16000u || samples_8k != 8000u ||
-            samples_4k != 4000u) {
+        if (samples_16k != HORATIO_GRANULAR_BUFFER_SAMPLES ||
+            samples_8k != 8000u || samples_4k != 4000u) {
             fprintf(stderr, "44.1 kHz host capture-rate mismatch: %u %u %u\\n",
                     samples_16k, samples_8k, samples_4k);
             return 8;
