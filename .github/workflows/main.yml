@@ -74,6 +74,9 @@ jobs:
       - name: Check HORATIO PRESET encoder scope
         run: python3 tools/check_horatio_preset_encoder.py
 
+      - name: Check HORATIO preset-specific LFO profiles
+        run: python3 tools/check_horatio_preset_lfo.py
+
       - name: Run Plaits audio smoke test
         run: |
           g++ -O1 -g -fsanitize=address -fno-omit-frame-pointer -std=gnu++11 -DTEST -D_GNU_SOURCE \

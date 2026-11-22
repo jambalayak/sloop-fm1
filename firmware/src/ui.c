@@ -668,6 +668,24 @@ UI_SMALL static void apply_preset_to(track_t *t, uint32_t pi)
                 t->p[P_AMODE + i] = (int16_t)(pr->arp[i] ? pr->arp[i] - 1 : TP[P_AMODE + i].def);
         }
         preset_extras(t->p, pr);                     /* glide, pitch / LFO modulation, voice mode */
+        /* Factory LFO profiles are deliberately sparse: untouched presets remain completely static. */
+        if (pr->lfo[0]) {
+            t->p[P_LRATE] = pr->lfo[1];
+            t->p[P_LWAVE] = pr->lfo[2];
+            t->p[P_LPHASE] = 0;
+            t->p[P_LFADE] = pr->lfo[3];
+            t->p[P_LSYNC] = pr->lfo[4];
+            t->p[P_LTRIG] = pr->lfo[5];
+            t->p[P_LPOL] = pr->lfo[6];
+            if (pr->lfo[7] == 1) t->p[P_LD_PIT] = pr->lfo[8];
+            if (pr->lfo[7] == 2) t->p[P_LD_FLT] = pr->lfo[8];
+            if (pr->lfo[7] == 3) t->p[P_LD_SHP] = pr->lfo[8];
+            if (pr->lfo[7] == 4) t->p[P_LD_AMP] = pr->lfo[8];
+            if (pr->lfo[9] == 1) t->p[P_LD_PIT] = pr->lfo[10];
+            if (pr->lfo[9] == 2) t->p[P_LD_FLT] = pr->lfo[10];
+            if (pr->lfo[9] == 3) t->p[P_LD_SHP] = pr->lfo[10];
+            if (pr->lfo[9] == 4) t->p[P_LD_AMP] = pr->lfo[10];
+        }
     }
 #ifndef HORATIO_PLAITS
     fm6_track_loaded(t);                             /* FM6: the preset's patch (its PTCH) */
