@@ -77,8 +77,9 @@ class DelayGrain : public Grain {
       float shape,
       float gain,
       float pan,
-      float fractional_sample) {
-    float consumption_speed = speed - (delay_line->frozen() ? 0.0f : 1.0f);
+      float fractional_sample,
+      float write_speed = 1.0f) {
+    float consumption_speed = speed - (delay_line->frozen() ? 0.0f : write_speed);
     delay -= fractional_sample * consumption_speed;
 
     // Trim duration so that there's enough space in the buffer.
@@ -139,14 +140,15 @@ class DelayGrain : public Grain {
       HeadCrossingPolicy head_crossing_policy,
       bool fade_out,
       typename DelayLineType>
-  inline void Render(const DelayLineType* delay_line, FloatFrame* in_out) {
+  inline void Render(const DelayLineType* delay_line, FloatFrame* in_out,
+                     float write_speed = 1.0f) {
     if (done()) {
       return;
     }
     
     delay_ -= speed_;
     if (!delay_line->frozen()) {
-      delay_ += 1024;
+      delay_ += int32_t(write_speed * 1024.0f);
     }
     
     const int32_t tail = DelayLineType::MAX_DELAY << 10;
