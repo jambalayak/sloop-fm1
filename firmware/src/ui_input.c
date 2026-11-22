@@ -537,15 +537,15 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
     if (!d || !vp || d->max == d->min)
         return;
     before = *vp;
-    if (id == P_ITYPE) {
+    if (pg->scope == SC_GLOBAL && id == G_BD_SIZE) {
+        /* G_BD_SIZE and P_ITYPE share numeric ID 53 in separate namespaces.
+         * Scope the global Beads control before testing track parameter IDs. */
+        delta = accel(EN_K1 + slot, steps, d->max - d->min);
+        v = clamp(before + delta, d->min, d->max);
+    } else if (pg->scope == SC_TRK && id == P_ITYPE) {
         v = insert_type_turn(before, steps);
     } else if (d->names == ESYNC_NAMES || d->names == N_IBITS || d->names == N_IRATE) {
         v = names_turn(d, before, steps);
-    } else if (id == G_BD_SIZE) {
-        /* Keep the proven dedicated Beads SIZE edit path; calculate its
-         * encoder delta once, then clamp the resulting value. */
-        delta = accel(EN_K1 + slot, steps, d->max - d->min);
-        v = clamp(before + delta, d->min, d->max);
     } else {
         delta = accel(EN_K1 + slot, steps, d->names ? 0 : d->max - d->min);
         v = clamp(before + delta, d->min, d->max);
