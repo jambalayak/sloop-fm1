@@ -476,7 +476,7 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
     const page_t *pg = cur_page();
     const param_desc_t *d;
     uint32_t id = pg->id[slot];
-    int32_t v, before, delta, sum;
+    int32_t v, before, delta;
     if (pg->scope == SC_STEP) {
         step_edit(slot, steps);
         return;
@@ -537,31 +537,17 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
     if (!d || !vp || d->max == d->min)
         return;
     before = *vp;
-    if (id == G_BD_SIZE) {
-        delta = accel(EN_K1 + slot, steps, d->max - d->min);
-        sum = before + delta;
-        v = clamp(sum, d->min, d->max);
+    if (id == P_ITYPE) {
+        v = insert_type_turn(before, steps);
+    } else if (d->names == ESYNC_NAMES || d->names == N_IBITS || d->names == N_IRATE) {
+        v = names_turn(d, before, steps);
     } else {
-        v = id == P_ITYPE ? insert_type_turn(before, steps) :
-            d->names == ESYNC_NAMES || d->names == N_IBITS || d->names == N_IRATE ? names_turn(d, before, steps)
-                                        : clamp(before + accel(EN_K1 + slot, steps, d->names ? 0 : d->max - d->min), d->min, d->max);
+        /* accel() updates encoder timing state, so evaluate it exactly once
+         * before clamp(); clamp may evaluate its argument more than once. */
+        delta = accel(EN_K1 + slot, steps, d->names ? 0 : d->max - d->min);
+        v = clamp(before + delta, d->min, d->max);
     }
     *vp = (int16_t)v;
-    /* HORATIO diagnostic: expose the SIZE delta, pre-clamp sum and final value. */
-    if (id == G_BD_SIZE) {
-        char b[48];
-        str_cpy(b, "K4 ", sizeof b);
-        fmt_int(b + str_len(b), steps);
-        str_cpy(b + str_len(b), " D", sizeof b - str_len(b));
-        fmt_int(b + str_len(b), delta);
-        str_cpy(b + str_len(b), " S", sizeof b - str_len(b));
-        fmt_int(b + str_len(b), sum);
-        str_cpy(b + str_len(b), " V", sizeof b - str_len(b));
-        fmt_int(b + str_len(b), v);
-        str_cpy(b + str_len(b), "/", sizeof b - str_len(b));
-        fmt_int(b + str_len(b), d->max);
-        ui_message(b);
-    }
     if (pg->scope != SC_GLOBAL && p_lockable(id))
         ui.lock_par = (uint8_t)id;                        /* the SEQ layer's lock parameter: the last one touched */
     if (pg->scope != SC_GLOBAL)
