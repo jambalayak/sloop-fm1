@@ -684,31 +684,71 @@ static void vis_fireworks_update(void)
 }
 static void vis_odd_world(void)
 {
-    static const uint16_t fur[4] = {RGB(244, 108, 54), RGB(112, 220, 142), RGB(180, 112, 244), RGB(255, 204, 82)};
+    static const uint16_t ink = RGB(18, 16, 24);
+    static const uint16_t paper = RGB(224, 220, 204);
+    static const uint16_t pink = RGB(244, 62, 166);
+    static const uint16_t mint = RGB(92, 218, 164);
+    static const uint16_t orange = RGB(246, 104, 48);
     uint32_t i, beat = vis_beat_q8();
-    int32_t bob = (int32_t)(isin(beat * 3u) * 5 >> 15);
-    /* A dreamlike paper-cutout landscape and three original, peculiar creatures. */
-    vis_ellipse(42, 178 + bob, 36, 24, RGB(38, 82, 92));
-    vis_ellipse(122, 184 - bob, 48, 31, RGB(56, 72, 112));
-    vis_ellipse(207, 178 + bob, 34, 25, RGB(100, 66, 108));
-    for (i = 0; i < 4u; ++i) {
-        int32_t x = 40 + (int32_t)i * 55, y = 154 + (int32_t)(isin(beat + i * 177u) * 9 >> 15);
-        vis_ellipse(x, y, 18 + vs.lvl[i] * 5 / 1000, 25 + vs.lvl[i] * 4 / 1000, fur[i]);
-        vis_ellipse(x - 6, y - 5, 4, 6, C_WHITE); vis_ellipse(x + 6, y - 5, 4, 6, C_WHITE);
-        vis_ellipse(x - 6, y - 5, 2, 3, C_BLACK); vis_ellipse(x + 6, y - 5, 2, 3, C_BLACK);
-        cv_line(x, y - 23, x + (int32_t)(isin(beat * 2u + i * 91u) * 10 >> 15), y - 39, C_WHITE);
-        vis_ellipse(x + (int32_t)(isin(beat * 2u + i * 91u) * 10 >> 15), y - 40, 4, 4, TE_COL[i]);
-        cv_line(x - 8, y + 15, x - 13, y + 27, C_WHITE); cv_line(x + 8, y + 15, x + 13, y + 27, C_WHITE);
-        if (vs.flash[i]) vis_ellipse(x, y - 5, 24, 29, C_WHITE);
+    int32_t pulse = (int32_t)vs.lvl[4] / 95;
+    int32_t moon_r = 69 + pulse / 3;
+    int32_t blink = (beat / 96u) % 8u == 0u ? 2 : 0;
+    /* Original handmade-collage scene: a lumpy moon portrait in deep space,
+       surrounded by cut-paper oddities, scribbles, stars and comic accents. */
+    cv_rect(0, 0, 240, 240, RGB(10, 13, 29));
+    for (i = 0; i < 34u; ++i) {
+        int32_t x = (int32_t)((i * 67u + 13u) % 236u) + 2;
+        int32_t y = (int32_t)((i * 43u + 7u) % 230u) + 3;
+        int32_t r = 1 + (i % 3u);
+        if ((i + beat / 18u) % 4u) vis_ellipse(x, y, r, r, i & 1u ? C_WHITE : RGB(118, 154, 196));
     }
-    /* Floating moons, odd stars and a hand-painted-looking horizon. */
-    for (i = 0; i < 13u; ++i) {
-        int32_t x = (int32_t)((i * 71u + 19u) % 232u) + 4, y = 18 + (int32_t)((i * 37u) % 86u);
-        if ((i + beat / 24u) % 3u) vis_ellipse(x, y, 2 + (i % 3u), 2 + (i % 3u), i & 1u ? C_WHITE : fur[i & 3u]);
+    /* Uneven moon silhouette and crater patches. */
+    vis_ellipse(120, 105, moon_r, moon_r, RGB(150, 155, 153));
+    vis_ellipse(116, 99, moon_r - 5, moon_r - 6, paper);
+    vis_ellipse(80, 65, 13, 8, RGB(190, 187, 175));
+    vis_ellipse(157, 55, 18, 10, RGB(190, 187, 175));
+    vis_ellipse(161, 133, 15, 11, RGB(190, 187, 175));
+    vis_ellipse(91, 148, 19, 8, RGB(190, 187, 175));
+    /* Expressive eyes, eyebrows, nose and grin. */
+    cv_line(73, 79, 99, 73, ink); cv_line(141, 73, 166, 79, ink);
+    vis_ellipse(91, 91, 18, 13, RGB(140, 66, 53));
+    vis_ellipse(151, 91, 18, 13, RGB(140, 66, 53));
+    vis_ellipse(92, 91, 10, 8, C_WHITE); vis_ellipse(151, 91, 10, 8, C_WHITE);
+    vis_ellipse(94, 91, 4, 5, RGB(34, 68, 51)); vis_ellipse(153, 91, 4, 5, RGB(34, 68, 51));
+    vis_ellipse(95, 91, 1, 2, ink); vis_ellipse(154, 91, 1, 2, ink);
+    cv_line(117, 94, 110, 116, RGB(128, 126, 118));
+    cv_line(110, 116, 123, 121, RGB(128, 126, 118));
+    vis_ellipse(120, 143, 35, 17, RGB(112, 47, 50));
+    vis_ellipse(120, 139, 31, 11, RGB(232, 180, 143));
+    cv_line(91, 137, 149, 137, ink);
+    for (i = 0; i < 7u; ++i) cv_line(99 + (int32_t)i * 7, 139, 101 + (int32_t)i * 7, 148, ink);
+    if (blink) { cv_line(75, 91, 108, 91, ink); cv_line(136, 91, 168, 91, ink); }
+    /* A small black oval creature with a bright pink cut-paper rim. */
+    vis_ellipse(188, 188, 31 + pulse / 5, 37 + pulse / 5, pink);
+    vis_ellipse(188, 188, 25 + pulse / 5, 31 + pulse / 5, RGB(247, 192, 214));
+    vis_ellipse(188, 188, 21 + pulse / 5, 27 + pulse / 5, ink);
+    vis_ellipse(179, 179, 5, 7, C_WHITE); vis_ellipse(197, 179, 5, 7, C_WHITE);
+    vis_ellipse(180, 179, 1, 2, ink); vis_ellipse(198, 179, 1, 2, ink);
+    cv_line(177, 197, 199, 197, C_WHITE); cv_line(181, 197, 181, 204, C_WHITE);
+    cv_line(189, 197, 189, 204, C_WHITE); cv_line(197, 197, 197, 204, C_WHITE);
+    /* Floating doodle heads, stitched outlines, stars and comic-book bursts. */
+    vis_ellipse(28, 174, 13, 13, orange);
+    vis_ellipse(24, 171, 3, 3, C_WHITE); vis_ellipse(33, 171, 3, 3, C_WHITE);
+    cv_line(23, 181, 34, 181, ink);
+    vis_ellipse(39, 34, 16, 19, RGB(158, 222, 222));
+    vis_ellipse(34, 32, 3, 4, ink); vis_ellipse(44, 32, 3, 4, ink);
+    cv_line(34, 42, 44, 42, ink);
+    for (i = 0; i < 5u; ++i) {
+        int32_t x = 18 + (int32_t)i * 43;
+        int32_t y = 215 + (int32_t)(isin(beat * 2u + i * 131u) * 5 >> 15);
+        cv_line(x - 5, y, x + 5, y, mint);
+        cv_line(x, y - 5, x, y + 5, mint);
     }
-    vis_ellipse(194, 48, 18, 18, RGB(255, 190, 96)); vis_ellipse(201, 42, 17, 17, C_BLACK);
-    cv_line(0, 218, 239, 218, RGB(246, 170, 90));
+    cv_line(8, 119, 19, 108, pink); cv_line(19, 108, 30, 119, pink);
+    cv_line(30, 119, 19, 130, pink); cv_line(19, 130, 8, 119, pink);
+    if (vs.flash[0]) vis_ellipse(120, 105, 75, 75, C_WHITE);
 }
+
 static void vis_media98(void)
 {
     static const uint16_t glow[6] = {
