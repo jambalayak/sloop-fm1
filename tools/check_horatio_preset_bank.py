@@ -40,6 +40,12 @@ winds = re.compile(r"brass|horn|trumpet|trombone|sax|flute|clarinet|reed|voice|v
 textures = re.compile(r"noise|texture|evolving|atmosphere|ambient|windy|static|spaceship|space.ship|chaos", re.I)
 for name, env in zip(names, envelopes):
     attack, decay, sustain, release = env
+    # Bundled DX7 patches use their own patch-derived envelopes; validate them
+    # against the broad natural-tail limits, not recipe-name heuristics.
+    if name.startswith("DX"):
+        if attack > 24 or decay < 48 or release < 40:
+            raise SystemExit(f"{name}: DX7 patch envelope is outside the useful range")
+        continue
     bell_like = re.search(r"bell|chime|marimba|mallet|xylophone|steel drum|wood block|snare|hi.hat", name, re.I)
     if percussive.search(name) and (not pads.search(name) or bell_like):
         if decay < 64 or release < 44:
