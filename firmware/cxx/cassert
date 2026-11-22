@@ -1,0 +1,9 @@
+/* Minimal freestanding <cassert> compatibility for the JieLi -nostdinc++ build.
+ * Beads' DelayLine uses assert only to validate its caller-provided buffer size.
+ * Keep the check active without pulling in a hosted C++ standard library. */
+#ifndef HORATIO_FREESTANDING_CASSERT
+#define HORATIO_FREESTANDING_CASSERT
+#ifndef assert
+#define assert(condition) ((condition) ? (void)0 : __builtin_trap())
+#endif
+#endif
