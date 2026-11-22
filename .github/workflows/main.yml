@@ -84,6 +84,16 @@ jobs:
             -lm -o build/horatio_plaits_smoke
           ./build/horatio_plaits_smoke
 
+      - name: Run compact Beads granular smoke test
+        run: |
+          g++ -O1 -g -fsanitize=address -fno-omit-frame-pointer -std=gnu++11 -DTEST -D_GNU_SOURCE \
+            -include /usr/include/c++/11/cmath -include /usr/include/stdio.h \
+            -Ifirmware/cxx -Ifirmware/src -Ithird_party -Ithird_party/eurorack \
+            -Ithird_party/stmlib \
+            firmware/cxx/horatio_beads_granular.cc tests/horatio_beads_granular_smoke.cc \
+            -lm -o build/horatio_beads_granular_smoke
+          ./build/horatio_beads_granular_smoke
+
       - name: Save HORATIO-1 package
         uses: actions/upload-artifact@v4
         with:

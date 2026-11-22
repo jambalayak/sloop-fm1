@@ -172,7 +172,8 @@ def build_cxx(probe=False):
                stmlib / "dsp" / "units.cc",
                stmlib / "utils" / "random.cc",
                FW / "cxx" / "runtime.cc",
-               FW / "cxx" / "horatio_plaits.cc"]
+               FW / "cxx" / "horatio_plaits.cc",
+               FW / "cxx" / "horatio_beads_granular.cc"]
     if probe:
         sources.append(FW / "cxx" / "horatio_probe.cc")
     objdir = OUT / "cxx"
