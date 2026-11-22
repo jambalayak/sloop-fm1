@@ -43,7 +43,7 @@
                                                 * so the format and its size do not change */
 _Static_assert(G_DRDLY == PROJ_NG && G_TXSRC == PROJ_NG + 5u,
                "the globals a project holds, then G_DRDLY (then 2.6's GLO > MIDI: settings of the FM-1)");
-_Static_assert(G_FXFADE == G_CLKOUT + 1u && G_BD_ON == G_FXFADE + 1u && G_COUNT == G_BD_FB + 1u, "HORATIO granular settings are appended device globals, outside the project format");
+_Static_assert(G_FXFADE == G_CLKOUT + 1u && G_BD_ON == G_FXFADE + 1u && G_COUNT == G_BD_REVERSE + 1u, "HORATIO granular settings are appended device globals, outside the project format");
 #define PROJ_NC6 ((uint32_t)P_ITYPE)           /* format 6: the parameters kept in 16 bits, P_LEVEL .. P_VLEAD (as 5), */
 #define PROJ_NX6 ((uint32_t)(P_E0 - P_ITYPE))  /* the 2.6 ones in a byte (0..127), then P_E0 .. P_E7 */
 _Static_assert(PROJ_NC6 == PROJ_NP_V5 - 8u && PROJ_NX6 == 10u, "format 6: format 5's parameters, then ten bytes");
