@@ -262,11 +262,17 @@ static void vis_update(void)
         vs.scale += (target - vs.scale) / 5;
     }
     switch (vis_style) {
-    case 1: case 2: {
+    case 0: case 1: case 2: {
         int16_t b[32];
         vis_fft();
         vis_bands(b);
-        if (vis_style == 1) {
+        if (vis_style != 1) {
+            for (i = 0; i < 32u; i++)
+                vs.bar[i] = (int16_t)((vs.bar[i] * 2 + b[i]) / 3);
+        }
+        if (vis_style == 0) {
+            break;
+        } else if (vis_style == 1) {
             for (i = 0; i < 32u; i++) {
                 int32_t bar = vs.bar[i] - vs.bar[i] * 18 / 100;
                 vs.bar[i] = (int16_t)(b[i] > bar ? b[i] : bar);
@@ -652,43 +658,74 @@ static void vis_vaporwave(void)
 
 /* Three replacement visualisers. All artwork is drawn procedurally for the 240x240 LCD. */
 typedef struct { int16_t x, y, vx, vy; uint8_t age, life, colour, live; } vis_spark_t;
-static vis_spark_t vis_sparks[48];
+static vis_spark_t vis_sparks[72];
+static int32_t vis_band_energy(uint32_t first, uint32_t last)
+{
+    uint32_t i;
+    int32_t sum = 0;
+    if (last > 32u) last = 32u;
+    for (i = first; i < last; ++i) sum += vs.bar[i];
+    return last > first ? sum / (int32_t)(last - first) : 0;
+}
 static uint32_t vis_rng = 0x6D2B79F5u;
 static uint32_t vis_rand(void) { vis_rng ^= vis_rng << 13; vis_rng ^= vis_rng >> 17; vis_rng ^= vis_rng << 5; return vis_rng; }
 static void vis_fireworks_update(void)
 {
-    uint32_t i, active = 0, energy = (uint32_t)(vs.lvl[0] + vs.lvl[1] + vs.lvl[2] + vs.lvl[3]);
-    for (i = 0; i < 48u; ++i) {
-        vis_spark_t *s = &vis_sparks[i];
-        if (!s->live) continue;
-        s->x = (int16_t)(s->x + s->vx);
-        s->y = (int16_t)(s->y + s->vy);
-        s->vy = (int16_t)(s->vy + 2);
-        if (++s->age >= s->life || s->y > 250 || s->x < -8 || s->x > 248) s->live = 0;
+    static uint8_t burst_wait[3];
+    uint32_t i, active = 0;
+    int32_t low = vis_band_energy(0u, 8u);
+    int32_t mid = vis_band_energy(8u, 21u);
+    int32_t high = vis_band_energy(21u, 32u);
+    int32_t energy[3] = {low, mid, high};
+    for (i = 0; i < 3u; ++i) if (burst_wait[i]) burst_wait[i]--;
+    for (i = 0; i < 72u; ++i) {
+        vis_spark_t *p = &vis_sparks[i];
+        if (!p->live) continue;
+        p->x = (int16_t)(p->x + p->vx);
+        p->y = (int16_t)(p->y + p->vy);
+        p->vy = (int16_t)(p->vy + 2);
+        if (++p->age >= p->life || p->y > 258 || p->x < -12 || p->x > 252) p->live = 0;
         else active++;
     }
-    if ((energy > 110u || vs.flash[0] || vs.flash[1] || vs.flash[2]) && active < 34u) {
-        int32_t cx = 24 + (int32_t)(vis_rand() % 192u);
-        int32_t cy = 48 + (int32_t)(vis_rand() % 100u);
-        uint32_t made = 0;
-        for (i = 0; i < 48u && made < 12u; ++i) if (!vis_sparks[i].live) {
-            uint32_t a = made * 1024u / 12u + (vis_rand() & 63u);
-            uint32_t speed = 2u + vis_rand() % 5u;
-            vis_sparks[i].x = (int16_t)(cx * 16); vis_sparks[i].y = (int16_t)(cy * 16);
-            vis_sparks[i].vx = (int16_t)((icos(a) * (int32_t)speed) >> 11);
-            vis_sparks[i].vy = (int16_t)((isin(a) * (int32_t)speed) >> 11);
-            vis_sparks[i].age = 0; vis_sparks[i].life = (uint8_t)(24u + vis_rand() % 24u);
-            vis_sparks[i].colour = (uint8_t)(vis_rand() % 4u); vis_sparks[i].live = 1; made++;
+    /* Bass, mids and treble each launch their own colour family of shells. */
+    for (i = 0; i < 3u && active < 58u; ++i) {
+        uint32_t n, made = 0, slot;
+        int32_t threshold = i == 0u ? 145 : (i == 1u ? 125 : 105);
+        if (energy[i] < threshold || burst_wait[i]) continue;
+        {
+            int32_t cx = 24 + (int32_t)(vis_rand() % 192u);
+            int32_t cy = 42 + (int32_t)(vis_rand() % 105u);
+            uint32_t count = 18u + (uint32_t)(energy[i] / 110);
+            if (count > 26u) count = 26u;
+            for (slot = 0; slot < 72u && made < count; ++slot) if (!vis_sparks[slot].live) {
+                uint32_t a = made * 1024u / count + (vis_rand() & 31u);
+                uint32_t speed = 2u + vis_rand() % 5u;
+                vis_sparks[slot].x = (int16_t)(cx * 16);
+                vis_sparks[slot].y = (int16_t)(cy * 16);
+                vis_sparks[slot].vx = (int16_t)((icos(a) * (int32_t)speed) >> 11);
+                vis_sparks[slot].vy = (int16_t)((isin(a) * (int32_t)speed) >> 11);
+                vis_sparks[slot].age = 0;
+                vis_sparks[slot].life = (uint8_t)(30u + vis_rand() % 22u);
+                vis_sparks[slot].colour = (uint8_t)i;
+                vis_sparks[slot].live = 1;
+                made++;
+            }
+            active += made;
+            burst_wait[i] = 7u;
         }
     }
 }
 static void vis_whitecap(void)
 {
-    static const uint16_t mesh[5] = {
-        RGB(70, 238, 255), RGB(128, 92, 255), RGB(255, 76, 190),
-        RGB(96, 255, 176), RGB(255, 196, 82)
+    static const uint16_t mesh[9] = {
+        RGB(255, 62, 42), RGB(255, 138, 36), RGB(255, 208, 72),
+        RGB(62, 255, 112), RGB(80, 224, 150), RGB(255, 76, 190),
+        RGB(50, 190, 255), RGB(82, 112, 255), RGB(176, 118, 255)
     };
     uint32_t i, j, beat = vis_beat_q8();
+    int32_t bass = vis_band_energy(0u, 8u);
+    int32_t mids = vis_band_energy(8u, 21u);
+    int32_t treble = vis_band_energy(21u, 32u);
     int32_t energy = (int32_t)vs.lvl[4];
     /* WhiteCap-inspired: a continuously morphing, audio-reactive 3D wireframe
        surface with luminous colour and a deep shifting background. */
@@ -699,12 +736,12 @@ static void vis_whitecap(void)
             int32_t u = (int32_t)j - 16;
             uint32_t phase = beat + i * 67u + j * 19u;
             int32_t v = (int32_t)i - 6;
-            int32_t wave = (isin(phase * 2u + (uint32_t)(u * 13)) * (15 + energy / 80) >> 15);
-            int32_t ripple = (icos(phase + (uint32_t)(v * 21)) * (9 + vs.bar[(j + i * 2u) & 31u] / 90) >> 15);
+            int32_t wave = (isin(phase * 2u + (uint32_t)(u * 13)) * (12 + bass / 45) >> 15);
+            int32_t ripple = (icos(phase + (uint32_t)(v * 21)) * (7 + mids / 55 + vs.bar[(j + i * 2u) & 31u] / 150) >> 15);
             int32_t depth = 92 + v * 9 + ripple;
             int32_t x = 120 + u * (5 + (depth / 90)) + (isin(phase) * 12 >> 15);
             int32_t y = 120 + wave + ripple + v * 4;
-            if (j) cv_line(px, py, x, y, mesh[(i + j / 7u) % 5u]);
+            if (j) cv_line(px, py, x, y, mesh[i < 4u ? (bass > 360 ? 0u : 1u) : (i < 8u ? (mids > 320 ? 3u : 4u) : (treble > 260 ? 6u : 7u))]);
             px = x; py = y;
         }
     }
@@ -719,7 +756,7 @@ static void vis_whitecap(void)
             int32_t depth = 92 + v * 9 + ripple;
             int32_t x = 120 + u * (5 + (depth / 90)) + (isin(phase) * 12 >> 15);
             int32_t y = 120 + wave + ripple + v * 4;
-            if (i) cv_line(px, py, x, y, mesh[(i + j / 7u + 2u) % 5u]);
+            if (i) cv_line(px, py, x, y, mesh[i < 4u ? 2u : (i < 8u ? 5u : 8u)]);
             px = x; py = y;
         }
     }
@@ -731,42 +768,49 @@ static void vis_whitecap(void)
 }
 static void vis_media98(void)
 {
-    static const uint16_t glow[6] = {
-        RGB(255, 72, 190), RGB(70, 220, 255), RGB(170, 105, 255),
-        RGB(255, 210, 90), RGB(90, 255, 190), RGB(255, 120, 110)
-    };
+    static const uint16_t low_col[3] = {RGB(255, 58, 35), RGB(255, 132, 32), RGB(255, 210, 64)};
+    static const uint16_t mid_col[3] = {RGB(64, 255, 116), RGB(50, 220, 160), RGB(255, 70, 188)};
+    static const uint16_t high_col[3] = {RGB(48, 205, 255), RGB(80, 120, 255), RGB(184, 110, 255)};
     uint32_t i, k, beat = vis_beat_q8();
-    int32_t energy = (int32_t)vs.lvl[4];
-    /* Classic WMP-era abstract "Alchemy" feel: layered luminous ribbons,
-       warped orbit loops and a breathing colour tunnel, not an equaliser. */
-    for (i = 0; i < 6u; ++i) {
-        uint32_t phase = beat * (1u + (i & 3u)) + i * 173u;
+    int32_t bass = vis_band_energy(0u, 8u);
+    int32_t mids = vis_band_energy(8u, 21u);
+    int32_t treble = vis_band_energy(21u, 32u);
+    /* Three independent frequency voices: bass drives the slow orbital body,
+       mids bend the ribbons, and treble adds quick, bright filaments. */
+    for (i = 0; i < 3u; ++i) {
         int32_t px = 120, py = 120;
-        for (k = 0; k <= 112u; ++k) {
-            uint32_t t = k * 1024u / 112u;
-            uint32_t a = phase + t;
-            int32_t band = (int32_t)vs.bar[(k * 3u + i * 5u) & 31u] / 95;
-            int32_t wobble = (isin(a * (2u + (i & 1u)) + beat) * (13 + band) >> 15);
-            int32_t rx = 34 + (int32_t)i * 8 + wobble + energy / 90;
-            int32_t ry = 22 + (int32_t)i * 6 + (icos(a * 2u + beat) * (10 + band) >> 15);
-            int32_t x = 120 + (icos(a + (uint32_t)(wobble * 3)) * rx >> 15);
-            int32_t y = 119 + (isin(a * (2u + (i % 3u)) + i * 91u) * ry >> 15);
-            if (k) cv_line(px, py, x, y, glow[i]);
+        int32_t radius = 22 + (int32_t)i * 18 + bass / 24;
+        for (k = 0; k <= 72u; ++k) {
+            uint32_t a = beat * (1u + i) + k * 1024u / 72u;
+            int32_t r = radius + (int32_t)(isin(a * 2u) * (5 + bass / 70) >> 15);
+            int32_t x = 120 + (icos(a) * r >> 15);
+            int32_t y = 120 + (isin(a) * (r * 2 / 3) >> 15);
+            if (k) cv_line(px, py, x, y, low_col[i]);
             px = x; py = y;
         }
     }
-    /* Perspective rings pulse and twist with low/mid frequency energy. */
-    for (i = 0; i < 5u; ++i) {
-        uint32_t phase = beat * (2u + i) + i * 211u;
-        int32_t radius = 16 + (int32_t)i * 20 + (int32_t)vs.lvl[i] / 65;
+    for (i = 0; i < 3u; ++i) {
         int32_t px = 120, py = 120;
-        for (k = 0; k <= 64u; ++k) {
-            uint32_t a = phase + k * 1024u / 64u;
-            int32_t r = radius + (int32_t)vs.bar[(k + i * 6u) & 31u] / 115;
-            int32_t x = 120 + (icos(a) * r >> 15);
-            int32_t y = 119 + (isin(a) * (r * 2 / 3) >> 15);
-            if (k) cv_line(px, py, x, y, glow[(i + 1u) % 6u]);
+        for (k = 0; k <= 96u; ++k) {
+            uint32_t a = beat * (2u + i) + k * 1024u / 96u;
+            int32_t bend = (int32_t)(isin(a * (2u + i)) * (12 + mids / 48) >> 15);
+            int32_t rx = 38 + (int32_t)i * 13 + bend;
+            int32_t ry = 24 + (int32_t)i * 9 + (int32_t)(icos(a * 2u) * (8 + mids / 65) >> 15);
+            int32_t x = 120 + (icos(a + (uint32_t)(bend * 2)) * rx >> 15);
+            int32_t y = 120 + (isin(a * (2u + i) + i * 111u) * ry >> 15);
+            if (k) cv_line(px, py, x, y, mid_col[i]);
             px = x; py = y;
+        }
+    }
+    /* Treble transients become fine spokes and glittering points. */
+    for (i = 0; i < 18u; ++i) {
+        uint32_t a = beat * 5u + i * 1024u / 18u;
+        int32_t r = 38 + (int32_t)((vs.bar[21u + (i % 11u)] * (24 + treble / 30)) / 1000);
+        int32_t x = 120 + (icos(a) * r >> 15);
+        int32_t y = 120 + (isin(a) * r >> 15);
+        if (vs.bar[21u + (i % 11u)] > 90) {
+            cv_line(x - 3, y, x + 3, y, high_col[i % 3u]);
+            cv_line(x, y - 3, x, y + 3, high_col[i % 3u]);
         }
     }
     cv_rect(0, 0, 240, 16, RGB(8, 13, 34));
@@ -774,16 +818,31 @@ static void vis_media98(void)
 }
 static void vis_fireworks(void)
 {
-    static const uint16_t col[4] = {RGB(255, 72, 64), RGB(72, 220, 255), RGB(255, 220, 72), RGB(204, 104, 255)};
+    static const uint16_t col[3][3] = {
+        {RGB(255, 54, 34), RGB(255, 130, 28), RGB(255, 218, 70)},
+        {RGB(76, 255, 102), RGB(48, 224, 150), RGB(255, 82, 190)},
+        {RGB(42, 194, 255), RGB(76, 112, 255), RGB(188, 120, 255)}
+    };
     uint32_t i;
-    cv_line(0, 220, 239, 220, RGB(32, 42, 74));
-    for (i = 0; i < 48u; ++i) if (vis_sparks[i].live) {
-        vis_spark_t *s = &vis_sparks[i];
-        uint16_t c = col[s->colour & 3u];
-        int32_t x = s->x / 16, y = s->y / 16;
-        cv_pset(x, y, c);
-        if (s->age < 10u) cv_line(x, y, x - s->vx / 5, y - s->vy / 5, C_WHITE);
-        if ((s->age & 3u) == 0u) vis_ellipse(x, y, 2, 2, c);
+    cv_rect(0, 0, 240, 240, RGB(3, 5, 15));
+    /* Tiny distant embers make the black sky feel deep, without a waveform. */
+    for (i = 0; i < 16u; ++i) {
+        int32_t x = (int32_t)((i * 71u + 19u) % 236u) + 2;
+        int32_t y = (int32_t)((i * 43u + 11u) % 214u) + 4;
+        if ((i + vis_beat_q8() / 30u) % 3u == 0u) cv_pset(x, y, RGB(70, 82, 112));
+    }
+    for (i = 0; i < 72u; ++i) if (vis_sparks[i].live) {
+        vis_spark_t *p = &vis_sparks[i];
+        uint16_t c = col[p->colour % 3u][(p->age / 8u) % 3u];
+        int32_t x = p->x / 16, y = p->y / 16;
+        int32_t tx = x - p->vx / 20, ty = y - p->vy / 20;
+        cv_line(tx, ty, x, y, c);
+        if (p->age < 5u) {
+            cv_line(x - 2, y, x + 2, y, C_WHITE);
+            cv_line(x, y - 2, x, y + 2, C_WHITE);
+        } else if ((p->age & 3u) == 0u) {
+            cv_pset(x, y, C_WHITE);
+        }
     }
 }
 
