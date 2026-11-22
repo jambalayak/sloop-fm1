@@ -13,8 +13,8 @@ extern "C" {
 #endif
 
 #define HORATIO_GRANULAR_MAX_GRAINS 8u
-#define HORATIO_GRANULAR_BUFFER_SAMPLES 16384u
-#define HORATIO_GRANULAR_BUFFER_BYTES 34824u
+#define HORATIO_GRANULAR_BUFFER_SAMPLES 8192u
+#define HORATIO_GRANULAR_BUFFER_BYTES 18440u
 
 void horatio_granular_init(uint32_t sample_rate);
 void horatio_granular_set(float density_hz, float time, float size,
