@@ -71,6 +71,9 @@ jobs:
       - name: Check HORATIO factory preset browser
         run: python3 tools/check_horatio_preset_bank.py
 
+      - name: Check HORATIO PRESET encoder scope
+        run: python3 tools/check_horatio_preset_encoder.py
+
       - name: Run Plaits audio smoke test
         run: |
           g++ -O1 -g -fsanitize=address -fno-omit-frame-pointer -std=gnu++11 -DTEST -D_GNU_SOURCE \
