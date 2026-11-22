@@ -100,15 +100,18 @@ static void start_grain(void) {
         time_position * static_cast<float>(usable);
     const float duration_seconds = 0.012f + 0.065f * grain_size;
     const float duration = duration_seconds * static_cast<float>(sample_rate);
-    /* The recording line advances at 16 kHz; compensate for the host rate. */
-    float speed = (static_cast<float>(capture_rate) / static_cast<float>(sample_rate)) *
+    /* Grain speed is relative to the recording head. The read-head renderer
+     * advances the write head by capture_rate/sample_rate each host frame. */
+    const float write_speed = static_cast<float>(capture_rate) /
+                              static_cast<float>(sample_rate);
+    float speed = write_speed *
                   powf(2.0f, pitch_semitones * (1.0f / 12.0f));
     if (reverse) speed = -speed;
 
     const float amplitude = 1.0f / sqrtf(static_cast<float>(active + 1u));
     const float pan = static_cast<float>((slot * 5u) & 7u) / 7.0f;
     grain.Start(&delay_line, delay, speed, duration, grain_shape,
-                amplitude, pan, 0.0f);
+                amplitude, pan, 0.0f, write_speed);
     grain_speed[slot] = speed;
 
     next_grain = (slot + 1u) % HORATIO_GRANULAR_MAX_GRAINS;
@@ -202,8 +205,9 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
 
     /* Pitch is a block-rate control. Calculate its exponential ratio once
      * per audio block, not once per sample on the embedded CPU. */
-    float target_speed = (static_cast<float>(capture_rate) /
-                          static_cast<float>(sample_rate)) *
+    const float write_speed = static_cast<float>(capture_rate) /
+                              static_cast<float>(sample_rate);
+    float target_speed = write_speed *
                          powf(2.0f, pitch_semitones * (1.0f / 12.0f));
     if (reverse) target_speed = -target_speed;
 
@@ -263,7 +267,8 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
                 grain_speed[g] += (target_speed - grain_speed[g]) * 0.001f;
                 grains[g].SetSpeed(grain_speed[g]);
             }
-            grains[g].Render<beads::HEAD_CROSSING_POLICY_STOP, true>(&delay_line, &wet);
+            grains[g].Render<beads::HEAD_CROSSING_POLICY_STOP, true>(
+                &delay_line, &wet, write_speed);
         }
 
         /* Beads stores a high-passed version of the wet return for feedback,
