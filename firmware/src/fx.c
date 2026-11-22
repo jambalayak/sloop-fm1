@@ -4,6 +4,7 @@
  * Stereo dry mix; the chorus and the reverb come back in stereo, the delay in the middle. */
 #ifdef HORATIO_PLAITS
 #include "horatio_plaits.h"
+#include "horatio_beads_granular.h"
 #endif
 #define DLY_LEN 65536u           /* 1.49 s: 1/4 down to 41 BPM, 1/8 dotted down to 31, 1/4 dotted down to 61 (clamped below) */
 #define CHO_LEN 2048u
@@ -1153,6 +1154,24 @@ static void mix_block(int32_t *out, uint32_t n)
         mix_l[i] += wet_l[i];
         mix_r[i] += wet_r[i];
     }
+#ifdef HORATIO_PLAITS
+    if (song.g[G_BD_ON]) {
+        static uint8_t beads_ready;
+        int32_t amount = clamp(song.g[G_BD_MIX], 0, 127);
+        if (!beads_ready) {
+            horatio_granular_init(FS);
+            beads_ready = 1;
+        }
+        horatio_granular_set(2.0f + (float)clamp(song.g[G_BD_DENS], 0, 127) * (58.0f / 127.0f),
+                             0.5f, 0.05f + (float)clamp(song.g[G_BD_SIZE], 0, 127) * (0.95f / 127.0f),
+                             0.0f, 0.5f, 0.15f, 0u, 0u);
+        horatio_granular_process(mix_l, mix_r, wet_l, wet_r, n);
+        for (i = 0; i < n; i++) {
+            mix_l[i] = (mix_l[i] * (127 - amount) + wet_l[i] * amount) / 127;
+            mix_r[i] = (mix_r[i] * (127 - amount) + wet_r[i] * amount) / 127;
+        }
+    }
+#endif
     dust_process(mix_l, mix_r, n);
     punch_process(mix_l, mix_r, n);
     djf_process(mix_l, mix_r, n);
