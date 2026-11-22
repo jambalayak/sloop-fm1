@@ -1167,7 +1167,7 @@ static void mix_block(int32_t *out, uint32_t n)
                              0.05f + (float)clamp(song.g[G_BD_SIZE], 0, 127) * (0.95f / 127.0f),
                              (float)clamp(song.g[G_BD_PITCH], -24, 24),
                              (float)clamp(song.g[G_BD_SHAPE], 0, 127) * (1.0f / 127.0f),
-                             0.15f, 0u, 0u);
+                             (float)clamp(song.g[G_BD_FB], 0, 127) * (0.85f / 127.0f), 0u, 0u);
         horatio_granular_process(mix_l, mix_r, wet_l, wet_r, n);
         for (i = 0; i < n; i++) {
             mix_l[i] = (mix_l[i] * (127 - amount) + wet_l[i] * amount) / 127;
