@@ -208,7 +208,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_BD_MIX] = PD("MIX", F_PCT, 0, 127, 64),
     [G_BD_DENS] = PD("DENS", F_PCT, 0, 127, 64),
     [G_BD_SIZE] = PD("SIZE", F_PCT, 0, 127, 64),
-    [G_BD_SHAPE] = PD("SHAPE", F_PCT, 0, 127, 64),
+    [G_BD_SHAPE] = PD("SHAPE", F_SHAPE, 0, 127, 64),
     [G_BD_PITCH] = PD("PITCH", F_SEMI, -24, 24, 0),
     [G_BD_FB] = PD("FEEDBACK", F_PCT, 0, 127, 22),
 };
@@ -282,6 +282,9 @@ static void param_format(const param_desc_t *d, int32_t v, char *val, const char
             fmt_int(val + 2, v < 0 ? (-v * 100 + 32) / 64 : (v * 100 + 31) / 63);
             *unit = "%";
         }
+        break;
+    case F_SHAPE:
+        str_cpy(val, v < 21 ? "SQR" : v < 63 ? "DECAY" : v < 105 ? "BELL" : "REV", 6);
         break;
     case F_BIPCT:
         fmt_int(val, v * 100 / 64);
@@ -392,7 +395,7 @@ enum { FAM_HOME, FAM_ENV, FAM_LFO, FAM_FX, FAM_SCL, FAM_EDIT, FAM_GLO, FAM_SAVE,
        FAM_COUNT };
 enum { SC_TRACK, SC_GLOBAL, SC_ENGINE, SC_STEP, SC_TRK, SC_SONG };
 enum { GR_NONE, GR_ADSR, GR_LFO, GR_STEPS, GR_ARP, GR_SCALE, GR_FX, GR_ROLL, GR_BROWSE, GR_SLOTS, GR_USER, GR_TRK,
-       GR_SLCR, GR_INS };
+       GR_SLCR, GR_INS, GR_BEADS };
 
 typedef struct {
     const char *title;
@@ -415,7 +418,7 @@ static const page_t PAGES[] = {
     {"DLY", FAM_FX, SC_GLOBAL, GR_NONE, {G_DTIME, G_DFDBK, G_DCOLOR, G_DMIX}},
     {"REV/CHO", FAM_FX, SC_GLOBAL, GR_NONE, {G_RSIZE, G_RDAMP, G_CRATE, G_CDEPTH}},
     {"BEADS", FAM_FX, SC_GLOBAL, GR_NONE, {G_BD_ON, G_BD_MIX, G_BD_DENS, G_BD_SIZE}},
-    {"BEADS 2", FAM_FX, SC_GLOBAL, GR_NONE, {G_BD_SHAPE, G_BD_PITCH, G_BD_FB, 0xFF}},
+    {"BEADS 2", FAM_FX, SC_GLOBAL, GR_BEADS, {G_BD_SHAPE, G_BD_PITCH, G_BD_FB, 0xFF}},
     {"SEL", FAM_SCL, SC_TRACK, GR_SCALE, {P_ROOT, P_SCALE, P_QUANT, P_CHORD}},
     {"SEL 2", FAM_SCL, SC_TRACK, GR_SCALE, {P_TRANS, P_STRUM, P_VLEAD, 0xFF}},   /* (2.4: the chords played) */
 #ifdef HORATIO_PLAITS

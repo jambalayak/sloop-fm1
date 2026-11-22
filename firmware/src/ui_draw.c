@@ -226,6 +226,65 @@ UI_SMALL static void graph_lfo(const track_t *t, uint16_t c)
     cv_line(0, 50, 239, 50, C_LINE);
 }
 
+/* Beads grain envelope: render the same four-stage morph used by GrainEnvelope.
+ * The curve is a live shape preview, not a generic percentage meter. */
+UI_SMALL static void graph_beads_shape(uint16_t c)
+{
+    const float shape = (float)clamp(song.g[G_BD_SHAPE], 0, 127) * (1.0f / 127.0f);
+    const float size = (float)clamp(song.g[G_BD_SIZE], 0, 127) * (1.0f / 127.0f);
+    const float duration = 0.012f + 0.065f * size;
+    float sustain = 1.0f - 3.0f * shape;
+    float attack, release, smoothness, a, s, r, total;
+    int32_t i, px = 0, py = 0;
+    if (sustain < 0.0f) sustain = 0.0f;
+    {
+        float morph = (shape - 0.33333333f) * 1.5f;
+        if (morph < 0.0f) morph = 0.0f;
+        else if (morph < 0.5f) morph = morph * morph * morph * 4.0f;
+        attack = morph;
+    }
+    release = (1.0f - attack) * (1.0f - sustain);
+    smoothness = attack < 0.5f ? 2.0f * attack : 2.0f - 2.0f * attack;
+    /* GrainEnvelope's minimum attack/release times, expressed as fractions
+     * of this processor's current grain duration. */
+    a = attack > 0.0005f * (1.0f + 3.0f * sustain) / duration
+        ? attack : 0.0005f * (1.0f + 3.0f * sustain) / duration;
+    s = sustain > 2.0f / (duration * (float)FS)
+        ? sustain : 2.0f / (duration * (float)FS);
+    r = release > 0.010f / duration ? release : 0.010f / duration;
+    total = a + s + r;
+    a /= total; s /= total; r /= total;
+
+    cv_text(5, 2, &FONT_S, "SQR", C_GRAY);
+    cv_text(61, 2, &FONT_S, "DECAY", C_GRAY);
+    cv_text(119, 2, &FONT_S, "BELL", C_GRAY);
+    cv_text(174, 2, &FONT_S, "REV", C_GRAY);
+    cv_line(7, 94, 233, 94, C_LINE);
+    cv_line(7, 17, 7, 94, C_LINE);
+    for (i = 0; i <= 120; ++i) {
+        const float t = (float)i * (1.0f / 120.0f);
+        float value;
+        int32_t x = 8 + i * 224 / 120;
+        int32_t y;
+        if (t < a) {
+            float u = t / a;
+            float base = u;
+            float smooth = u * u * (3.0f - 2.0f * u);
+            value = base + (smooth - base) * smoothness;
+        } else if (t < a + s) {
+            value = 1.0f;
+        } else {
+            float u = (1.0f - (t - a - s) / r);
+            float base = u * u * u * u;
+            float smooth = u * u * (3.0f - 2.0f * u);
+            value = base + (smooth - base) * smoothness;
+        }
+        y = 92 - (int32_t)(value * 68.0f);
+        if (i) cv_line(px, py, x, y, c);
+        px = x; py = y;
+    }
+}
+
 UI_SMALL static void graph_steps(const track_t *t, uint16_t c)
 {
     uint32_t i, len = (uint32_t)t->p[P_SLEN];
@@ -441,6 +500,8 @@ UI_SMALL static uint32_t graph_signature(void)
         uint32_t q;
         for (q = 0; q < FAV_N; q++) h = h * 31u + fav[q];
     }
+    if (pg->graph == GR_BEADS)
+        h ^= (uint32_t)song.g[G_BD_SHAPE] * 2654435761u + (uint32_t)song.g[G_BD_SIZE] * 31u;
     if (pg->graph == GR_SLCR && t->p[P_SLCR])        /* the SLICER's step playing */
         h ^= (sl[song.sel].idx + 1u) * 2654435761u;
     if (pg->graph == GR_SLOTS)                       /* (a checksum over each slot) */
@@ -754,6 +815,9 @@ UI_SMALL static void draw_graph(void)
             break;
         case GR_LFO:
             graph_lfo(t, c);
+            break;
+        case GR_BEADS:
+            graph_beads_shape(c);
             break;
         case GR_STEPS:
             graph_steps(t, c);

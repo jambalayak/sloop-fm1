@@ -172,7 +172,7 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
         /* Beads' digital-resolution feedback path feeds the previous, DC-blocked
          * granular return back into the recording input with a squared control
          * law and 3x loop gain. Its input limiter keeps resonant settings stable. */
-        const float feedback_gain = feedback * feedback * 3.0f;
+        const float feedback_gain = feedback * feedback * 3.35f;
         beads::FloatFrame input;
         input.l = in_l + previous_wet_l * feedback_gain;
         input.r = in_r + previous_wet_r * feedback_gain;
