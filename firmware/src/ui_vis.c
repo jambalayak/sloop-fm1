@@ -8,9 +8,9 @@
  * right, as if MASTER were all the way up: the picture does not follow the volume knob, even at 0), the tracks' peaks (fx.c / drums.c, as the TRACKS meters read them), the notes that started
  * (voice.c vis_hit) and the transport clock. Everything is drawn in the main loop, every other frame, in two
  * bands of 120 rows (the canvas holds 120): no cost to the audio. */
-#define VIS_N 12u
+#define VIS_N 13u
 static const char *const VIS_NAME[VIS_N] = {"OSCILLOSCOPE", "SPECTRUM", "SPECTROGRAM", "LISSAJOUS", "VU METERS",
-                                            "CIRCLE", "TAPE", "LCD", "BOUNCE", "ORBIT", "WIRES", "SLOOP"};
+                                            "CIRCLE", "TAPE", "LCD", "BOUNCE", "ORBIT", "WIRES", "SLOOP", "VAPORWAVE"};
 /* vis_on, vis_shown_last, vis_name_t: ui_draw.c; vis_style: panel.c (kept with the settings) */
 #define VIS_FFT 512u
 #define VIS_SG_W 48u                                /* spectrogram: 48 columns of 5 px, 72 rows of 3 px */
@@ -593,6 +593,64 @@ static void vis_sloop(void)
     }
 }
 
+/* A new vaporwave horizon: a striped sunset, perspective grid and audio-reactive neon bars.
+ * Original artwork; deliberately light enough for the FM-1's small display and UI frame budget. */
+static void vis_vaporwave(void)
+{
+    static const uint16_t NEON[4] = {
+        RGB(255, 48, 174), RGB(164, 76, 255), RGB(48, 220, 255), RGB(255, 130, 224)
+    };
+    static const uint8_t GRID_Y[8] = {1, 4, 9, 16, 26, 39, 56, 78};
+    uint32_t i, k, bq = vis_beat_q8();
+    int32_t sc = vs.scale > 1600 ? vs.scale : 1600;
+
+    /* Distant stars and the sunset sit above the horizon. */
+    for (i = 0; i < 18u; i++) {
+        int32_t x = (int32_t)((i * 67u + 19u) % 236u) + 2;
+        int32_t y = 12 + (int32_t)((i * 29u + 7u) % 82u);
+        if (((i * 13u + bq / 32u) & 7u) < 3u)
+            cv_rect(x, y, 2, 2, i & 1u ? RGB(84, 166, 255) : RGB(255, 126, 220));
+    }
+    vis_ellipse(120, 91, 49, 49, RGB(244, 48, 174));
+    vis_ellipse(120, 91, 45, 45, RGB(255, 104, 190));
+    vis_ellipse(120, 91, 39, 39, RGB(255, 164, 188));
+    /* Dark horizontal cuts make the sun read as a retro-futurist striped disc. */
+    for (i = 0; i < 7u; i++) {
+        int32_t y = 91 + (int32_t)i * 8 - 2;
+        if (i >= 2u)
+            cv_rect(69 + (int32_t)i * 2, y, 102 - (int32_t)i * 4, 3, RGB(34, 12, 52));
+    }
+    cv_line(0, 140, 239, 140, RGB(255, 70, 190));
+
+    /* Perspective floor: all rails converge at the horizon. */
+    for (i = 0; i < 13u; i++) {
+        int32_t x = (int32_t)i * 20;
+        cv_line(120, 139, x, 239, i & 1u ? RGB(42, 104, 214) : RGB(32, 190, 220));
+    }
+    for (i = 0; i < 8u; i++) {
+        int32_t y = 140 + GRID_Y[i];
+        cv_line(0, y, 239, y, i & 1u ? RGB(76, 36, 150) : RGB(26, 112, 184));
+    }
+
+    /* The spectrum rises from the horizon; note flashes brighten their own band. */
+    for (k = 0; k < 32u; k++) {
+        int32_t x = 3 + (int32_t)k * 7, h = vs.bar[k] * 52 / 1000;
+        uint16_t col = NEON[k & 3u];
+        if (h > 0) {
+            cv_rect(x, 137 - h, 4, h, col);
+            cv_rect(x, 136 - h, 4, 2, C_WHITE);
+        }
+    }
+    /* A fine master waveform floats across the horizon. */
+    for (i = 1; i < 239u; i += 2u) {
+        int32_t a = vis_l[i - 1u] * 22 / sc, b = vis_l[i] * 22 / sc;
+        cv_line((int32_t)i - 1, 137 - a, (int32_t)i, 137 - b,
+                (i / 12u) & 1u ? RGB(48, 220, 255) : RGB(255, 72, 198));
+    }
+    if (vs.flash[0] || vs.flash[1] || vs.flash[2] || vs.flash[3])
+        cv_line(0, 139, 239, 139, C_WHITE);
+}
+
 /* the visualiser, every other frame: the update, then both bands */
 static void vis_draw(void)
 {
@@ -619,7 +677,8 @@ static void vis_draw(void)
         case 8: vis_bounce(); break;
         case 9: vis_orbit(); break;
         case 10: vis_wires(); break;
-        default: vis_sloop(); break;
+        case 11: vis_sloop(); break;
+        default: vis_vaporwave(); break;
         }
         if (!pass && (vis_name_t || ui.msg_t)) {    /* the style's name a second (or a message) */
             char n[8];
@@ -628,7 +687,7 @@ static void vis_draw(void)
             cv_text(120 - text_w(&FONT_S, s) / 2, 2, &FONT_S, s, C_WHITE);
             if (!ui.msg_t) {
                 fmt_int(n, (int32_t)(vis_style % VIS_N) + 1);
-                str_cpy(n + str_len(n), "/12", 4);
+                str_cpy(n + str_len(n), "/13", 4);
                 cv_text(4, 2, &FONT_S, n, C_DIM);
             }
         }
