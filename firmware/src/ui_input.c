@@ -476,7 +476,7 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
     const page_t *pg = cur_page();
     const param_desc_t *d;
     uint32_t id = pg->id[slot];
-    int32_t v, before;
+    int32_t v, before, delta, sum;
     if (pg->scope == SC_STEP) {
         step_edit(slot, steps);
         return;
@@ -537,18 +537,26 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
     if (!d || !vp || d->max == d->min)
         return;
     before = *vp;
-    v = id == P_ITYPE ? insert_type_turn(before, steps) :
-        d->names == ESYNC_NAMES || d->names == N_IBITS || d->names == N_IRATE ? names_turn(d, before, steps)   /* (a name a detent) */
-                                    : clamp(before + accel(EN_K1 + slot, steps, d->names ? 0 : d->max - d->min), d->min, d->max);
-    *vp = (int16_t)v;
-    /* HORATIO diagnostic: show encoder steps, value before/after edit, and descriptor maximum. */
     if (id == G_BD_SIZE) {
-        char b[32];
+        delta = accel(EN_K1 + slot, steps, d->max - d->min);
+        sum = before + delta;
+        v = clamp(sum, d->min, d->max);
+    } else {
+        v = id == P_ITYPE ? insert_type_turn(before, steps) :
+            d->names == ESYNC_NAMES || d->names == N_IBITS || d->names == N_IRATE ? names_turn(d, before, steps)
+                                        : clamp(before + accel(EN_K1 + slot, steps, d->names ? 0 : d->max - d->min), d->min, d->max);
+    }
+    *vp = (int16_t)v;
+    /* HORATIO diagnostic: expose the SIZE delta, pre-clamp sum and final value. */
+    if (id == G_BD_SIZE) {
+        char b[48];
         str_cpy(b, "K4 ", sizeof b);
         fmt_int(b + str_len(b), steps);
-        str_cpy(b + str_len(b), " ", sizeof b - str_len(b));
-        fmt_int(b + str_len(b), before);
-        str_cpy(b + str_len(b), ">", sizeof b - str_len(b));
+        str_cpy(b + str_len(b), " D", sizeof b - str_len(b));
+        fmt_int(b + str_len(b), delta);
+        str_cpy(b + str_len(b), " S", sizeof b - str_len(b));
+        fmt_int(b + str_len(b), sum);
+        str_cpy(b + str_len(b), " V", sizeof b - str_len(b));
         fmt_int(b + str_len(b), v);
         str_cpy(b + str_len(b), "/", sizeof b - str_len(b));
         fmt_int(b + str_len(b), d->max);
