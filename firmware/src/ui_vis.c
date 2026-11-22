@@ -266,13 +266,7 @@ static void vis_update(void)
         int16_t b[32];
         vis_fft();
         vis_bands(b);
-        if (vis_style != 1) {
-            for (i = 0; i < 32u; i++)
-                vs.bar[i] = (int16_t)((vs.bar[i] * 2 + b[i]) / 3);
-        }
-        if (vis_style == 0) {
-            break;
-        } else if (vis_style == 1) {
+        if (vis_style == 1) {                       /* MEDIA PLAYER 98: peak-hold bands */
             for (i = 0; i < 32u; i++) {
                 int32_t bar = vs.bar[i] - vs.bar[i] * 18 / 100;
                 vs.bar[i] = (int16_t)(b[i] > bar ? b[i] : bar);
@@ -284,14 +278,9 @@ static void vis_update(void)
                     vs.cap[i] = (int16_t)(vs.cap[i] > vs.capv[i] ? vs.cap[i] - vs.capv[i] : 0);
                 }
             }
-        } else {                                    /* spectrogram: the new row on top */
-            for (i = VIS_SG_H - 1u; i; i--)            /* (no memmove here: row by row, from the bottom) */
-                memcpy(vis_sg[i], vis_sg[i - 1u], VIS_SG_W);
-            for (i = 0; i < VIS_SG_W; i++) {
-                uint32_t p = i * 31u * 16u / (VIS_SG_W - 1u), k = p >> 4, f = p & 15u;
-                int32_t v = k < 31u ? (b[k] * (int32_t)(16u - f) + b[k + 1u] * (int32_t)f) / 16 : b[31];
-                vis_sg[0][i] = (uint8_t)(v * 255 / 1000);
-            }
+        } else {                                      /* WHITECAP / FIREWORKS: smoothed FFT bands */
+            for (i = 0; i < 32u; i++)
+                vs.bar[i] = (int16_t)((vs.bar[i] * 2 + b[i]) / 3);
         }
         break;
     }
@@ -856,8 +845,7 @@ static void vis_draw(void)
     } else if (ui.frame & 1u) {
         return;
     }
-    vis_update();
-    if (vis_style % VIS_N == 1u) { vis_fft(); { int16_t b[32]; vis_bands(b); for (pass = 0; pass < 32u; ++pass) vs.bar[pass] = (int16_t)((vs.bar[pass] * 2 + b[pass]) / 3); } }
+    vis_update();                                  /* one FFT per frame feeds all three visualisers */
     if (vis_style % VIS_N == 2u) vis_fireworks_update();
     for (pass = 0; pass < 2u; pass++) {
         cv_begin(240, 120, C_BLACK);
