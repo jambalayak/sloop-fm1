@@ -1206,12 +1206,10 @@ UI_SMALL static void ui_input(void)
         ui.zoom = (uint8_t)(clamp((int32_t)(int8_t)ui.zoom + (s > 0 ? 1 : -1), -1, 2));
         ui.force = 1;
     }
-    if ((s = panel_enc(EN_PRESET)) != 0 && !on_notes_page() &&
-        (ui.home || cur_page()->scope == SC_TRACK || cur_page()->scope == SC_ENGINE ||
-         cur_page()->scope == SC_TRK || cur_page()->graph == GR_BROWSE || cur_fam() == FAM_TRK)) {
-        /* PRESETS browses the selected part's sounds from track and engine pages,
-         * including ENV, LFO, SCALE and PL MODEL. Global settings stay untouched;
-         * NOTES keeps this encoder for zoom. Every detent loads one preset. */
+    if ((s = panel_enc(EN_PRESET)) != 0 && !on_notes_page()) {
+        /* PRESETS browses the selected part's sounds from every menu family, including
+         * track, engine, FX and global pages. NOTES keeps this encoder for zoom.
+         * Every detent loads one preset without changing the page being edited. */
         uint32_t total, cur = preset_pos(&total);
         if (total)
             preset_go((uint32_t)(((int32_t)cur + s % (int32_t)total + (int32_t)total) % (int32_t)total));
