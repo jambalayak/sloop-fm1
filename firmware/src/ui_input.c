@@ -540,6 +540,16 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
         d->names == ESYNC_NAMES || d->names == N_IBITS || d->names == N_IRATE ? names_turn(d, *vp, steps)   /* (a name a detent) */
                                     : clamp(*vp + accel(EN_K1 + slot, steps, d->names ? 0 : d->max - d->min), d->min, d->max);
     *vp = (int16_t)v;
+    /* HORATIO diagnostic: show the actual K4 detents and raw Beads SIZE value.
+     * Temporary, display-only instrumentation; it does not alter the parameter. */
+    if (id == G_BD_SIZE) {
+        char b[24];
+        str_cpy(b, "K4 ", sizeof b);
+        fmt_int(b + 3, steps);
+        str_cpy(b + str_len(b), " SIZE ", sizeof b - str_len(b));
+        fmt_int(b + str_len(b), *vp);
+        ui_message(b);
+    }
     if (pg->scope != SC_GLOBAL && p_lockable(id))
         ui.lock_par = (uint8_t)id;                        /* the SEQ layer's lock parameter: the last one touched */
     if (pg->scope != SC_GLOBAL)
