@@ -26,7 +26,8 @@ static const int kMaxDelay = HORATIO_GRANULAR_BUFFER_SAMPLES;
 static const int kSafety = beads::DelayGrain::head_crossing_safety_zone + 1;
 static const size_t kBankBytes = (kMaxDelay + 4u) * sizeof(int16_t);
 static const size_t kAllocatedBytes = HORATIO_GRANULAR_BUFFER_BYTES;
-static const uint32_t kCaptureRate = 16000u;
+static uint32_t capture_rate = HORATIO_GRANULAR_RATE_16K;
+static float capture_filter_coefficient = 0.65f;
 
 typedef beads::DelayLine<beads::RESOLUTION_16_BIT, kMaxDelay, 1,
                          kBankBytes, 1> CompactDelayLine;
@@ -100,7 +101,7 @@ static void start_grain(void) {
     const float duration_seconds = 0.012f + 0.065f * grain_size;
     const float duration = duration_seconds * static_cast<float>(sample_rate);
     /* The recording line advances at 16 kHz; compensate for the host rate. */
-    float speed = (static_cast<float>(kCaptureRate) / static_cast<float>(sample_rate)) *
+    float speed = (static_cast<float>(capture_rate) / static_cast<float>(sample_rate)) *
                   powf(2.0f, pitch_semitones * (1.0f / 12.0f));
     if (reverse) speed = -speed;
 
@@ -122,6 +123,8 @@ void horatio_granular_init(uint32_t requested_sample_rate) {
         requested_sample_rate = 48000u;
 
     sample_rate = requested_sample_rate;
+    capture_rate = HORATIO_GRANULAR_RATE_16K;
+    capture_filter_coefficient = 0.65f;
     memset(recording_buffer, 0, sizeof(recording_buffer));
     delay_line.Init(recording_buffer, sizeof(recording_buffer));
 
@@ -151,8 +154,32 @@ void horatio_granular_init(uint32_t requested_sample_rate) {
 
 void horatio_granular_set(float density, float time, float size,
                           float pitch, float shape, float fb,
-                          uint32_t freeze, uint32_t rev) {
+                          uint32_t freeze, uint32_t rev,
+                          uint32_t requested_capture_rate) {
     if (!initialized) horatio_granular_init(48000u);
+    if (requested_capture_rate != HORATIO_GRANULAR_RATE_16K &&
+        requested_capture_rate != HORATIO_GRANULAR_RATE_8K &&
+        requested_capture_rate != HORATIO_GRANULAR_RATE_4K)
+        requested_capture_rate = HORATIO_GRANULAR_RATE_16K;
+    if (requested_capture_rate != capture_rate) {
+        /* A rate change changes the meaning of every stored delay in the ring.
+         * Clear it rather than mixing samples recorded at different rates. */
+        capture_rate = requested_capture_rate;
+        capture_filter_coefficient = 0.65f *
+            (static_cast<float>(capture_rate) / 16000.0f);
+        memset(recording_buffer, 0, sizeof(recording_buffer));
+        delay_line.Init(recording_buffer, sizeof(recording_buffer));
+        for (uint32_t i = 0; i < HORATIO_GRANULAR_MAX_GRAINS; ++i) {
+            grains[i].Init(static_cast<float>(sample_rate));
+            grain_speed[i] = 0.0f;
+        }
+        recorded_samples = 0u;
+        capture_l = capture_r = 0.0f;
+        capture_phase = 0u;
+        trigger_phase = 0.0f;
+        previous_wet_l = previous_wet_r = 0.0f;
+        feedback_dc_l = feedback_dc_r = 0.0f;
+    }
     density_hz = clamp_float(density, 0.0f, 60.0f);
     time_position = clamp_unit(time);
     grain_size = clamp_unit(size);
@@ -197,9 +224,9 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
 
         /* One-pole anti-alias filtering, then rational-rate 16 kHz capture.
          * The phase accumulator also works when the host runs at 44.1 kHz. */
-        capture_l += 0.65f * (input.l - capture_l);
-        capture_r += 0.65f * (input.r - capture_r);
-        capture_phase += kCaptureRate;
+        capture_l += capture_filter_coefficient * (input.l - capture_l);
+        capture_r += capture_filter_coefficient * (input.r - capture_r);
+        capture_phase += capture_rate;
         if (capture_phase >= sample_rate) {
             capture_phase -= sample_rate;
             input.l = capture_l;
@@ -216,7 +243,7 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
         }
 
         /* HORATIO slews active grain read speeds so pitch changes are continuous. */
-        float target_speed = (static_cast<float>(kCaptureRate) /
+        float target_speed = (static_cast<float>(capture_rate) /
                               static_cast<float>(sample_rate)) *
                              powf(2.0f, pitch_semitones * (1.0f / 12.0f));
         if (reverse) target_speed = -target_speed;
