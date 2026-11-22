@@ -24,6 +24,7 @@ void horatio_granular_set(float density_hz, float time, float size,
                           float pitch_semitones, float shape, float feedback,
                           uint32_t freeze, uint32_t reverse,
                           uint32_t capture_rate_hz);
+uint32_t horatio_granular_recorded_samples(void);
 void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
                               int32_t *output_l, int32_t *output_r,
                               uint32_t samples);
