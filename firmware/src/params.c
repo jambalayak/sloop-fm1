@@ -29,7 +29,7 @@ static const uint16_t ESYNC_UNITS[ESYNC_N] = {0, 4, 6, 8, 9, 12, 16, 18, 24, 32,
                                               96, 128, 144, 192, 256, 288, 384, 576, 768, 1152, 1536};
 static uint32_t esync_idx(int32_t v) { return (uint32_t)(v & 127) * ESYNC_N >> 7; }   /* (param_format's split) */
 /* the INSERT's types (fx.c IT_*; append-only: stored). Its three values A B C mean what the type says (ins_desc) */
-static const char *const N_ITYPE[] = {"OFF", "SOFT", "HARD", "FOLD", "FUZZ", "CRUSH", "PHASR", "FLANG", "CHOR"};
+static const char *const N_ITYPE[] = {"OFF", "SOFT", "HARD", "FOLD", "OFF", "OFF", "PHASR", "OFF", "CHOR"};
 /* CRUSH: BITS 1..16 and RATE (the held sample's rate) over the range in 16 even parts (0-terminated) */
 static const char *const N_IBITS[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
                                       "16", 0};
@@ -225,9 +225,9 @@ static const param_desc_t INS_DESC[3][3] = {
 #undef PU
 static const param_desc_t *ins_desc(int32_t type, uint32_t k)
 {
-    if (type <= 0 || type >= (int32_t)NELEM(N_ITYPE))
+    if (type <= 0 || type == 4 || type == 5 || type == 7 || type >= (int32_t)NELEM(N_ITYPE))
         return &TP[P_IA + k];
-    return &INS_DESC[type < 5 ? 0 : type == 5 ? 1 : 2][k % 3u];   /* (SOFT .. FUZZ, CRUSH, the swept ones) */
+    return &INS_DESC[type < 4 ? 0 : 2][k % 3u];   /* SOFT/HARD/FOLD and PHASR/CHOR */
 }
 static const param_desc_t ESYNC_DESC[3] = {   /* ATK DEC REL with ENV SYNC on: the range and defaults as ever */
     {"ATK", F_INT, 0, 127, 10, ESYNC_NAMES, 0},
