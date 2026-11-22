@@ -8,9 +8,8 @@
  * right, as if MASTER were all the way up: the picture does not follow the volume knob, even at 0), the tracks' peaks (fx.c / drums.c, as the TRACKS meters read them), the notes that started
  * (voice.c vis_hit) and the transport clock. Everything is drawn in the main loop, every other frame, in two
  * bands of 120 rows (the canvas holds 120): no cost to the audio. */
-#define VIS_N 13u
-static const char *const VIS_NAME[VIS_N] = {"OSCILLOSCOPE", "SPECTRUM", "SPECTROGRAM", "LISSAJOUS", "VU METERS",
-                                            "CIRCLE", "TAPE", "LCD", "BOUNCE", "ORBIT", "WIRES", "SLOOP", "VAPORWAVE"};
+#define VIS_N 3u
+static const char *const VIS_NAME[VIS_N] = {"ODD LITTLE WORLD", "MEDIA PLAYER 98", "FIREWORKS"};
 /* vis_on, vis_shown_last, vis_name_t: ui_draw.c; vis_style: panel.c (kept with the settings) */
 #define VIS_FFT 512u
 #define VIS_SG_W 48u                                /* spectrogram: 48 columns of 5 px, 72 rows of 3 px */
@@ -651,6 +650,106 @@ static void vis_vaporwave(void)
         cv_line(0, 139, 239, 139, C_WHITE);
 }
 
+/* Three replacement visualisers. All artwork is drawn procedurally for the 240x240 LCD. */
+typedef struct { int16_t x, y, vx, vy; uint8_t age, life, colour, live; } vis_spark_t;
+static vis_spark_t vis_sparks[48];
+static uint32_t vis_rng = 0x6D2B79F5u;
+static uint32_t vis_rand(void) { vis_rng ^= vis_rng << 13; vis_rng ^= vis_rng >> 17; vis_rng ^= vis_rng << 5; return vis_rng; }
+static void vis_fireworks_update(void)
+{
+    uint32_t i, active = 0, energy = (uint32_t)(vs.lvl[0] + vs.lvl[1] + vs.lvl[2] + vs.lvl[3]);
+    for (i = 0; i < 48u; ++i) {
+        vis_spark_t *s = &vis_sparks[i];
+        if (!s->live) continue;
+        s->x = (int16_t)(s->x + s->vx);
+        s->y = (int16_t)(s->y + s->vy);
+        s->vy = (int16_t)(s->vy + 2);
+        if (++s->age >= s->life || s->y > 250 || s->x < -8 || s->x > 248) s->live = 0;
+        else active++;
+    }
+    if ((energy > 110u || vs.flash[0] || vs.flash[1] || vs.flash[2]) && active < 34u) {
+        int32_t cx = 24 + (int32_t)(vis_rand() % 192u);
+        int32_t cy = 48 + (int32_t)(vis_rand() % 100u);
+        uint32_t made = 0;
+        for (i = 0; i < 48u && made < 12u; ++i) if (!vis_sparks[i].live) {
+            uint32_t a = made * 1024u / 12u + (vis_rand() & 63u);
+            uint32_t speed = 2u + vis_rand() % 5u;
+            vis_sparks[i].x = (int16_t)(cx * 16); vis_sparks[i].y = (int16_t)(cy * 16);
+            vis_sparks[i].vx = (int16_t)((icos(a) * (int32_t)speed) >> 11);
+            vis_sparks[i].vy = (int16_t)((isin(a) * (int32_t)speed) >> 11);
+            vis_sparks[i].age = 0; vis_sparks[i].life = (uint8_t)(24u + vis_rand() % 24u);
+            vis_sparks[i].colour = (uint8_t)(vis_rand() % 4u); vis_sparks[i].live = 1; made++;
+        }
+    }
+}
+static void vis_odd_world(void)
+{
+    static const uint16_t fur[4] = {RGB(244, 108, 54), RGB(112, 220, 142), RGB(180, 112, 244), RGB(255, 204, 82)};
+    uint32_t i, beat = vis_beat_q8();
+    int32_t bob = (int32_t)(isin(beat * 3u) * 5 >> 15);
+    /* A dreamlike paper-cutout landscape and three original, peculiar creatures. */
+    vis_ellipse(42, 178 + bob, 36, 24, RGB(38, 82, 92));
+    vis_ellipse(122, 184 - bob, 48, 31, RGB(56, 72, 112));
+    vis_ellipse(207, 178 + bob, 34, 25, RGB(100, 66, 108));
+    for (i = 0; i < 4u; ++i) {
+        int32_t x = 40 + (int32_t)i * 55, y = 154 + (int32_t)(isin(beat + i * 177u) * 9 >> 15);
+        vis_ellipse(x, y, 18 + vs.lvl[i] * 5 / 1000, 25 + vs.lvl[i] * 4 / 1000, fur[i]);
+        vis_ellipse(x - 6, y - 5, 4, 6, C_WHITE); vis_ellipse(x + 6, y - 5, 4, 6, C_WHITE);
+        vis_ellipse(x - 6, y - 5, 2, 3, C_BLACK); vis_ellipse(x + 6, y - 5, 2, 3, C_BLACK);
+        cv_line(x, y - 23, x + (int32_t)(isin(beat * 2u + i * 91u) * 10 >> 15), y - 39, C_WHITE);
+        vis_ellipse(x + (int32_t)(isin(beat * 2u + i * 91u) * 10 >> 15), y - 40, 4, 4, TE_COL[i]);
+        cv_line(x - 8, y + 15, x - 13, y + 27, C_WHITE); cv_line(x + 8, y + 15, x + 13, y + 27, C_WHITE);
+        if (vs.flash[i]) vis_ellipse(x, y - 5, 24, 29, C_WHITE);
+    }
+    /* Floating moons, odd stars and a hand-painted-looking horizon. */
+    for (i = 0; i < 13u; ++i) {
+        int32_t x = (int32_t)((i * 71u + 19u) % 232u) + 4, y = 18 + (int32_t)((i * 37u) % 86u);
+        if ((i + beat / 24u) % 3u) vis_ellipse(x, y, 2 + (i % 3u), 2 + (i % 3u), i & 1u ? C_WHITE : fur[i & 3u]);
+    }
+    vis_ellipse(194, 48, 18, 18, RGB(255, 190, 96)); vis_ellipse(201, 42, 17, 17, C_BLACK);
+    cv_line(0, 218, 239, 218, RGB(246, 170, 90));
+}
+static void vis_media98(void)
+{
+    static const uint16_t neon[4] = {RGB(255, 54, 174), RGB(60, 224, 255), RGB(164, 92, 255), RGB(255, 220, 92)};
+    uint32_t i, k, beat = vis_beat_q8();
+    /* Deep blue-black glass with a rotating, audio-pulsed plasma flower. */
+    for (i = 0; i < 4u; ++i) {
+        uint32_t a = beat * (2u + i) + i * 256u;
+        int32_t radius = 28 + (int32_t)i * 19 + vs.lvl[i] * 15 / 1000;
+        int32_t px = 120, py = 120;
+        for (k = 0; k <= 96u; ++k) {
+            uint32_t ang = a + k * 1024u / 96u;
+            int32_t band = (int32_t)vs.bar[(k + i * 7u) & 31u] * (5 + i) / 1000;
+            int32_t r = radius + band;
+            int32_t x = 120 + (icos(ang) * r >> 15), y = 120 + (isin(ang) * r >> 15);
+            if (k) cv_line(px, py, x, y, neon[i]);
+            px = x; py = y;
+        }
+    }
+    for (i = 0; i < 32u; ++i) {
+        int32_t h = vs.bar[i] * 26 / 1000, x = 4 + (int32_t)i * 7;
+        if (h) cv_rect(x, 232 - h, 4, h, neon[i & 3u]);
+    }
+    cv_rect(0, 0, 240, 16, RGB(14, 20, 52));
+    cv_text(7, 2, &FONT_S, "MEDIA PLAYER 98  /  NOW PLAYING", C_WHITE);
+    if (vs.lvl[4] > 30) vis_ellipse(120, 120, 4 + vs.lvl[4] / 100, 4 + vs.lvl[4] / 100, C_WHITE);
+}
+static void vis_fireworks(void)
+{
+    static const uint16_t col[4] = {RGB(255, 72, 64), RGB(72, 220, 255), RGB(255, 220, 72), RGB(204, 104, 255)};
+    uint32_t i;
+    cv_line(0, 220, 239, 220, RGB(32, 42, 74));
+    for (i = 0; i < 48u; ++i) if (vis_sparks[i].live) {
+        vis_spark_t *s = &vis_sparks[i];
+        uint16_t c = col[s->colour & 3u];
+        int32_t x = s->x / 16, y = s->y / 16;
+        cv_pset(x, y, c);
+        if (s->age < 10u) cv_line(x, y, x - s->vx / 5, y - s->vy / 5, C_WHITE);
+        if ((s->age & 3u) == 0u) vis_ellipse(x, y, 2, 2, c);
+    }
+}
+
 /* the visualiser, every other frame: the update, then both bands */
 static void vis_draw(void)
 {
@@ -662,23 +761,15 @@ static void vis_draw(void)
         return;
     }
     vis_update();
+    if (vis_style % VIS_N == 1u) { vis_fft(); { int16_t b[32]; vis_bands(b); for (pass = 0; pass < 32u; ++pass) vs.bar[pass] = (int16_t)((vs.bar[pass] * 2 + b[pass]) / 3); } }
+    if (vis_style % VIS_N == 2u) vis_fireworks_update();
     for (pass = 0; pass < 2u; pass++) {
         cv_begin(240, 120, C_BLACK);
         cv_oy = -(int32_t)(pass * 120u);
         switch (vis_style % VIS_N) {
-        case 0: vis_scope(); break;
-        case 1: vis_spectrum(); break;
-        case 2: vis_spectrogram(); break;
-        case 3: vis_lissajous(); break;
-        case 4: vis_meters(); break;
-        case 5: vis_ring(); break;
-        case 6: vis_tape(); break;
-        case 7: vis_lcd(); break;
-        case 8: vis_bounce(); break;
-        case 9: vis_orbit(); break;
-        case 10: vis_wires(); break;
-        case 11: vis_sloop(); break;
-        default: vis_vaporwave(); break;
+        case 0: vis_odd_world(); break;
+        case 1: vis_media98(); break;
+        default: vis_fireworks(); break;
         }
         if (!pass && (vis_name_t || ui.msg_t)) {    /* the style's name a second (or a message) */
             char n[8];
@@ -687,7 +778,7 @@ static void vis_draw(void)
             cv_text(120 - text_w(&FONT_S, s) / 2, 2, &FONT_S, s, C_WHITE);
             if (!ui.msg_t) {
                 fmt_int(n, (int32_t)(vis_style % VIS_N) + 1);
-                str_cpy(n + str_len(n), "/13", 4);
+                str_cpy(n + str_len(n), "/3", 3);
                 cv_text(4, 2, &FONT_S, n, C_DIM);
             }
         }
