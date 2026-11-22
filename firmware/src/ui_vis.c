@@ -9,7 +9,7 @@
  * (voice.c vis_hit) and the transport clock. Everything is drawn in the main loop, every other frame, in two
  * bands of 120 rows (the canvas holds 120): no cost to the audio. */
 #define VIS_N 3u
-static const char *const VIS_NAME[VIS_N] = {"ODD LITTLE WORLD", "MEDIA PLAYER 98", "FIREWORKS"};
+static const char *const VIS_NAME[VIS_N] = {"WHITECAP", "MEDIA PLAYER 98", "FIREWORKS"};
 /* vis_on, vis_shown_last, vis_name_t: ui_draw.c; vis_style: panel.c (kept with the settings) */
 #define VIS_FFT 512u
 #define VIS_SG_W 48u                                /* spectrogram: 48 columns of 5 px, 72 rows of 3 px */
@@ -682,73 +682,53 @@ static void vis_fireworks_update(void)
         }
     }
 }
-static void vis_odd_world(void)
+static void vis_whitecap(void)
 {
-    static const uint16_t ink = RGB(18, 16, 24);
-    static const uint16_t paper = RGB(224, 220, 204);
-    static const uint16_t pink = RGB(244, 62, 166);
-    static const uint16_t mint = RGB(92, 218, 164);
-    static const uint16_t orange = RGB(246, 104, 48);
-    uint32_t i, beat = vis_beat_q8();
-    int32_t pulse = (int32_t)vs.lvl[4] / 95;
-    int32_t moon_r = 69 + pulse / 3;
-    int32_t blink = (beat / 96u) % 8u == 0u ? 2 : 0;
-    /* Original handmade-collage scene: a lumpy moon portrait in deep space,
-       surrounded by cut-paper oddities, scribbles, stars and comic accents. */
-    cv_rect(0, 0, 240, 240, RGB(10, 13, 29));
-    for (i = 0; i < 34u; ++i) {
-        int32_t x = (int32_t)((i * 67u + 13u) % 236u) + 2;
-        int32_t y = (int32_t)((i * 43u + 7u) % 230u) + 3;
-        int32_t r = 1 + (i % 3u);
-        if ((i + beat / 18u) % 4u) vis_ellipse(x, y, r, r, i & 1u ? C_WHITE : RGB(118, 154, 196));
+    static const uint16_t mesh[5] = {
+        RGB(70, 238, 255), RGB(128, 92, 255), RGB(255, 76, 190),
+        RGB(96, 255, 176), RGB(255, 196, 82)
+    };
+    uint32_t i, j, beat = vis_beat_q8();
+    int32_t energy = (int32_t)vs.lvl[4];
+    /* WhiteCap-inspired: a continuously morphing, audio-reactive 3D wireframe
+       surface with luminous colour and a deep shifting background. */
+    cv_rect(0, 0, 240, 240, RGB(5, 8, 24));
+    for (i = 0; i < 12u; ++i) {
+        int32_t px = 0, py = 0;
+        for (j = 0; j <= 32u; ++j) {
+            int32_t u = (int32_t)j - 16;
+            uint32_t phase = beat + i * 67u + j * 19u;
+            int32_t v = (int32_t)i - 6;
+            int32_t wave = (isin(phase * 2u + (uint32_t)(u * 13)) * (15 + energy / 80) >> 15);
+            int32_t ripple = (icos(phase + (uint32_t)(v * 21)) * (9 + vs.bar[(j + i * 2u) & 31u] / 90) >> 15);
+            int32_t depth = 92 + v * 9 + ripple;
+            int32_t x = 120 + u * (5 + (depth / 90)) + (isin(phase) * 12 >> 15);
+            int32_t y = 120 + wave + ripple + v * 4;
+            if (j) cv_line(px, py, x, y, mesh[(i + j / 7u) % 5u]);
+            px = x; py = y;
+        }
     }
-    /* Uneven moon silhouette and crater patches. */
-    vis_ellipse(120, 105, moon_r, moon_r, RGB(150, 155, 153));
-    vis_ellipse(116, 99, moon_r - 5, moon_r - 6, paper);
-    vis_ellipse(80, 65, 13, 8, RGB(190, 187, 175));
-    vis_ellipse(157, 55, 18, 10, RGB(190, 187, 175));
-    vis_ellipse(161, 133, 15, 11, RGB(190, 187, 175));
-    vis_ellipse(91, 148, 19, 8, RGB(190, 187, 175));
-    /* Expressive eyes, eyebrows, nose and grin. */
-    cv_line(73, 79, 99, 73, ink); cv_line(141, 73, 166, 79, ink);
-    vis_ellipse(91, 91, 18, 13, RGB(140, 66, 53));
-    vis_ellipse(151, 91, 18, 13, RGB(140, 66, 53));
-    vis_ellipse(92, 91, 10, 8, C_WHITE); vis_ellipse(151, 91, 10, 8, C_WHITE);
-    vis_ellipse(94, 91, 4, 5, RGB(34, 68, 51)); vis_ellipse(153, 91, 4, 5, RGB(34, 68, 51));
-    vis_ellipse(95, 91, 1, 2, ink); vis_ellipse(154, 91, 1, 2, ink);
-    cv_line(117, 94, 110, 116, RGB(128, 126, 118));
-    cv_line(110, 116, 123, 121, RGB(128, 126, 118));
-    vis_ellipse(120, 143, 35, 17, RGB(112, 47, 50));
-    vis_ellipse(120, 139, 31, 11, RGB(232, 180, 143));
-    cv_line(91, 137, 149, 137, ink);
-    for (i = 0; i < 7u; ++i) cv_line(99 + (int32_t)i * 7, 139, 101 + (int32_t)i * 7, 148, ink);
-    if (blink) { cv_line(75, 91, 108, 91, ink); cv_line(136, 91, 168, 91, ink); }
-    /* A small black oval creature with a bright pink cut-paper rim. */
-    vis_ellipse(188, 188, 31 + pulse / 5, 37 + pulse / 5, pink);
-    vis_ellipse(188, 188, 25 + pulse / 5, 31 + pulse / 5, RGB(247, 192, 214));
-    vis_ellipse(188, 188, 21 + pulse / 5, 27 + pulse / 5, ink);
-    vis_ellipse(179, 179, 5, 7, C_WHITE); vis_ellipse(197, 179, 5, 7, C_WHITE);
-    vis_ellipse(180, 179, 1, 2, ink); vis_ellipse(198, 179, 1, 2, ink);
-    cv_line(177, 197, 199, 197, C_WHITE); cv_line(181, 197, 181, 204, C_WHITE);
-    cv_line(189, 197, 189, 204, C_WHITE); cv_line(197, 197, 197, 204, C_WHITE);
-    /* Floating doodle heads, stitched outlines, stars and comic-book bursts. */
-    vis_ellipse(28, 174, 13, 13, orange);
-    vis_ellipse(24, 171, 3, 3, C_WHITE); vis_ellipse(33, 171, 3, 3, C_WHITE);
-    cv_line(23, 181, 34, 181, ink);
-    vis_ellipse(39, 34, 16, 19, RGB(158, 222, 222));
-    vis_ellipse(34, 32, 3, 4, ink); vis_ellipse(44, 32, 3, 4, ink);
-    cv_line(34, 42, 44, 42, ink);
-    for (i = 0; i < 5u; ++i) {
-        int32_t x = 18 + (int32_t)i * 43;
-        int32_t y = 215 + (int32_t)(isin(beat * 2u + i * 131u) * 5 >> 15);
-        cv_line(x - 5, y, x + 5, y, mint);
-        cv_line(x, y - 5, x, y + 5, mint);
+    for (j = 0; j < 33u; ++j) {
+        int32_t px = 0, py = 0;
+        for (i = 0; i < 12u; ++i) {
+            int32_t u = (int32_t)j - 16;
+            int32_t v = (int32_t)i - 6;
+            uint32_t phase = beat + i * 67u + j * 19u;
+            int32_t wave = (isin(phase * 2u + (uint32_t)(u * 13)) * (15 + energy / 80) >> 15);
+            int32_t ripple = (icos(phase + (uint32_t)(v * 21)) * (9 + vs.bar[(j + i * 2u) & 31u] / 90) >> 15);
+            int32_t depth = 92 + v * 9 + ripple;
+            int32_t x = 120 + u * (5 + (depth / 90)) + (isin(phase) * 12 >> 15);
+            int32_t y = 120 + wave + ripple + v * 4;
+            if (i) cv_line(px, py, x, y, mesh[(i + j / 7u + 2u) % 5u]);
+            px = x; py = y;
+        }
     }
-    cv_line(8, 119, 19, 108, pink); cv_line(19, 108, 30, 119, pink);
-    cv_line(30, 119, 19, 130, pink); cv_line(19, 130, 8, 119, pink);
-    if (vs.flash[0]) vis_ellipse(120, 105, 75, 75, C_WHITE);
+    /* A soft audio-pulsed central glow, kept geometric for the wireframe look. */
+    if (energy > 20) {
+        int32_t r = 5 + energy / 110;
+        vis_ellipse(120, 120, r, r, RGB(120, 185, 255));
+    }
 }
-
 static void vis_media98(void)
 {
     static const uint16_t glow[6] = {
@@ -824,7 +804,7 @@ static void vis_draw(void)
         cv_begin(240, 120, C_BLACK);
         cv_oy = -(int32_t)(pass * 120u);
         switch (vis_style % VIS_N) {
-        case 0: vis_odd_world(); break;
+        case 0: vis_whitecap(); break;
         case 1: vis_media98(); break;
         default: vis_fireworks(); break;
         }
