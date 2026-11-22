@@ -541,9 +541,12 @@ UI_SMALL static void edit_param(uint32_t slot, int32_t steps)
         v = insert_type_turn(before, steps);
     } else if (d->names == ESYNC_NAMES || d->names == N_IBITS || d->names == N_IRATE) {
         v = names_turn(d, before, steps);
+    } else if (id == G_BD_SIZE) {
+        /* Keep the proven dedicated Beads SIZE edit path; calculate its
+         * encoder delta once, then clamp the resulting value. */
+        delta = accel(EN_K1 + slot, steps, d->max - d->min);
+        v = clamp(before + delta, d->min, d->max);
     } else {
-        /* accel() updates encoder timing state, so evaluate it exactly once
-         * before clamp(); clamp may evaluate its argument more than once. */
         delta = accel(EN_K1 + slot, steps, d->names ? 0 : d->max - d->min);
         v = clamp(before + delta, d->min, d->max);
     }
