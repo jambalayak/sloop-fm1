@@ -215,6 +215,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_BD_TIME] = PD("TIME", F_PCT, 0, 127, 64),
     [G_BD_FREEZE] = PE("FREEZE", N_ONOFF, 0),
     [G_BD_REVERSE] = PE("REVERSE", N_ONOFF, 0),
+    [G_BD_RATE] = PE("RATE", N_BDRATE, 0),
 };
 
 static const param_desc_t DRUM_KIT_DESC = PE("KIT", DRUM_KIT_NAMES, 0);
