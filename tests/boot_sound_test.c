@@ -50,6 +50,27 @@ static void compare(const char *when)
         memcpy(trk[k].p, now, sizeof now);
     }
 }
+/* Every Plaits factory recipe carries its own ADSR. Check the complete browser bank, not just
+ * the three boot sounds: a zeroed envelope here makes otherwise valid patches click or lose their tail. */
+static void preset_envelope_check(void)
+{
+    static track_t saved;
+    const engine_t *e = ENGINES[0];
+    uint32_t pi;
+    memcpy(&saved, &trk[0], sizeof saved);
+    trk[0].eng_req = 0;
+    trk[0].engine = 0;
+    trk[0].user = 0;
+    for (pi = 0; pi < e->npresets; pi++) {
+        const preset_t *pr = &e->presets[pi];
+        char b[128];
+        apply_preset_to(&trk[0], pi);
+        snprintf(b, sizeof b, "factory preset %u (%s) restores its ADSR", pi + 1u, pr->name);
+        check(trk[0].p[P_ATK] == pr->env[0] && trk[0].p[P_DEC] == pr->env[1] &&
+              trk[0].p[P_SUS] == pr->env[2] && trk[0].p[P_REL] == pr->env[3], b);
+    }
+    memcpy(&trk[0], &saved, sizeof saved);
+}
 /* track k's note: its zero-crossing rate over 0.3 .. 0.8 s (Hz, the fundamental of a bass sine) */
 static double note_hz(uint32_t k, uint32_t note)
 {
@@ -112,6 +133,8 @@ int main(void)
 {
     uint32_t i;
     harness_init();
+    boot_as_main();
+    preset_envelope_check();
     memset(nor, 0xFF, sizeof nor);               /* 1. a first install: nothing in the flash */
     boot_as_main();
     compare("first power-on");
