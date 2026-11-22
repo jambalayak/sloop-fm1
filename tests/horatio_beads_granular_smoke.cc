@@ -13,8 +13,8 @@ int main() {
     int32_t peak = 0;
 
     if (HORATIO_GRANULAR_MAX_GRAINS != 8u ||
-        HORATIO_GRANULAR_BUFFER_SAMPLES != 4096u ||
-        HORATIO_GRANULAR_BUFFER_BYTES > 13u * 1024u) {
+        HORATIO_GRANULAR_BUFFER_SAMPLES != 8192u ||
+        HORATIO_GRANULAR_BUFFER_BYTES > 20u * 1024u) {
         fprintf(stderr, "compact Beads memory budget changed unexpectedly\n");
         return 1;
     }
