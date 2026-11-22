@@ -3,9 +3,19 @@
 /* Effects: per-track DIST insert, then sends into three shared buses (chorus, tempo delay, reverb).
  * Stereo dry mix; the chorus and the reverb come back in stereo, the delay in the middle. */
 #ifdef HORATIO_PLAITS
-#include <math.h>
 #include "horatio_plaits.h"
 #include "horatio_beads_granular.h"
+#endif
+#ifdef HORATIO_PLAITS
+/* Small bounded square root for equal-power gains; avoids libm on the JieLi target. */
+static float beads_sqrt(float x) {
+    float y = x > 1.0f ? x : 1.0f;
+    unsigned k;
+    if (x <= 0.0f) return 0.0f;
+    for (k = 0; k < 7u; k++)
+        y = 0.5f * (y + x / y);
+    return y;
+}
 #endif
 #define DLY_LEN 65536u           /* 1.49 s: 1/4 down to 41 BPM, 1/8 dotted down to 31, 1/4 dotted down to 61 (clamped below) */
 #define CHO_LEN 2048u
@@ -1143,13 +1153,13 @@ static void mix_block(int32_t *out, uint32_t n)
                 wet_energy += wl * wl + wr * wr;
             }
             if (dry_energy > 0.000001f && wet_energy > 0.000001f) {
-                target_gain = sqrtf(dry_energy / wet_energy);
+                target_gain = beads_sqrt(dry_energy / wet_energy);
                 if (target_gain < 0.75f) target_gain = 0.75f;
                 if (target_gain > 1.80f) target_gain = 1.80f;
                 beads_wet_gain += (target_gain - beads_wet_gain) * 0.125f;
             }
-            dry_gain = sqrtf((float)(127 - amount) * (1.0f / 127.0f));
-            wet_mix_gain = sqrtf((float)amount * (1.0f / 127.0f)) * beads_wet_gain;
+            dry_gain = beads_sqrt((float)(127 - amount) * (1.0f / 127.0f));
+            wet_mix_gain = beads_sqrt((float)amount * (1.0f / 127.0f)) * beads_wet_gain;
             for (i = 0; i < n; i++) {
                 mix_l[i] = (int32_t)((float)mix_l[i] * dry_gain + (float)wet_l[i] * wet_mix_gain);
                 mix_r[i] = (int32_t)((float)mix_r[i] * dry_gain + (float)wet_r[i] * wet_mix_gain);
