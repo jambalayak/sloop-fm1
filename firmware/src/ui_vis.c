@@ -711,29 +711,46 @@ static void vis_odd_world(void)
 }
 static void vis_media98(void)
 {
-    static const uint16_t neon[4] = {RGB(255, 54, 174), RGB(60, 224, 255), RGB(164, 92, 255), RGB(255, 220, 92)};
+    static const uint16_t glow[6] = {
+        RGB(255, 72, 190), RGB(70, 220, 255), RGB(170, 105, 255),
+        RGB(255, 210, 90), RGB(90, 255, 190), RGB(255, 120, 110)
+    };
     uint32_t i, k, beat = vis_beat_q8();
-    /* Deep blue-black glass with a rotating, audio-pulsed plasma flower. */
-    for (i = 0; i < 4u; ++i) {
-        uint32_t a = beat * (2u + i) + i * 256u;
-        int32_t radius = 28 + (int32_t)i * 19 + vs.lvl[i] * 15 / 1000;
+    int32_t energy = (int32_t)vs.lvl[4];
+    /* Classic WMP-era abstract "Alchemy" feel: layered luminous ribbons,
+       warped orbit loops and a breathing colour tunnel, not an equaliser. */
+    for (i = 0; i < 6u; ++i) {
+        uint32_t phase = beat * (1u + (i & 3u)) + i * 173u;
         int32_t px = 120, py = 120;
-        for (k = 0; k <= 96u; ++k) {
-            uint32_t ang = a + k * 1024u / 96u;
-            int32_t band = (int32_t)vs.bar[(k + i * 7u) & 31u] * (5 + i) / 1000;
-            int32_t r = radius + band;
-            int32_t x = 120 + (icos(ang) * r >> 15), y = 120 + (isin(ang) * r >> 15);
-            if (k) cv_line(px, py, x, y, neon[i]);
+        for (k = 0; k <= 112u; ++k) {
+            uint32_t t = k * 1024u / 112u;
+            uint32_t a = phase + t;
+            int32_t band = (int32_t)vs.bar[(k * 3u + i * 5u) & 31u] / 95;
+            int32_t wobble = (isin(a * (2u + (i & 1u)) + beat) * (13 + band) >> 15);
+            int32_t rx = 34 + (int32_t)i * 8 + wobble + energy / 90;
+            int32_t ry = 22 + (int32_t)i * 6 + (icos(a * 2u + beat) * (10 + band) >> 15);
+            int32_t x = 120 + (icos(a + (uint32_t)(wobble * 3)) * rx >> 15);
+            int32_t y = 119 + (isin(a * (2u + (i % 3u)) + i * 91u) * ry >> 15);
+            if (k) cv_line(px, py, x, y, glow[i]);
             px = x; py = y;
         }
     }
-    for (i = 0; i < 32u; ++i) {
-        int32_t h = vs.bar[i] * 26 / 1000, x = 4 + (int32_t)i * 7;
-        if (h) cv_rect(x, 232 - h, 4, h, neon[i & 3u]);
+    /* Perspective rings pulse and twist with low/mid frequency energy. */
+    for (i = 0; i < 5u; ++i) {
+        uint32_t phase = beat * (2u + i) + i * 211u;
+        int32_t radius = 16 + (int32_t)i * 20 + (int32_t)vs.lvl[i] / 65;
+        int32_t px = 120, py = 120;
+        for (k = 0; k <= 64u; ++k) {
+            uint32_t a = phase + k * 1024u / 64u;
+            int32_t r = radius + (int32_t)vs.bar[(k + i * 6u) & 31u] / 115;
+            int32_t x = 120 + (icos(a) * r >> 15);
+            int32_t y = 119 + (isin(a) * (r * 2 / 3) >> 15);
+            if (k) cv_line(px, py, x, y, glow[(i + 1u) % 6u]);
+            px = x; py = y;
+        }
     }
-    cv_rect(0, 0, 240, 16, RGB(14, 20, 52));
+    cv_rect(0, 0, 240, 16, RGB(8, 13, 34));
     cv_text(7, 2, &FONT_S, "MEDIA PLAYER 98  /  NOW PLAYING", C_WHITE);
-    if (vs.lvl[4] > 30) vis_ellipse(120, 120, 4 + vs.lvl[4] / 100, 4 + vs.lvl[4] / 100, C_WHITE);
 }
 static void vis_fireworks(void)
 {
