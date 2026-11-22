@@ -20,8 +20,10 @@ if "m->cutoff >> 8" not in engine or "m->shape >> 8" not in engine:
     raise SystemExit("Plaits does not consume LFO filter/shape modulation")
 
 profiles = re.findall(r'\bLFO\(([^)]*)\)', engine)
-if len(profiles) < 15:
-    raise SystemExit(f"Expected a curated set of at least 15 LFO-enabled presets, found {len(profiles)}")
+if len(profiles) != 22:
+    raise SystemExit(f"Expected exactly 22 curated LFO-enabled presets, found {len(profiles)}")
+if len(set(profiles)) != len(profiles):
+    raise SystemExit("Each curated LFO-enabled preset must have its own distinct profile")
 for profile in profiles:
     values = [int(x.strip()) for x in profile.split(",")]
     if len(values) != 10:
