@@ -41,7 +41,7 @@ textures = re.compile(r"noise|texture|evolving|atmosphere|ambient|windy|static|s
 # Short display names are intentionally compact; restore semantic aliases for
 # sound-envelope classification so the display rename cannot change validation.
 semantic_names = {
-    "BOWED HARM": "Bowed string Instrument harmonics",
+    "BOWED HARM": "Bowed String Pad",
     "SCN PLUCK": "side-chainy string pluck (Bass - Guitar)",
     "MARIMBA BNC": "bouncing marimba mallets",
     "NOISE MAR": "noisy marimba",
