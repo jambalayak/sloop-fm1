@@ -749,7 +749,6 @@ static const char *const BANK_KIND[] = {"BASS", "KEYS", "ORGN", "PAD", "LEAD", "
 /* One browser entry for every Plaits factory preset, in source-sheet order.
  * The category shows the Plaits bank: ORNG, GREEN or RED. */
 static const struct { uint8_t kind, e; const char *name; } BANK[] = {
-    {BK_ORGAN, 0, "Orchestra tuning up poorly"},
     {BK_ORGAN, 0, "Bowed string Instrument harmonics"},
     {BK_ORGAN, 0, "Mosquito in your ear"},
     {BK_ORGAN, 0, "side-chainy string pluck (Bass - Guitar)"},
