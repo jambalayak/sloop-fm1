@@ -147,9 +147,9 @@ class DelayGrain : public Grain {
     }
     
     delay_ -= speed_;
-    if (!delay_line->frozen()) {
-      delay_ += write_speed_q10;
-    }
+    /* The caller supplies the (possibly slewed) recording-head velocity.
+     * Do not switch it abruptly when Freeze changes state. */
+    delay_ += write_speed_q10;
     
     const int32_t tail = DelayLineType::MAX_DELAY << 10;
     const int32_t fade_zone = head_crossing_safety_zone << 10;
