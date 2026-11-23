@@ -197,6 +197,49 @@ int main() {
         }
     }
 
+    {
+        /* Exercise the feedback limiter under sustained worst-case settings:
+         * maximum density, pitch, grain size and feedback with a repeatable
+         * high-level input. The recording line must remain bounded and the
+         * wet return must stay audible without exceeding Q15 output range. */
+        uint32_t noise = 0x2468ace1u;
+        uint32_t stress_audible = 0u;
+        int32_t stress_peak = 0;
+        horatio_granular_init(48000u);
+        horatio_granular_set(60.0f, 0.5f, 1.0f, 24.0f, 0.65f, 1.0f,
+                             0u, 0u, HORATIO_GRANULAR_RATE_16K);
+        for (uint32_t block = 0; block < 750u; ++block) {
+            for (uint32_t i = 0; i < 128u; ++i) {
+                noise = noise * 1664525u + 1013904223u;
+                const int32_t x = static_cast<int32_t>((noise >> 16) & 0xffffu) - 32768;
+                in_l[i] = in_r[i] = x;
+            }
+            horatio_granular_process(in_l, in_r, out_l, out_r, 128u);
+            for (uint32_t i = 0; i < 128u; ++i) {
+                const int32_t left = abs(out_l[i]);
+                const int32_t right = abs(out_r[i]);
+                if (left > 2 || right > 2) ++stress_audible;
+                if (left > stress_peak) stress_peak = left;
+                if (right > stress_peak) stress_peak = right;
+                if (out_l[i] < -32768 || out_l[i] > 32767 ||
+                    out_r[i] < -32768 || out_r[i] > 32767) {
+                    fprintf(stderr, "maximum-feedback stress exceeded Q15 bounds\\n");
+                    return 21;
+                }
+            }
+        }
+        if (horatio_granular_recorded_samples() != HORATIO_GRANULAR_BUFFER_SAMPLES) {
+            fprintf(stderr, "maximum-feedback stress changed recording capacity: %u\\n",
+                    horatio_granular_recorded_samples());
+            return 22;
+        }
+        if (stress_audible < 1000u || stress_peak < 100) {
+            fprintf(stderr, "maximum-feedback stress became silent: audible=%u peak=%d\\n",
+                    stress_audible, stress_peak);
+            return 23;
+        }
+    }
+
     horatio_granular_init(sr);
     horatio_granular_set(30.0f, 0.45f, 0.55f, 0.0f, 0.65f, 0.15f, 0u, 0u, HORATIO_GRANULAR_RATE_16K);
 
