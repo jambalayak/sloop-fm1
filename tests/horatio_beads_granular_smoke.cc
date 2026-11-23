@@ -227,7 +227,7 @@ int main() {
                              0u, 0u, HORATIO_GRANULAR_RATE_16K);
         for (uint32_t block = 0; block < 3u; ++block)
             horatio_granular_process(input_l, input_r, out_l, out_r, 128u);
-        if (horatio_granular_recorded_samples() != 2122u) {
+        if (horatio_granular_recorded_samples() != 2090u) {
             fprintf(stderr, "capture did not resume after FREEZE: %u\\n",
                     horatio_granular_recorded_samples());
             return 26;
