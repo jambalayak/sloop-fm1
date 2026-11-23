@@ -70,6 +70,8 @@ static uint8_t reverse;
 /* De-click the wet return while the recording head changes freeze state. */
 static uint8_t freeze_transition_stage;
 static float wet_output_gain;
+/* Slewed write-head velocity keeps active grains continuous across Freeze. */
+static float grain_write_speed;
 static uint8_t initialized;
 
 static float clamp_unit(float value) {
@@ -167,6 +169,8 @@ void horatio_granular_init(uint32_t requested_sample_rate) {
     frozen = reverse = 0u;
     freeze_transition_stage = 0u;
     wet_output_gain = 1.0f;
+    grain_write_speed = static_cast<float>(capture_rate) /
+                        static_cast<float>(sample_rate);
     initialized = 1u;
 }
 
@@ -192,6 +196,8 @@ void horatio_granular_set(float density, float time, float size,
             grain_speed[i] = 0.0f;
         }
         recorded_samples = 0u;
+        grain_write_speed = frozen ? 0.0f :
+            static_cast<float>(capture_rate) / static_cast<float>(sample_rate);
         capture_l = capture_r = 0.0f;
         capture_phase = 0u;
         trigger_phase = 0.0f;
@@ -227,8 +233,9 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
     /* DelayGrain stores its head position in Q10. Round the write-head
      * increment to nearest rather than truncating it; truncation accumulates
      * a small but systematic timing drift at non-integer rate ratios. */
-    const int32_t write_speed_q10 = static_cast<int32_t>(
-        write_speed * 1024.0f + 0.5f);
+    const float target_grain_write_speed = frozen ? 0.0f : write_speed;
+    const float freeze_speed_slew = 1.0f - expf(
+        -1.0f / (0.006f * static_cast<float>(sample_rate)));
     float target_speed = write_speed *
                          powf(2.0f, pitch_semitones * (1.0f / 12.0f));
     if (reverse) target_speed = -target_speed;
@@ -242,6 +249,10 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
     const float density_increment = density_hz / static_cast<float>(sample_rate);
 
     for (uint32_t i = 0; i < samples; ++i) {
+        grain_write_speed += (target_grain_write_speed - grain_write_speed) *
+                             freeze_speed_slew;
+        const int32_t render_write_speed_q10 = static_cast<int32_t>(
+            grain_write_speed * 1024.0f + 0.5f);
         const float in_l = input_l ? static_cast<float>(input_l[i]) * (1.0f / 32768.0f) : 0.0f;
         const float in_r = input_r ? static_cast<float>(input_r[i]) * (1.0f / 32768.0f) : in_l;
 
@@ -297,7 +308,7 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
                 grains[g].SetSpeed(grain_speed[g]);
             }
             grains[g].Render<beads::HEAD_CROSSING_POLICY_STOP, true>(
-                &delay_line, &wet, write_speed_q10);
+                &delay_line, &wet, render_write_speed_q10);
         }
 
         /* Beads stores a high-passed version of the wet return for feedback,
