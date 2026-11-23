@@ -112,7 +112,7 @@ static const param_desc_t TP[P_COUNT] = {
     [P_DIST] = PD("DST", F_PCT, 0, 127, 0),
     [P_CHOR] = PD("CHO", F_PCT, 0, 127, 0),
     [P_DLY] = PD("DLY", F_PCT, 0, 127, 0),
-    [P_REV] = PD("REV", F_PCT, 0, 127, 0),
+    [P_REV] = PD("REVERB", F_PCT, 0, 127, 0),
     [P_VOICE] = PE("VCE", N_VOICE, 0),
     [P_GLIDE] = PD("GLD", F_TIME, 0, 127, 0),
     [P_GLMODE] = PE("GLMOD", N_GLMODE, 0),
@@ -214,7 +214,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_BD_FB] = PD("FEEDBACK", F_PCT, 0, 127, 22),
     [G_BD_TIME] = PD("TIME", F_PCT, 0, 127, 64),
     [G_BD_FREEZE] = PE("FREEZE", N_ONOFF, 0),
-    [G_BD_REVERSE] = PE("REVERSE", N_ONOFF, 0),
+    [G_BD_REVERSE] = PE("REVRS", N_ONOFF, 0),
     [G_BD_RATE] = PE("RATE", N_BDRATE, 0),
 };
 
