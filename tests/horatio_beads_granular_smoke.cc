@@ -152,6 +152,31 @@ int main() {
     }
 
     {
+        /* A rate switch must discard fractional capture phase as well as the
+         * old recording. At 32 kHz, one 16 kHz input sample leaves half a
+         * host-frame interval accumulated; switching to 4 kHz must restart
+         * from phase zero, yielding exactly 16 samples in the next 128 frames. */
+        int32_t in_l[128] = {0}, in_r[128] = {0};
+        int32_t out_l[128], out_r[128];
+        horatio_granular_init(32000u);
+        horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
+                             0u, 0u, HORATIO_GRANULAR_RATE_16K);
+        horatio_granular_process(in_l, in_r, out_l, out_r, 1u);
+        horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
+                             0u, 0u, HORATIO_GRANULAR_RATE_4K);
+        if (horatio_granular_recorded_samples() != 0u) {
+            fprintf(stderr, "32 kHz rate switch did not clear recording\\n");
+            return 19;
+        }
+        horatio_granular_process(in_l, in_r, out_l, out_r, 128u);
+        if (horatio_granular_recorded_samples() != 16u) {
+            fprintf(stderr, "32 kHz rate switch retained stale capture phase: %u\\n",
+                    horatio_granular_recorded_samples());
+            return 20;
+        }
+    }
+
+    {
         int32_t zeros[128] = {0}, out_l[128], out_r[128];
         horatio_granular_init(48000u);
         horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
