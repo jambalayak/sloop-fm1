@@ -199,45 +199,56 @@ int main() {
 
     {
         /* FREEZE must hold the current recording position while audio keeps
-         * arriving, then resume capture cleanly when released at every
-         * supported capture rate. */
-        const uint32_t rates[] = {
+         * arriving, then resume capture cleanly across every host/capture
+         * rate combination. The phase accumulator records floor(N * rate /
+         * host_rate) samples after N host frames. */
+        const uint32_t host_rates[] = {32000u, 44100u, 48000u, 96000u};
+        const uint32_t capture_rates[] = {
             HORATIO_GRANULAR_RATE_16K,
             HORATIO_GRANULAR_RATE_8K,
             HORATIO_GRANULAR_RATE_4K
         };
-        const uint32_t before[] = {1962u, 981u, 490u};
-        const uint32_t resumed[] = {2090u, 1045u, 522u};
+        const uint32_t initial_frames = 46u * 128u;
+        const uint32_t resumed_frames = initial_frames + 3u * 128u;
         int32_t input_l[128], input_r[128], out_l[128], out_r[128];
         for (uint32_t i = 0; i < 128u; ++i) input_l[i] = input_r[i] = 12000;
-        for (uint32_t rate = 0; rate < 3u; ++rate) {
-            horatio_granular_init(48000u);
-            horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
-                                 0u, 0u, rates[rate]);
-            for (uint32_t block = 0; block < 46u; ++block)
-                horatio_granular_process(input_l, input_r, out_l, out_r, 128u);
-            if (horatio_granular_recorded_samples() != before[rate]) {
-                fprintf(stderr, "unexpected partial recording at rate %u: %u\\n",
-                        rates[rate], horatio_granular_recorded_samples());
-                return 24;
-            }
-            horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
-                                 1u, 0u, rates[rate]);
-            for (uint32_t block = 0; block < 40u; ++block)
-                horatio_granular_process(input_l, input_r, out_l, out_r, 128u);
-            if (horatio_granular_recorded_samples() != before[rate]) {
-                fprintf(stderr, "FREEZE changed recording length at rate %u: %u\\n",
-                        rates[rate], horatio_granular_recorded_samples());
-                return 25;
-            }
-            horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
-                                 0u, 0u, rates[rate]);
-            for (uint32_t block = 0; block < 3u; ++block)
-                horatio_granular_process(input_l, input_r, out_l, out_r, 128u);
-            if (horatio_granular_recorded_samples() != resumed[rate]) {
-                fprintf(stderr, "capture did not resume at rate %u: %u (expected %u)\\n",
-                        rates[rate], horatio_granular_recorded_samples(), resumed[rate]);
-                return 26;
+        for (uint32_t host = 0; host < 4u; ++host) {
+            for (uint32_t rate = 0; rate < 3u; ++rate) {
+                const uint32_t expected_before =
+                    (initial_frames * capture_rates[rate]) / host_rates[host];
+                const uint32_t expected_resumed =
+                    (resumed_frames * capture_rates[rate]) / host_rates[host];
+                horatio_granular_init(host_rates[host]);
+                horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
+                                     0u, 0u, capture_rates[rate]);
+                for (uint32_t block = 0; block < 46u; ++block)
+                    horatio_granular_process(input_l, input_r, out_l, out_r, 128u);
+                if (horatio_granular_recorded_samples() != expected_before) {
+                    fprintf(stderr, "unexpected partial recording at host %u capture %u: %u (expected %u)\\n",
+                            host_rates[host], capture_rates[rate],
+                            horatio_granular_recorded_samples(), expected_before);
+                    return 24;
+                }
+                horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
+                                     1u, 0u, capture_rates[rate]);
+                for (uint32_t block = 0; block < 40u; ++block)
+                    horatio_granular_process(input_l, input_r, out_l, out_r, 128u);
+                if (horatio_granular_recorded_samples() != expected_before) {
+                    fprintf(stderr, "FREEZE changed recording length at host %u capture %u: %u\\n",
+                            host_rates[host], capture_rates[rate],
+                            horatio_granular_recorded_samples());
+                    return 25;
+                }
+                horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
+                                     0u, 0u, capture_rates[rate]);
+                for (uint32_t block = 0; block < 3u; ++block)
+                    horatio_granular_process(input_l, input_r, out_l, out_r, 128u);
+                if (horatio_granular_recorded_samples() != expected_resumed) {
+                    fprintf(stderr, "capture did not resume at host %u capture %u: %u (expected %u)\\n",
+                            host_rates[host], capture_rates[rate],
+                            horatio_granular_recorded_samples(), expected_resumed);
+                    return 26;
+                }
             }
         }
     }
