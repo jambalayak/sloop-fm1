@@ -67,6 +67,9 @@ static float feedback_peak_lp;
 static float feedback_decay;
 static uint8_t frozen;
 static uint8_t reverse;
+/* De-click the wet return while the recording head changes freeze state. */
+static uint8_t freeze_transition_stage;
+static float wet_output_gain;
 static uint8_t initialized;
 
 static float clamp_unit(float value) {
@@ -162,6 +165,8 @@ void horatio_granular_init(uint32_t requested_sample_rate) {
     feedback_peak = feedback_peak_lp = 0.5f;
     feedback_decay = 1.0f / static_cast<float>(sample_rate);
     frozen = reverse = 0u;
+    freeze_transition_stage = 0u;
+    wet_output_gain = 1.0f;
     initialized = 1u;
 }
 
@@ -199,7 +204,9 @@ void horatio_granular_set(float density, float time, float size,
     pitch_semitones = clamp_float(pitch, -24.0f, 24.0f);
     grain_shape = clamp_unit(shape);
     feedback = clamp_unit(fb);
-    frozen = freeze != 0u;
+    const uint8_t next_frozen = freeze != 0u;
+    if (next_frozen != frozen) freeze_transition_stage = 1u;
+    frozen = next_frozen;
     reverse = rev != 0u;
 }
 
@@ -299,8 +306,27 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
         feedback_dc_r += 0.005f * (wet.r - feedback_dc_r);
         previous_wet_l = wet.l - feedback_dc_l;
         previous_wet_r = wet.r - feedback_dc_r;
-        output_l[i] = to_q15(wet.l);
-        output_r[i] = to_q15(wet.r);
+        /* Freeze changes can expose a different recording-head relationship
+         * to every active grain at once. Ramp the wet return down over 3 ms,
+         * then back up over 8 ms to mask any discontinuity without stopping
+         * grains, clearing the buffer, or changing the feedback path. */
+        if (freeze_transition_stage == 1u) {
+            wet_output_gain -= 1.0f /
+                (0.003f * static_cast<float>(sample_rate));
+            if (wet_output_gain <= 0.0f) {
+                wet_output_gain = 0.0f;
+                freeze_transition_stage = 2u;
+            }
+        } else if (freeze_transition_stage == 2u) {
+            wet_output_gain += 1.0f /
+                (0.008f * static_cast<float>(sample_rate));
+            if (wet_output_gain >= 1.0f) {
+                wet_output_gain = 1.0f;
+                freeze_transition_stage = 0u;
+            }
+        }
+        output_l[i] = to_q15(wet.l * wet_output_gain);
+        output_r[i] = to_q15(wet.r * wet_output_gain);
     }
 }
 
