@@ -123,6 +123,21 @@ int main() {
 
     {
         const uint32_t samples_16k = captured_after_one_second_at_host_rate(
+            HORATIO_GRANULAR_RATE_16K, 32000u);
+        const uint32_t samples_8k = captured_after_one_second_at_host_rate(
+            HORATIO_GRANULAR_RATE_8K, 32000u);
+        const uint32_t samples_4k = captured_after_one_second_at_host_rate(
+            HORATIO_GRANULAR_RATE_4K, 32000u);
+        if (samples_16k != HORATIO_GRANULAR_BUFFER_SAMPLES ||
+            samples_8k != 8000u || samples_4k != 4000u) {
+            fprintf(stderr, "32 kHz host capture-rate mismatch: %u %u %u\\n",
+                    samples_16k, samples_8k, samples_4k);
+            return 18;
+        }
+    }
+
+    {
+        const uint32_t samples_16k = captured_after_one_second_at_host_rate(
             HORATIO_GRANULAR_RATE_16K, 96000u);
         const uint32_t samples_8k = captured_after_one_second_at_host_rate(
             HORATIO_GRANULAR_RATE_8K, 96000u);
