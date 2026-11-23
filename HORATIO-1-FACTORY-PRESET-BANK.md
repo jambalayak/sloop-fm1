@@ -1,6 +1,6 @@
 # HORATIO-1 Factory Preset Bank
 
-**Factory bank:** 190 entries: 92 complete Rochefsky Plaits 1.2 recipes, three six-op FM bank selectors, and all 96 bundled DX7-format patches (32 in each of Plaits' three FM banks). The PRESETS browser exposes every entry in source-sheet order and groups them by Plaits bank (ORNG, GREEN, RED).
+**Factory bank:** 190 entries: 91 complete Rochefsky Plaits 1.2 recipes, three six-op FM bank selectors, and all 96 bundled DX7-format patches (32 in each of Plaits' three FM banks). The PRESETS browser exposes every entry in source-sheet order and groups them by Plaits bank (ORNG, GREEN, RED).
 
 **Source:** [Rochefsky — Plaits sound-design recipes](https://www.rochefsky.com/learnings/plaits), shared spreadsheet/PDF supplied for this project.
 
@@ -28,8 +28,8 @@ The model index is zero-based in firmware. The recipe bank order follows the sou
 | 8 | CEMENT TUNL | Red 3 → 17 | yes | 64/76/25 |
 | 9 | WIND CHIME | Red 3 → 17 | no | 64/25/127 |
 | 10 | WATER DRIP | Red 3 → 17 | yes | 0/0/70 |
-| 11 | WATER DRIP too | Red 3 → 17 | yes | 0/0/70 |
-| 12 | WATER DRIP three | Red 3 → 17 | yes | 0/0/127 |
+| 11 | WATER DRIP 2 | Red 3 → 17 | yes | 0/0/70 |
+| 12 | WATER DRIP 3 | Red 3 → 17 | yes | 0/0/127 |
 | 13 | CPU NOISE | Red 3 → 17 | no | 102/89/127 |
 | 14 | HARP SOFT | Red 4 → 18 | yes | 0/0/83 |
 | 15 | HARP BUZZ | Red 4 → 18 | yes | 0/89/89 |
@@ -41,10 +41,10 @@ The model index is zero-based in firmware. The recipe bank order follows the sou
 | 21 | STEEL DRUM | Red 4 → 18 | yes | 102/127/51 |
 | 22 | BRASS SECT | Red 4 → 18 | yes | 13/127/83 |
 | 23 | STAND BASS | Red 4 → 18 | yes | 0/64/64 |
-| 24 | Slap STAND BASS | Red 4 → 18 | yes | 0/127/0 |
+| 24 | SLAP BASS | Red 4 → 18 | yes | 0/127/0 |
 | 25 | GLASS BELL | Red 5 → 19 | yes | 127/45/51 |
-| 26 | GLASS BELL hit with pencil | Red 5 → 19 | yes | 127/45/51 |
-| 27 | WATER DRIP - low | Red 5 → 19 | yes | 25/127/0 |
+| 26 | PENCIL BELL | Red 5 → 19 | yes | 127/45/51 |
+| 27 | LOW DRIP | Red 5 → 19 | yes | 25/127/0 |
 | 28 | XYLOPHONE | Red 5 → 19 | yes | 127/64/51 |
 | 29 | WOOD STICKS | Red 5 → 19 | yes | 127/127/0 |
 | 30 | POP CORN | Red 5 → 19 | yes | 0/127/0 |
@@ -52,7 +52,7 @@ The model index is zero-based in firmware. The recipe bank order follows the sou
 | 32 | CHICKS | Red 5 → 19 | yes | 64/127/0 |
 | 33 | RESO BASS | Red 5 → 19 | yes | 38/0/38 |
 | 34 | TOY PIANO | Red 6 → 20 | yes | 64/0/64 |
-| 35 | STAND BASS Plucked | Red 6 → 20 | yes | 64/25/102 |
+| 35 | PLUCK BASS | Red 6 → 20 | yes | 64/25/102 |
 | 36 | SIREN | Red 6 → 20 | yes | 127/64/127 |
 | 37 | HIHAT SNAP | Red 7 → 21 | yes | 127/64/25 |
 | 38 | HIHAT SOFT | Red 7 → 21 | yes | 127/64/25 |
@@ -75,7 +75,7 @@ The model index is zero-based in firmware. The recipe bank order follows the sou
 | 55 | MARIMBA BELL | Green 2 → 9 | yes | 0/64/0 |
 | 56 | MANDOLIN | Green 2 → 9 | yes | 38/0/76 |
 | 57 | MUTE BELL | Green 2 → 9 | yes | 64/0/0 |
-| 58 | MUTED STR (Wave) | Green 2 → 9 | yes | 64/0/127 |
+| 58 | MUTE STRING | Green 2 → 9 | yes | 64/0/127 |
 | 59 | BUZZ SITAR | Green 3 → 10 | yes | 0/127/127 |
 | 60 | MELODIC FROG | Green 4 → 11 | yes | 102/64/76 |
 | 61 | AHH / EW | Green 4 → 11 | yes | 76/76/76 |
@@ -87,7 +87,7 @@ The model index is zero-based in firmware. The recipe bank order follows the sou
 | 67 | CLARINET | Green 5 → 12 | no | 45/38/0 |
 | 68 | VOWEL MOD | Green 5 → 12 | no | 64/64/64 |
 | 69 | HARM ORGAN | Green 6 → 13 | yes | 127/96/102 |
-| 70 | STAND BASS Too | Green 6 → 13 | yes | 127/64/64 |
+| 70 | BASS STAND | Green 6 → 13 | yes | 127/64/64 |
 | 71 | WEH WAH | Green 6 → 13 | yes | 64/64/64 |
 | 72 | SPACE CHAOS | Green 6 → 13 | yes | 127/64/64 |
 | 73 | DOOM DRONE | Green 7 → 14 | no | 32/25/32 |
@@ -101,7 +101,7 @@ The model index is zero-based in firmware. The recipe bank order follows the sou
 | 81 | BASS CHOICE | Orange 1 → 0 | yes | 64/102/25 |
 | 82 | VIOLIN PLUCK | Orange 2 → 1 | yes | 127/0/127 |
 | 83 | PURE STRINGS | Orange 2 → 1 | yes | 127/127/0 |
-| 84 | Tuba or Airy STAND BASS | Orange 6 → 5 | yes | 64/25/25 |
+| 84 | TUBA BASS | Orange 6 → 5 | yes | 64/25/25 |
 | 85 | MOTOR | Orange 6 → 5 | yes | 127/64/64 |
 | 86 | PULSE SAW | Orange 6 → 5 | yes | 127/0/0 |
 | 87 | SLOW SAW | Orange 6 → 5 | yes | 95/127/127 |
