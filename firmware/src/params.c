@@ -214,7 +214,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_BD_FB] = PD("FEEDBACK", F_PCT, 0, 127, 22),
     [G_BD_TIME] = PD("TIME", F_PCT, 0, 127, 64),
     [G_BD_FREEZE] = PE("FREEZE", N_ONOFF, 0),
-    [G_BD_REVERSE] = PE("REVRS", N_ONOFF, 0),
+    [G_BD_REVERSE] = PE("R-DIR", N_ONOFF, 0),
     [G_BD_RATE] = PE("RATE", N_BDRATE, 0),
 };
 
@@ -418,13 +418,13 @@ static const page_t PAGES[] = {
     {"FX", FAM_FX, SC_TRACK, GR_FX, {P_DIST, P_CHOR, P_DLY, P_REV}},
     {"FILTER", FAM_FX, SC_TRACK, GR_NONE, {P_TFLT, 0xFF, 0xFF, 0xFF}},   /* the track's filter (drum track too) */
     {"BEADS", FAM_FX, SC_GLOBAL, GR_NONE, {G_BD_ON, G_BD_MIX, G_BD_DENS, G_BD_TIME}},
-    {"BEADS 2", FAM_FX, SC_GLOBAL, GR_BEADS, {G_BD_SHAPE, G_BD_SIZE, G_BD_PITCH, G_BD_FB}},
-    {"BEADS 3", FAM_FX, SC_GLOBAL, GR_NONE, {G_BD_FREEZE, G_BD_REVERSE, G_BD_RATE, 0xFF}},
+    {"BEADS SHAPE", FAM_FX, SC_GLOBAL, GR_BEADS, {G_BD_SHAPE, G_BD_SIZE, G_BD_PITCH, G_BD_FB}},
+    {"BEADS CTRL", FAM_FX, SC_GLOBAL, GR_NONE, {G_BD_FREEZE, G_BD_REVERSE, G_BD_RATE, 0xFF}},
     {"SLICER", FAM_FX, SC_TRACK, GR_SLCR, {P_SLCR, P_SLPAT, P_SLRATE, P_SLDEPTH}},   /* drum track too */
     {"INSERT", FAM_FX, SC_TRACK, GR_INS, {P_ITYPE, P_IA, P_IB, P_IC}},   /* 2.6 (Felucca 1.5): the track's INSERT (fx.c), */
     {"INSERT 2", FAM_FX, SC_TRACK, GR_INS, {P_IMIX, 0xFF, 0xFF, 0xFF}},  /* .. its dry / wet; the drum track too */
     {"DLY", FAM_FX, SC_GLOBAL, GR_NONE, {G_DTIME, G_DFDBK, G_DCOLOR, G_DMIX}},
-    {"REV/CHO", FAM_FX, SC_GLOBAL, GR_NONE, {G_RSIZE, G_RDAMP, G_CRATE, G_CDEPTH}},
+    {"REV+CHO", FAM_FX, SC_GLOBAL, GR_NONE, {G_RSIZE, G_RDAMP, G_CRATE, G_CDEPTH}},
     {"SEL", FAM_SCL, SC_TRACK, GR_SCALE, {P_ROOT, P_SCALE, P_QUANT, P_CHORD}},
     {"SEL 2", FAM_SCL, SC_TRACK, GR_SCALE, {P_TRANS, P_STRUM, P_VLEAD, 0xFF}},   /* (2.4: the chords played) */
 #ifdef HORATIO_PLAITS
