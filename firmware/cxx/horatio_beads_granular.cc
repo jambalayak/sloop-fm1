@@ -28,6 +28,15 @@ static const size_t kBankBytes = (kMaxDelay + 4u) * sizeof(int16_t);
 static const size_t kAllocatedBytes = HORATIO_GRANULAR_BUFFER_BYTES;
 static uint32_t capture_rate = HORATIO_GRANULAR_RATE_16K;
 static float capture_filter_coefficient = 0.65f;
+static float capture_filter_coefficient_for_rates(uint32_t host_rate,
+                                                       uint32_t rate) {
+    /* Keep the one-pole anti-alias cutoff tied to the capture Nyquist limit.
+     * A fixed coefficient changes its cutoff in Hz when the host rate changes,
+     * allowing more aliasing at 96 kHz and over-filtering at lower rates. */
+    const float cutoff = 0.45f * static_cast<float>(rate);
+    return 1.0f - expf(-6.2831853071795864769f * cutoff /
+                       static_cast<float>(host_rate));
+}
 
 typedef beads::DelayLine<beads::RESOLUTION_16_BIT, kMaxDelay, 1,
                          kBankBytes, 1> CompactDelayLine;
@@ -127,7 +136,8 @@ void horatio_granular_init(uint32_t requested_sample_rate) {
 
     sample_rate = requested_sample_rate;
     capture_rate = HORATIO_GRANULAR_RATE_16K;
-    capture_filter_coefficient = 0.65f;
+    capture_filter_coefficient = capture_filter_coefficient_for_rates(
+        sample_rate, capture_rate);
     memset(recording_buffer, 0, sizeof(recording_buffer));
     delay_line.Init(recording_buffer, sizeof(recording_buffer));
 
@@ -168,8 +178,8 @@ void horatio_granular_set(float density, float time, float size,
         /* A rate change changes the meaning of every stored delay in the ring.
          * Clear it rather than mixing samples recorded at different rates. */
         capture_rate = requested_capture_rate;
-        capture_filter_coefficient = 0.65f *
-            (static_cast<float>(capture_rate) / 16000.0f);
+        capture_filter_coefficient = capture_filter_coefficient_for_rates(
+            sample_rate, capture_rate);
         memset(recording_buffer, 0, sizeof(recording_buffer));
         delay_line.Init(recording_buffer, sizeof(recording_buffer));
         for (uint32_t i = 0; i < HORATIO_GRANULAR_MAX_GRAINS; ++i) {
