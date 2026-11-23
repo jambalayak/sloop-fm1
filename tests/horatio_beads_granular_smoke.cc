@@ -122,6 +122,21 @@ int main() {
     }
 
     {
+        const uint32_t samples_16k = captured_after_one_second_at_host_rate(
+            HORATIO_GRANULAR_RATE_16K, 96000u);
+        const uint32_t samples_8k = captured_after_one_second_at_host_rate(
+            HORATIO_GRANULAR_RATE_8K, 96000u);
+        const uint32_t samples_4k = captured_after_one_second_at_host_rate(
+            HORATIO_GRANULAR_RATE_4K, 96000u);
+        if (samples_16k != HORATIO_GRANULAR_BUFFER_SAMPLES ||
+            samples_8k != 8000u || samples_4k != 4000u) {
+            fprintf(stderr, "96 kHz host capture-rate mismatch: %u %u %u\\n",
+                    samples_16k, samples_8k, samples_4k);
+            return 17;
+        }
+    }
+
+    {
         int32_t zeros[128] = {0}, out_l[128], out_r[128];
         horatio_granular_init(48000u);
         horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
