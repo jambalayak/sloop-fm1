@@ -217,7 +217,11 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
      * per audio block, not once per sample on the embedded CPU. */
     const float write_speed = static_cast<float>(capture_rate) /
                               static_cast<float>(sample_rate);
-    const int32_t write_speed_q10 = static_cast<int32_t>(write_speed * 1024.0f);
+    /* DelayGrain stores its head position in Q10. Round the write-head
+     * increment to nearest rather than truncating it; truncation accumulates
+     * a small but systematic timing drift at non-integer rate ratios. */
+    const int32_t write_speed_q10 = static_cast<int32_t>(
+        write_speed * 1024.0f + 0.5f);
     float target_speed = write_speed *
                          powf(2.0f, pitch_semitones * (1.0f / 12.0f));
     if (reverse) target_speed = -target_speed;
