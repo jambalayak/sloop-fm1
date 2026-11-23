@@ -199,38 +199,46 @@ int main() {
 
     {
         /* FREEZE must hold the current recording position while audio keeps
-         * arriving, then resume capture cleanly when released. Start with a
-         * partial buffer so resumed capture can be measured exactly. */
+         * arriving, then resume capture cleanly when released at every
+         * supported capture rate. */
+        const uint32_t rates[] = {
+            HORATIO_GRANULAR_RATE_16K,
+            HORATIO_GRANULAR_RATE_8K,
+            HORATIO_GRANULAR_RATE_4K
+        };
+        const uint32_t before[] = {1962u, 981u, 490u};
+        const uint32_t resumed[] = {2090u, 1045u, 522u};
         int32_t input_l[128], input_r[128], out_l[128], out_r[128];
         for (uint32_t i = 0; i < 128u; ++i) input_l[i] = input_r[i] = 12000;
-        horatio_granular_init(48000u);
-        horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
-                             0u, 0u, HORATIO_GRANULAR_RATE_16K);
-        for (uint32_t block = 0; block < 46u; ++block)
-            horatio_granular_process(input_l, input_r, out_l, out_r, 128u);
-        const uint32_t before_freeze = horatio_granular_recorded_samples();
-        if (before_freeze != 1962u) {
-            fprintf(stderr, "unexpected partial recording before freeze: %u\\n",
-                    before_freeze);
-            return 24;
-        }
-        horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
-                             1u, 0u, HORATIO_GRANULAR_RATE_16K);
-        for (uint32_t block = 0; block < 40u; ++block)
-            horatio_granular_process(input_l, input_r, out_l, out_r, 128u);
-        if (horatio_granular_recorded_samples() != before_freeze) {
-            fprintf(stderr, "FREEZE changed recording length: %u (expected %u)\\n",
-                    horatio_granular_recorded_samples(), before_freeze);
-            return 25;
-        }
-        horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
-                             0u, 0u, HORATIO_GRANULAR_RATE_16K);
-        for (uint32_t block = 0; block < 3u; ++block)
-            horatio_granular_process(input_l, input_r, out_l, out_r, 128u);
-        if (horatio_granular_recorded_samples() != 2090u) {
-            fprintf(stderr, "capture did not resume after FREEZE: %u\\n",
-                    horatio_granular_recorded_samples());
-            return 26;
+        for (uint32_t rate = 0; rate < 3u; ++rate) {
+            horatio_granular_init(48000u);
+            horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
+                                 0u, 0u, rates[rate]);
+            for (uint32_t block = 0; block < 46u; ++block)
+                horatio_granular_process(input_l, input_r, out_l, out_r, 128u);
+            if (horatio_granular_recorded_samples() != before[rate]) {
+                fprintf(stderr, "unexpected partial recording at rate %u: %u\\n",
+                        rates[rate], horatio_granular_recorded_samples());
+                return 24;
+            }
+            horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
+                                 1u, 0u, rates[rate]);
+            for (uint32_t block = 0; block < 40u; ++block)
+                horatio_granular_process(input_l, input_r, out_l, out_r, 128u);
+            if (horatio_granular_recorded_samples() != before[rate]) {
+                fprintf(stderr, "FREEZE changed recording length at rate %u: %u\\n",
+                        rates[rate], horatio_granular_recorded_samples());
+                return 25;
+            }
+            horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
+                                 0u, 0u, rates[rate]);
+            for (uint32_t block = 0; block < 3u; ++block)
+                horatio_granular_process(input_l, input_r, out_l, out_r, 128u);
+            if (horatio_granular_recorded_samples() != resumed[rate]) {
+                fprintf(stderr, "capture did not resume at rate %u: %u (expected %u)\\n",
+                        rates[rate], horatio_granular_recorded_samples(), resumed[rate]);
+                return 26;
+            }
         }
     }
 
