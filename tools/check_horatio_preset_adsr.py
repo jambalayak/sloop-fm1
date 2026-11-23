@@ -22,8 +22,8 @@ rows = re.findall(
     r'\{"([^"]+)",\s*\{[^}]*\},\s*\{\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\}',
     block,
 )
-if len(rows) != 191:
-    raise SystemExit(f"Expected 191 Plaits factory presets with ADSR fields, found {len(rows)}")
+if len(rows) != 190:
+    raise SystemExit(f"Expected 190 Plaits factory presets after removing the unwanted orchestra preset, found {len(rows)}")
 for name, *values in rows:
     adsr = [int(value) for value in values]
     if any(value < 0 or value > 127 for value in adsr):
