@@ -257,6 +257,47 @@ int main() {
     }
 
     {
+        /* Host audio callbacks are not guaranteed to arrive in fixed 128-frame
+         * blocks. Irregular process() chunking must preserve the exact rational
+         * capture count and phase across callback boundaries. */
+        const uint32_t host_rates[] = {32000u, 44100u, 48000u, 96000u};
+        const uint32_t capture_rates[] = {
+            HORATIO_GRANULAR_RATE_16K,
+            HORATIO_GRANULAR_RATE_8K,
+            HORATIO_GRANULAR_RATE_4K
+        };
+        const uint32_t chunks[] = {1u, 7u, 63u, 127u, 3u, 95u, 16u, 111u};
+        int32_t input_l[128], input_r[128], out_l[128], out_r[128];
+        for (uint32_t i = 0; i < 128u; ++i) input_l[i] = input_r[i] = 0;
+        for (uint32_t host = 0; host < 4u; ++host) {
+            for (uint32_t rate = 0; rate < 3u; ++rate) {
+                const uint32_t total_frames = 8192u;
+                uint32_t processed = 0u;
+                uint32_t chunk = 0u;
+                const uint32_t expected =
+                    (total_frames * capture_rates[rate]) / host_rates[host];
+                horatio_granular_init(host_rates[host]);
+                horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
+                                     0u, 0u, capture_rates[rate]);
+                while (processed < total_frames) {
+                    uint32_t count = chunks[chunk % 8u];
+                    if (count > total_frames - processed)
+                        count = total_frames - processed;
+                    horatio_granular_process(input_l, input_r, out_l, out_r, count);
+                    processed += count;
+                    ++chunk;
+                }
+                if (horatio_granular_recorded_samples() != expected) {
+                    fprintf(stderr, "irregular callback capture mismatch at host %u capture %u: %u (expected %u)\\n",
+                            host_rates[host], capture_rates[rate],
+                            horatio_granular_recorded_samples(), expected);
+                    return 27;
+                }
+            }
+        }
+    }
+
+    {
         /* Exercise the feedback limiter under sustained worst-case settings:
          * maximum density, pitch, grain size and feedback with a repeatable
          * high-level input. The recording line must remain bounded and the
