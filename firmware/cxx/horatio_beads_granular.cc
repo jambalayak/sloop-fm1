@@ -207,6 +207,7 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
      * per audio block, not once per sample on the embedded CPU. */
     const float write_speed = static_cast<float>(capture_rate) /
                               static_cast<float>(sample_rate);
+    const int32_t write_speed_q10 = static_cast<int32_t>(write_speed * 1024.0f);
     float target_speed = write_speed *
                          powf(2.0f, pitch_semitones * (1.0f / 12.0f));
     if (reverse) target_speed = -target_speed;
@@ -275,7 +276,7 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
                 grains[g].SetSpeed(grain_speed[g]);
             }
             grains[g].Render<beads::HEAD_CROSSING_POLICY_STOP, true>(
-                &delay_line, &wet, write_speed);
+                &delay_line, &wet, write_speed_q10);
         }
 
         /* Beads stores a high-passed version of the wet return for feedback,
