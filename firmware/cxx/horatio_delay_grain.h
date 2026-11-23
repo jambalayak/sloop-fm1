@@ -141,14 +141,14 @@ class DelayGrain : public Grain {
       bool fade_out,
       typename DelayLineType>
   inline void Render(const DelayLineType* delay_line, FloatFrame* in_out,
-                     float write_speed = 1.0f) {
+                     int32_t write_speed_q10 = 1024) {
     if (done()) {
       return;
     }
     
     delay_ -= speed_;
     if (!delay_line->frozen()) {
-      delay_ += int32_t(write_speed * 1024.0f);
+      delay_ += write_speed_q10;
     }
     
     const int32_t tail = DelayLineType::MAX_DELAY << 10;
