@@ -178,12 +178,109 @@ def rgb565(c):
     return ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
 
 
+def synthwave_splash():
+    """Compact 240x188 HORATIO boot art: outrun ship, striped sun and neon sea."""
+    W, H = 240, 188
+    im = Image.new("RGB", (W, H), (4, 3, 24))
+    d = ImageDraw.Draw(im)
+    # Sixteen deliberately chosen RGB565-friendly colours.
+    pal = [
+        (4, 3, 24), (9, 7, 42), (17, 12, 68), (30, 18, 105),
+        (57, 25, 142), (105, 25, 174), (174, 20, 190), (238, 35, 164),
+        (255, 91, 139), (255, 151, 105), (255, 203, 116), (255, 235, 190),
+        (13, 66, 145), (17, 139, 210), (24, 225, 235), (92, 245, 255)
+    ]
+    # Deep starfield and a warm, striped sunset.
+    for y in range(0, 118):
+        c = pal[1] if y < 42 else pal[2] if y < 82 else pal[3]
+        d.line((0, y, W, y), fill=c)
+    d.ellipse((58, 7, 182, 131), fill=pal[9], outline=pal[8], width=2)
+    for y in range(45, 130, 8):
+        d.rectangle((55, y, 185, y + 3), fill=pal[7] if y < 88 else pal[6])
+    # Stars, kept sparse around the ship.
+    stars = [(12,13),(31,29),(51,9),(198,18),(222,38),(17,68),(215,78),
+             (37,91),(194,96),(229,12),(83,18),(165,28),(8,104),(232,106)]
+    for x,y in stars:
+        d.point((x,y), fill=pal[15])
+        if (x+y) % 3 == 0:
+            d.line((x-2,y,x+2,y), fill=pal[14])
+            d.line((x,y-2,x,y+2), fill=pal[14])
+    # Distant mountain silhouettes.
+    d.polygon([(0,111),(18,91),(31,103),(48,94),(72,119),(0,126)], fill=pal[3])
+    d.polygon([(240,111),(220,92),(205,104),(187,96),(166,119),(240,126)], fill=pal[3])
+    d.line([(0,111),(18,91),(31,103),(48,94),(72,119)], fill=pal[5], width=1)
+    d.line([(240,111),(220,92),(205,104),(187,96),(166,119)], fill=pal[5], width=1)
+    # Horizon and luminous water.
+    d.line((0,119,239,119), fill=pal[14], width=2)
+    d.rectangle((0,121,239,148), fill=pal[1])
+    for y in range(123,149,4):
+        d.line((0,y,239,y), fill=pal[4] if y%8 else pal[6], width=1)
+    for x in range(-30,280,24):
+        d.line((120,121,x,151), fill=pal[4], width=1)
+    # Ship rigging behind the sails.
+    rig = pal[11]
+    d.line((117,18,117,110), fill=rig, width=2)
+    d.line((88,43,117,18,149,44), fill=rig, width=1)
+    d.line((73,65,117,39,174,68), fill=pal[8], width=1)
+    d.line((60,91,117,62,188,94), fill=rig, width=1)
+    d.line((117,18,117,12,130,19), fill=pal[8], width=1)
+    # Three dark sails with neon edges.
+    d.polygon([(119,24),(146,35),(149,55),(119,49)], fill=pal[1], outline=pal[8])
+    d.polygon([(115,42),(154,56),(166,83),(116,70)], fill=pal[1], outline=pal[7])
+    d.polygon([(113,61),(166,82),(183,107),(111,91)], fill=pal[1], outline=pal[8])
+    d.polygon([(111,42),(83,54),(72,75),(111,68)], fill=pal[2], outline=pal[7])
+    d.polygon([(109,67),(71,81),(61,105),(109,91)], fill=pal[2], outline=pal[8])
+    d.polygon([(111,91),(60,105),(52,120),(113,111)], fill=pal[2], outline=pal[7])
+    # Hull, bow and deck.
+    d.polygon([(47,113),(111,108),(188,103),(174,124),(145,132),(72,129),(52,123)],
+              fill=pal[1], outline=pal[8])
+    d.line((49,116,178,107), fill=pal[11], width=2)
+    d.line((57,123,145,128), fill=pal[7], width=1)
+    d.line((117,20,117,108), fill=pal[8], width=1)
+    # Cyan wake and broken reflections.
+    d.line((39,132,69,135,91,130,112,137,135,131,159,137,190,130), fill=pal[14], width=3)
+    d.line((54,137,81,139,101,136), fill=pal[15], width=1)
+    for x,y,w in [(15,139,23),(49,144,18),(83,141,31),(145,145,26),(190,139,34),(112,148,18)]:
+        d.line((x,y,x+w,y), fill=pal[7] if y%2 else pal[14], width=1)
+    # Lower dark grid, restrained so the title remains readable.
+    d.rectangle((0,151,239,187), fill=pal[0])
+    for y in (154,160,168,178,187):
+        d.line((0,y,239,y), fill=pal[4], width=1)
+    for x in range(-100,341,24):
+        d.line((120,151,x,187), fill=pal[4], width=1)
+    # Large compact HORATIO pixel wordmark.
+    glyphs = {
+        "H":("10001","10001","10001","11111","10001","10001","10001"),
+        "O":("01110","10001","10001","10001","10001","10001","01110"),
+        "R":("11110","10001","10001","11110","10100","10010","10001"),
+        "A":("01110","10001","10001","11111","10001","10001","10001"),
+        "T":("11111","00100","00100","00100","00100","00100","00100"),
+        "I":("11111","00100","00100","00100","00100","00100","11111")
+    }
+    cell, gap = 3, 1
+    word = "HORATIO"
+    width = len(word) * (5*cell+gap)-gap
+    ox, oy = (W-width)//2, 153
+    for ch in word:
+        for yy,row in enumerate(glyphs[ch]):
+            for xx,b in enumerate(row):
+                if b == "1":
+                    x, y = ox+xx*cell, oy+yy*cell
+                    d.rectangle((x,y,x+cell-1,y+cell-1), fill=pal[11])
+                    if y+cell < H-1:
+                        d.point((x,y+cell), fill=pal[7])
+        ox += 5*cell+gap
+    # Anchor emblem and a slim neon boot progress bar.
+    d.line((120,178,120,184), fill=pal[11], width=1)
+    d.line((116,180,124,180), fill=pal[11], width=1)
+    d.arc((116,179,124,187), 0, 180, fill=pal[11], width=1)
+    d.rounded_rectangle((43,184,197,187), radius=2, outline=pal[14], width=1)
+    d.rectangle((46,185,133,186), fill=pal[7])
+    return im, pal
+
+
 def splash_header(path):
-    im = render("v", SPLASH_W, SPLASH_H, SPLASH_K)
-    # a fixed palette: black, and each logo colour at 1/3, 2/3 and full (the anti-aliased edges)
-    cols = [BLACK]
-    for c in (WHITE, BLUE, GREEN, YELLOW, ORANGE):
-        cols += [tuple(round(v * f) for v in c) for f in (1 / 3, 2 / 3, 1.0)]
+    im, cols = synthwave_splash()
     src = im.tobytes()
     px = []
     cache = {}
@@ -192,7 +289,7 @@ def splash_header(path):
         if p not in cache:
             cache[p] = min(range(16), key=lambda k: sum((p[j] - cols[k][j]) ** 2 for j in range(3)))
         px.append(cache[p])
-    rle = bytearray()                                 # (run - 1) << 4 | index, runs of 1..16
+    rle = bytearray()
     i = 0
     while i < len(px):
         j = i
@@ -200,7 +297,7 @@ def splash_header(path):
             j += 1
         rle.append(((j - i - 1) << 4) | px[i])
         i = j
-    L = ["/* generated by tools/gen_logo.py: the HORATIO-1 boot splash */", "#pragma once", "#include <stdint.h>",
+    L = ["/* generated by tools/gen_logo.py: the HORATIO synthwave boot splash */", "#pragma once", "#include <stdint.h>",
          f"#define SLOOP_SPLASH_W {SPLASH_W}", f"#define SLOOP_SPLASH_H {SPLASH_H}",
          "static const uint16_t SLOOP_SPLASH_PAL[16] = {" + ", ".join(f"0x{rgb565(c):04X}" for c in cols) + "};",
          f"static const uint8_t SLOOP_SPLASH_RLE[{len(rle)}] = {{"]
@@ -208,8 +305,7 @@ def splash_header(path):
         L.append("    " + ", ".join(str(b) for b in rle[k:k + 24]) + ",")
     L.append("};")
     Path(path).write_text("\n".join(L) + "\n")
-    print(f"logo: splash {SPLASH_W}x{SPLASH_H}, {len(rle)} B RLE -> {path}")
-
+    print(f"logo: HORATIO synthwave splash {SPLASH_W}x{SPLASH_H}, {len(rle)} B RLE -> {path}")
 
 def assets(out):
     out = Path(out)
