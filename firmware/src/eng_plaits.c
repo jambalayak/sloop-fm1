@@ -22,7 +22,6 @@ static const char *const PL_MODEL_NAMES[HORATIO_PLAITS_MODELS] = {
  * retained in the companion recipe-bank document where the current preset
  * schema cannot represent them. AUX routing notes are translated to AUX MIX. */
 static const preset_t PL_PRESETS[] = {
-    {"Orchestra tuning up poorly", {15, 89, 38, 70, 64, 64, 0, 127}, {23, 84, 93, 88}, 12, 0, {0, 0, 0, 0}, {0, 0, 0, 0}, 0, {P_TFLT + 1, -38, 0, 0, 0, 0, 0, 0}},
     {"Bowed string Instrument harmonics", {15, 25, 25, 64, 64, 64, 0, 127}, {25, 84, 104, 88}, 12, 0, {0, 0, 0, 0}, {0, 0, 0, 0}, 0, {P_TFLT + 1, -38, 0, 0, 0, 0, 0, 0}, LFO(32, 0, 42, 1, 0, 0, 3, 13, 2, 8)},
     {"Mosquito in your ear", {15, 0, 0, 0, 64, 64, 0, 127}, {1, 64, 8, 44}, 18, 0, {0, 0, 0, 0}, {0, 0, 0, 0}, 0, {P_TFLT + 1, 10, 0, 0, 0, 0, 0, 0}},
     {"side-chainy string pluck (Bass - Guitar)", {15, 25, 0, 64, 64, 64, 0, 127}, {3, 64, 4, 44}, 38, 0, {0, 0, 0, 0}, {0, 0, 0, 0}, 0, {P_TFLT + 1, -8, 0, 0, 0, 0, 0, 0}},
