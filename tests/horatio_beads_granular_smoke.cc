@@ -198,10 +198,10 @@ int main() {
     }
 
     {
-        /* FREEZE must hold the current recording position while audio keeps
-         * arriving, then resume capture cleanly across every host/capture
-         * rate combination. The accumulator emits on the frame that crosses
-         * the host-rate threshold, so the count is ceil(N * rate / host_rate). */
+        /* FREEZE holds the write position, but the capture phase continues to
+         * advance. Count samples emitted before freeze with floor(N*r/sr),
+         * then resume by counting threshold crossings during the resumed
+         * blocks using the phase accumulated through the frozen interval. */
         const uint32_t host_rates[] = {32000u, 44100u, 48000u, 96000u};
         const uint32_t capture_rates[] = {
             HORATIO_GRANULAR_RATE_16K,
@@ -215,9 +215,12 @@ int main() {
         for (uint32_t host = 0; host < 4u; ++host) {
             for (uint32_t rate = 0; rate < 3u; ++rate) {
                 const uint32_t expected_before =
-                    (initial_frames * capture_rates[rate] + host_rates[host] - 1u) / host_rates[host];
-                const uint32_t expected_resumed =
-                    (resumed_frames * capture_rates[rate] + host_rates[host] - 1u) / host_rates[host];
+                    (initial_frames * capture_rates[rate]) / host_rates[host];
+                const uint32_t frozen_end_frames = initial_frames + 40u * 128u;
+                const uint32_t resumed_end_frames = frozen_end_frames + 3u * 128u;
+                const uint32_t expected_resumed = expected_before +
+                    (resumed_end_frames * capture_rates[rate]) / host_rates[host] -
+                    (frozen_end_frames * capture_rates[rate]) / host_rates[host];
                 horatio_granular_init(host_rates[host]);
                 horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
                                      0u, 0u, capture_rates[rate]);
