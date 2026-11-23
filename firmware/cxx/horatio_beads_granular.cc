@@ -210,6 +210,10 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
     float target_speed = write_speed *
                          powf(2.0f, pitch_semitones * (1.0f / 12.0f));
     if (reverse) target_speed = -target_speed;
+    /* The host sample rate is constant for this block, so calculate the
+     * 20 ms glide coefficient once rather than once per audio sample. */
+    const float speed_slew = 1.0f - expf(
+        -1.0f / (0.020f * static_cast<float>(sample_rate)));
 
     for (uint32_t i = 0; i < samples; ++i) {
         const float in_l = input_l ? static_cast<float>(input_l[i]) * (1.0f / 32768.0f) : 0.0f;
@@ -258,8 +262,6 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
         }
 
         /* Keep the pitch glide at 20 ms on every supported host sample rate. */
-        const float speed_slew = 1.0f - expf(
-            -1.0f / (0.020f * static_cast<float>(sample_rate)));
         beads::FloatFrame wet;
         wet.l = 0.0f;
         wet.r = 0.0f;
