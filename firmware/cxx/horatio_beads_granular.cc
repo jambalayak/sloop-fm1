@@ -214,6 +214,10 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
      * 20 ms glide coefficient once rather than once per audio sample. */
     const float speed_slew = 1.0f - expf(
         -1.0f / (0.020f * static_cast<float>(sample_rate)));
+    /* These controls are block-rate too; avoid repeating invariant math in
+     * the sample loop on the embedded CPU. */
+    const float feedback_gain = feedback * feedback * 3.35f;
+    const float density_increment = density_hz / static_cast<float>(sample_rate);
 
     for (uint32_t i = 0; i < samples; ++i) {
         const float in_l = input_l ? static_cast<float>(input_l[i]) * (1.0f / 32768.0f) : 0.0f;
@@ -222,7 +226,6 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
         /* Beads' digital-resolution feedback path feeds the previous, DC-blocked
          * granular return back into the recording input with a squared control
          * law and 3x loop gain. Its input limiter keeps resonant settings stable. */
-        const float feedback_gain = feedback * feedback * 3.35f;
         beads::FloatFrame input;
         input.l = in_l + previous_wet_l * feedback_gain;
         input.r = in_r + previous_wet_r * feedback_gain;
@@ -255,7 +258,7 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
                 ++recorded_samples;
         }
 
-        trigger_phase += density_hz / static_cast<float>(sample_rate);
+        trigger_phase += density_increment;
         if (trigger_phase >= 1.0f) {
             trigger_phase -= 1.0f;
             start_grain();
