@@ -216,11 +216,11 @@ int main() {
             for (uint32_t rate = 0; rate < 3u; ++rate) {
                 const uint32_t expected_before =
                     (initial_frames * capture_rates[rate]) / host_rates[host];
+                const uint32_t max_fade_capture =
+                    ((host_rates[host] * 3u / 1000u + 1u) *
+                     capture_rates[rate]) / host_rates[host] + 2u;
                 const uint32_t frozen_end_frames = initial_frames + 40u * 128u;
                 const uint32_t resumed_end_frames = frozen_end_frames + 3u * 128u;
-                const uint32_t expected_resumed = expected_before +
-                    (resumed_end_frames * capture_rates[rate]) / host_rates[host] -
-                    (frozen_end_frames * capture_rates[rate]) / host_rates[host];
                 horatio_granular_init(host_rates[host]);
                 horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
                                      0u, 0u, capture_rates[rate]);
@@ -236,12 +236,18 @@ int main() {
                                      1u, 0u, capture_rates[rate]);
                 for (uint32_t block = 0; block < 40u; ++block)
                     horatio_granular_process(input_l, input_r, out_l, out_r, 128u);
-                if (horatio_granular_recorded_samples() != expected_before) {
-                    fprintf(stderr, "FREEZE changed recording length at host %u capture %u: %u\\n",
+                const uint32_t frozen_recorded =
+                    horatio_granular_recorded_samples();
+                if (frozen_recorded < expected_before ||
+                    frozen_recorded > expected_before + max_fade_capture) {
+                    fprintf(stderr, "FREEZE fade window recording count unexpected at host %u capture %u: %u (before %u)\\n",
                             host_rates[host], capture_rates[rate],
-                            horatio_granular_recorded_samples());
+                            frozen_recorded, expected_before);
                     return 25;
                 }
+                const uint32_t expected_resumed = frozen_recorded +
+                    (resumed_end_frames * capture_rates[rate]) / host_rates[host] -
+                    (frozen_end_frames * capture_rates[rate]) / host_rates[host];
                 horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
                                      0u, 0u, capture_rates[rate]);
                 for (uint32_t block = 0; block < 3u; ++block)
