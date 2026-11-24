@@ -221,7 +221,7 @@ int main() {
                      capture_rates[rate]) / host_rates[host] + 2u;
                 const uint32_t frozen_end_frames = initial_frames + 40u * 128u;
                 const uint32_t resume_start_frames = frozen_end_frames +
-                    (host_rates[host] * 3u / 1000u + 1u);
+                    (host_rates[host] * 3u + 999u) / 1000u;
                 const uint32_t resumed_end_frames = frozen_end_frames + 3u * 128u;
                 horatio_granular_init(host_rates[host]);
                 horatio_granular_set(0.0f, 0.5f, 0.55f, 0.0f, 0.65f, 0.0f,
