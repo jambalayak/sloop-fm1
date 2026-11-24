@@ -293,7 +293,7 @@ UI_SMALL static void graph_beads_shape(uint16_t c)
         uint32_t k;
         for (k = 2u; k < 4u; ++k) {
             int32_t x = k == 2u ? 8 : 126;
-            int32_t y = 67;
+            int32_t y = 52;
             int32_t vx;
             cv_text(x, y, &FONT_S, ui.big_l[k], TE_COL[k & 3u]);
             vx = cv_text(x, y + 11, &FONT_L, ui.big_v[k],
