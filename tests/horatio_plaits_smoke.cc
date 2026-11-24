@@ -24,7 +24,7 @@ int main(void) {
 
         horatio_plaits_configure(0, model, 60 * 128,
                                  19660, 16384, 19660,
-                                 24575, 16384, 0, 32767);
+                                 24575, 16384, 0, 32767, 1);
         horatio_plaits_note_on(0);
         horatio_plaits_render(0, samples, 1024);
 
@@ -62,7 +62,7 @@ int main(void) {
             horatio_plaits_render(0, samples, 48);
             horatio_plaits_configure(0, model, 60 * 128,
                                      harmonics_q15, 16384, 16384,
-                                     24575, 16384, 0, 32767);
+                                     24575, 16384, 0, 32767, 1);
             horatio_plaits_note_on(0);
             horatio_plaits_render(0, samples, 1024);
 
