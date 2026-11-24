@@ -201,7 +201,11 @@ recipe_rows = re.findall(
 )
 if len(recipe_rows) != 91:
     raise SystemExit(f"Expected 91 source Plaits recipes in the specification, found {len(recipe_rows)}")
-preset_by_name = {row[0]: tuple(map(int, row[1:5])) for row in presets}
+recipe_controls = re.findall(
+    r'\{"([^"]+)",\s*\{\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)',
+    preset_block,
+)
+preset_by_name = {row[0]: tuple(map(int, row[1:5])) for row in recipe_controls}
 for number, name, model_source, h, t, m in recipe_rows:
     model_match = re.search(r"→\s*(\d+)", model_source)
     if not model_match:
