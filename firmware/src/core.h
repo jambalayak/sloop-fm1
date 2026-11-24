@@ -160,6 +160,7 @@ typedef struct {
     int8_t lfo[11];              /* optional preset modulation: enabled, rate, wave, fade, sync, trig, polarity,
                                   * destination 1, depth 1, destination 2, depth 2; all zero = LFO off */
     int8_t octave;               /* HORATIO: preset pitch offset in octaves, -2..+2; 0 = unchanged */
+    uint8_t trigger_unpatched;    /* 1 = source recipe leaves Plaits TRIGGER input unpatched; 0 = normal trigger */
 } preset_t;
 #define FX(d, c, dl, r) .fx = {(d) + 1, (c) + 1, (dl) + 1, (r) + 1}
 #define ARP(m, rt, o, g) .arp = {(m) + 1, (rt) + 1, (o) + 1, (g) + 1}
