@@ -260,8 +260,10 @@ UI_SMALL static void graph_beads_shape(uint16_t c)
     cv_text(61, 2, &FONT_S, "DECAY", C_GRAY);
     cv_text(119, 2, &FONT_S, "BELL", C_GRAY);
     cv_text(174, 2, &FONT_S, "REV", C_GRAY);
-    cv_line(7, 94, 233, 94, C_LINE);
-    cv_line(7, 17, 7, 94, C_LINE);
+    /* Keep the envelope preview in the upper half of this page, leaving
+     * the lower half for larger live values of the four Beads controls. */
+    cv_line(7, 50, 233, 50, C_LINE);
+    cv_line(7, 17, 7, 50, C_LINE);
     for (i = 0; i <= 120; ++i) {
         int32_t t = i * 1000 / 120;
         int32_t value, x = 8 + i * 224 / 120, y;
@@ -280,9 +282,25 @@ UI_SMALL static void graph_beads_shape(uint16_t c)
                 value = base + (smooth - base) * smoothness / 1000;
             }
         }
-        y = 92 - value * 68 / 1000;
+        y = 48 - value * 28 / 1000;
         if (i) cv_line(px, py, x, y, c);
         px = x; py = y;
+    }
+    /* Larger readouts for SHAPE, SIZE, PITCH and FDBK. draw_columns()
+     * has already formatted these using the active parameter descriptors. */
+    {
+        uint32_t k;
+        for (k = 0; k < 4u; ++k) {
+            int32_t x = (k & 1u) ? 126 : 8;
+            int32_t y = (k & 2u) ? 91 : 59;
+            int32_t vx;
+            cv_text(x, y, &FONT_S, ui.big_l[k], TE_COL[k & 3u]);
+            vx = cv_text(x, y + 11, &FONT_L, ui.big_v[k],
+                         ui.big_c[k] == C_DIM ? C_DIM :
+                         ui.big_c[k] == C_WHITE ? C_WHITE : C_HI);
+            if (ui.big_u[k][0])
+                cv_text(vx + 3, y + 22, &FONT_S, ui.big_u[k], C_GRAY);
+        }
     }
 }
 
