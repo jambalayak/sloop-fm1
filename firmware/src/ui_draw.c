@@ -292,14 +292,16 @@ UI_SMALL static void graph_beads_shape(uint16_t c)
         uint32_t k;
         for (k = 0; k < 4u; ++k) {
             int32_t x = (k & 1u) ? 126 : 8;
-            int32_t y = (k & 2u) ? 91 : 59;
+            /* Two compact rows: keep all four controls inside the graph
+             * instead of clipping PITCH and FDBK against the footer. */
+            int32_t y = (k & 2u) ? 82 : 54;
             int32_t vx;
             cv_text(x, y, &FONT_S, ui.big_l[k], TE_COL[k & 3u]);
-            vx = cv_text(x, y + 11, &FONT_L, ui.big_v[k],
+            vx = cv_text(x, y + 10, &FONT_L, ui.big_v[k],
                          ui.big_c[k] == C_DIM ? C_DIM :
                          ui.big_c[k] == C_WHITE ? C_WHITE : C_HI);
             if (ui.big_u[k][0])
-                cv_text(vx + 3, y + 22, &FONT_S, ui.big_u[k], C_GRAY);
+                cv_text(vx + 3, y + 20, &FONT_S, ui.big_u[k], C_GRAY);
         }
     }
 }
