@@ -195,7 +195,7 @@ for (name, model_text, *_env), (kind, bank_name) in zip(presets, bank):
 # The source values are direct Plaits H/T/M controls; they must not be rescaled.
 spec = (ROOT / "HORATIO-1-FACTORY-PRESET-BANK.md").read_text()
 recipe_rows = re.findall(
-    r"^\|\s*(\d+)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*[^|]*\|\s*(\d+)\s*/\s*(\d+)\s*/\s*(\d+)\s*\|",
+    r"^\|\s*(\d+)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*(\d+)\s*/\s*(\d+)\s*/\s*(\d+)\s*\|",
     spec,
     re.M,
 )
@@ -206,7 +206,8 @@ recipe_controls = re.findall(
     preset_block,
 )
 preset_by_name = {row[0]: tuple(map(int, row[1:5])) for row in recipe_controls}
-for number, name, model_source, h, t, m in recipe_rows:
+trigger_unpatched_names = set(re.findall(r'\{"([^\"]+)"[^\n]*?\.trigger_unpatched\s*=\s*1', preset_block))
+for number, name, model_source, trigger_source, h, t, m in recipe_rows:
     model_match = re.search(r"→\s*(\d+)", model_source)
     if not model_match:
         raise SystemExit(f"Recipe {number} {name}: missing firmware model index in specification")
@@ -217,6 +218,11 @@ for number, name, model_source, h, t, m in recipe_rows:
     if actual != expected:
         raise SystemExit(
             f"Recipe {number} {name}: expected model/H/T/M {expected}, got {actual}"
+        )
+    expects_unpatched = trigger_source.strip().lower() == "no"
+    if (name.strip() in trigger_unpatched_names) != expects_unpatched:
+        raise SystemExit(
+            f"Recipe {number} {name}: source trigger={trigger_source.strip()}, firmware trigger_unpatched={name.strip() in trigger_unpatched_names}"
         )
 
 print(f"HORATIO factory browser and 91 source H/T/M mappings OK: {len(bank)} unique presets cover all 23 HORATIO models with {len(set(envelopes))} ADSR shapes and {len(set(filter_cutoffs))} filter cutoff values.")
