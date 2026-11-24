@@ -261,9 +261,26 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
             if (wet_output_gain <= 0.0f) {
                 wet_output_gain = 0.0f;
                 frozen = pending_frozen;
+                /* Existing grains were launched against the old recording-head
+                 * motion. Retire them at silence so none can cross the head
+                 * discontinuity and produce repeated transients. */
+                for (uint32_t g = 0; g < HORATIO_GRANULAR_MAX_GRAINS; ++g) {
+                    grains[g].Init(static_cast<float>(sample_rate));
+                    grain_speed[g] = 0.0f;
+                }
+                grain_write_speed = frozen ? 0.0f : write_speed;
+                trigger_phase = 1.0f;
                 freeze_transition_stage = 2u;
             }
         } else if (freeze_transition_stage == 2u) {
+            /* DelayLine records its frozen flag on the next capture tick.
+             * Wait until that flag agrees before starting new grains. */
+            if (delay_line.frozen() == (frozen != 0u)) {
+                start_grain();
+                trigger_phase = 0.0f;
+                freeze_transition_stage = 3u;
+            }
+        } else if (freeze_transition_stage == 3u) {
             wet_output_gain += 1.0f /
                 (0.008f * static_cast<float>(sample_rate));
             if (wet_output_gain >= 1.0f) {
@@ -316,8 +333,15 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
 
         trigger_phase += density_increment;
         if (trigger_phase >= 1.0f) {
-            trigger_phase -= 1.0f;
-            start_grain();
+            /* During a freeze transition, defer grain starts until the
+             * recording line has adopted the new frozen state. */
+            if (freeze_transition_stage != 2u &&
+                delay_line.frozen() == (frozen != 0u)) {
+                trigger_phase -= 1.0f;
+                start_grain();
+            } else {
+                trigger_phase = 1.0f;
+            }
         }
 
         /* Keep the pitch glide at 20 ms on every supported host sample rate. */
