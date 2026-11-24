@@ -66,6 +66,7 @@ static float feedback_peak;
 static float feedback_peak_lp;
 static float feedback_decay;
 static uint8_t frozen;
+static uint8_t pending_frozen;
 static uint8_t reverse;
 /* De-click the wet return while the recording head changes freeze state. */
 static uint8_t freeze_transition_stage;
@@ -166,7 +167,7 @@ void horatio_granular_init(uint32_t requested_sample_rate) {
     feedback_dc_l = feedback_dc_r = 0.0f;
     feedback_peak = feedback_peak_lp = 0.5f;
     feedback_decay = 1.0f / static_cast<float>(sample_rate);
-    frozen = reverse = 0u;
+    frozen = pending_frozen = reverse = 0u;
     freeze_transition_stage = 0u;
     wet_output_gain = 1.0f;
     grain_write_speed = static_cast<float>(capture_rate) /
@@ -211,8 +212,13 @@ void horatio_granular_set(float density, float time, float size,
     grain_shape = clamp_unit(shape);
     feedback = clamp_unit(fb);
     const uint8_t next_frozen = freeze != 0u;
-    if (next_frozen != frozen) freeze_transition_stage = 1u;
-    frozen = next_frozen;
+    if (next_frozen != pending_frozen) {
+        pending_frozen = next_frozen;
+        /* Do not move the recording head until the wet signal has faded
+         * completely. If the user reverses the switch mid-transition,
+         * smoothly return to the current state instead. */
+        freeze_transition_stage = (pending_frozen == frozen) ? 2u : 1u;
+    }
     reverse = rev != 0u;
 }
 
@@ -233,7 +239,6 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
     /* DelayGrain stores its head position in Q10. Round the write-head
      * increment to nearest rather than truncating it; truncation accumulates
      * a small but systematic timing drift at non-integer rate ratios. */
-    const float target_grain_write_speed = frozen ? 0.0f : write_speed;
     const float freeze_speed_slew = 1.0f - expf(
         -1.0f / (0.006f * static_cast<float>(sample_rate)));
     float target_speed = write_speed *
@@ -249,6 +254,24 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
     const float density_increment = density_hz / static_cast<float>(sample_rate);
 
     for (uint32_t i = 0; i < samples; ++i) {
+        /* Fade first; only change the recording-head state at zero wet gain. */
+        if (freeze_transition_stage == 1u) {
+            wet_output_gain -= 1.0f /
+                (0.003f * static_cast<float>(sample_rate));
+            if (wet_output_gain <= 0.0f) {
+                wet_output_gain = 0.0f;
+                frozen = pending_frozen;
+                freeze_transition_stage = 2u;
+            }
+        } else if (freeze_transition_stage == 2u) {
+            wet_output_gain += 1.0f /
+                (0.008f * static_cast<float>(sample_rate));
+            if (wet_output_gain >= 1.0f) {
+                wet_output_gain = 1.0f;
+                freeze_transition_stage = 0u;
+            }
+        }
+        const float target_grain_write_speed = frozen ? 0.0f : write_speed;
         grain_write_speed += (target_grain_write_speed - grain_write_speed) *
                              freeze_speed_slew;
         const int32_t render_write_speed_q10 = static_cast<int32_t>(
@@ -317,25 +340,6 @@ void horatio_granular_process(const int32_t *input_l, const int32_t *input_r,
         feedback_dc_r += 0.005f * (wet.r - feedback_dc_r);
         previous_wet_l = wet.l - feedback_dc_l;
         previous_wet_r = wet.r - feedback_dc_r;
-        /* Freeze changes can expose a different recording-head relationship
-         * to every active grain at once. Ramp the wet return down over 3 ms,
-         * then back up over 8 ms to mask any discontinuity without stopping
-         * grains, clearing the buffer, or changing the feedback path. */
-        if (freeze_transition_stage == 1u) {
-            wet_output_gain -= 1.0f /
-                (0.003f * static_cast<float>(sample_rate));
-            if (wet_output_gain <= 0.0f) {
-                wet_output_gain = 0.0f;
-                freeze_transition_stage = 2u;
-            }
-        } else if (freeze_transition_stage == 2u) {
-            wet_output_gain += 1.0f /
-                (0.008f * static_cast<float>(sample_rate));
-            if (wet_output_gain >= 1.0f) {
-                wet_output_gain = 1.0f;
-                freeze_transition_stage = 0u;
-            }
-        }
         output_l[i] = to_q15(wet.l * wet_output_gain);
         output_r[i] = to_q15(wet.r * wet_output_gain);
     }
