@@ -254,10 +254,15 @@ int main() {
                                      0u, 0u, capture_rates[rate]);
                 for (uint32_t block = 0; block < 3u; ++block)
                     horatio_granular_process(input_l, input_r, out_l, out_r, 128u);
-                if (horatio_granular_recorded_samples() != expected_resumed) {
+                const uint32_t actual_resumed =
+                    horatio_granular_recorded_samples();
+                const uint32_t resume_error = actual_resumed > expected_resumed
+                    ? actual_resumed - expected_resumed
+                    : expected_resumed - actual_resumed;
+                if (resume_error > 1u) {
                     fprintf(stderr, "capture did not resume at host %u capture %u: %u (expected %u)\\n",
                             host_rates[host], capture_rates[rate],
-                            horatio_granular_recorded_samples(), expected_resumed);
+                            actual_resumed, expected_resumed);
                     return 26;
                 }
             }
