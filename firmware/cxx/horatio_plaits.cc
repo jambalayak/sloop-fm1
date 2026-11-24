@@ -30,6 +30,7 @@ struct PlaitsSlot {
     uint16_t level;
     uint8_t model;
     uint8_t gate;
+    uint8_t trigger_patched;
     uint8_t retrigger_low_pending;
     uint8_t fifo_pos;
     uint8_t fifo_count;
@@ -76,7 +77,7 @@ static void render_chunk(uint32_t index, uint32_t trigger) {
     mod.frequency_patched = false;
     mod.timbre_patched = false;
     mod.morph_patched = false;
-    mod.trigger_patched = true;
+    mod.trigger_patched = s->trigger_patched != 0u;
     mod.level_patched = true;
 
     const uint32_t previous_rng = stmlib::Random::state();
@@ -120,7 +121,7 @@ void horatio_plaits_init(void) {
 void horatio_plaits_configure(uint32_t slot, uint32_t model, int32_t pitch_q7,
                               uint16_t harmonics, uint16_t timbre, uint16_t morph,
                               uint16_t decay, uint16_t lpg_colour, uint16_t aux_mix,
-                              uint16_t level) {
+                              uint16_t level, uint32_t trigger_patched) {
     if (!initialized || slot >= kVoiceCount) return;
     PlaitsSlot *s = &slots[slot];
     if (model >= HORATIO_PLAITS_MODELS) model = HORATIO_PLAITS_MODELS - 1u;
@@ -145,6 +146,7 @@ void horatio_plaits_configure(uint32_t slot, uint32_t model, int32_t pitch_q7,
     s->lpg_colour = lpg_colour;
     s->aux_mix = aux_mix;
     s->level = level;
+    s->trigger_patched = trigger_patched != 0u;
 }
 
 void horatio_plaits_note_on(uint32_t slot) {
