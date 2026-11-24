@@ -24,8 +24,14 @@ namespace {
 
 static const int kMaxDelay = HORATIO_GRANULAR_BUFFER_SAMPLES;
 static const int kSafety = beads::DelayGrain::head_crossing_safety_zone + 1;
-static const size_t kBankBytes = (kMaxDelay + 4u) * sizeof(int16_t);
+/* DelayLine reserves its freeze-tail frames at the END of the final bank.
+ * Keep that region after (not inside) the delay samples. */
+static const size_t kDelayDataBytes = (kMaxDelay + 4u) * sizeof(int16_t);
+static const size_t kFreezeTailBytes = 256u * sizeof(beads::FloatFrame);
+static const size_t kBankBytes = kDelayDataBytes + kFreezeTailBytes;
 static const size_t kAllocatedBytes = HORATIO_GRANULAR_BUFFER_BYTES;
+static_assert(kBankBytes == kAllocatedBytes,
+              "Beads delay bank must include its non-overlapping freeze tail");
 static uint32_t capture_rate = HORATIO_GRANULAR_RATE_16K;
 static float capture_filter_coefficient = 0.65f;
 static float capture_filter_coefficient_for_rates(uint32_t host_rate,
@@ -145,7 +151,8 @@ void horatio_granular_init(uint32_t requested_sample_rate) {
     capture_filter_coefficient = capture_filter_coefficient_for_rates(
         sample_rate, capture_rate);
     memset(recording_buffer, 0, sizeof(recording_buffer));
-    delay_line.Init(recording_buffer, sizeof(recording_buffer));
+    uint8_t* delay_banks[1] = { recording_buffer };
+    delay_line.Init(delay_banks);
 
     for (uint32_t i = 0; i < HORATIO_GRANULAR_MAX_GRAINS; ++i) {
         grains[i].Init(static_cast<float>(sample_rate));
@@ -191,7 +198,8 @@ void horatio_granular_set(float density, float time, float size,
         capture_filter_coefficient = capture_filter_coefficient_for_rates(
             sample_rate, capture_rate);
         memset(recording_buffer, 0, sizeof(recording_buffer));
-        delay_line.Init(recording_buffer, sizeof(recording_buffer));
+        uint8_t* delay_banks[1] = { recording_buffer };
+    delay_line.Init(delay_banks);
         for (uint32_t i = 0; i < HORATIO_GRANULAR_MAX_GRAINS; ++i) {
             grains[i].Init(static_cast<float>(sample_rate));
             grain_speed[i] = 0.0f;
