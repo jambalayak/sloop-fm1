@@ -190,4 +190,29 @@ for (name, model_text, *_env), (kind, bank_name) in zip(presets, bank):
     if kind != expected_kind:
         raise SystemExit(f"{bank_name}: expected {expected_kind} for model {model}, got {kind}")
 
-print(f"HORATIO factory browser OK: {len(bank)} unique presets cover all 23 HORATIO models with {len(set(envelopes))} ADSR shapes and {len(set(filter_cutoffs))} filter cutoff values.")
+
+# Keep the 91 Rochefsky Plaits recipe mappings tied to the source specification.
+# The source values are direct Plaits H/T/M controls; they must not be rescaled.
+spec = (ROOT / "HORATIO-1-FACTORY-PRESET-BANK.md").read_text()
+recipe_rows = re.findall(
+    r"^\|\s*(\d+)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*[^|]*\|\s*(\d+)\s*/\s*(\d+)\s*/\s*(\d+)\s*\|",
+    spec,
+    re.M,
+)
+if len(recipe_rows) != 91:
+    raise SystemExit(f"Expected 91 source Plaits recipes in the specification, found {len(recipe_rows)}")
+preset_by_name = {row[0]: tuple(map(int, row[1:5])) for row in presets}
+for number, name, model_source, h, t, m in recipe_rows:
+    model_match = re.search(r"→\s*(\d+)", model_source)
+    if not model_match:
+        raise SystemExit(f"Recipe {number} {name}: missing firmware model index in specification")
+    expected = (int(model_match.group(1)), int(h), int(t), int(m))
+    actual = preset_by_name.get(name.strip())
+    if actual is None:
+        raise SystemExit(f"Recipe {number} {name}: missing from firmware preset table")
+    if actual != expected:
+        raise SystemExit(
+            f"Recipe {number} {name}: expected model/H/T/M {expected}, got {actual}"
+        )
+
+print(f"HORATIO factory browser and 91 source H/T/M mappings OK: {len(bank)} unique presets cover all 23 HORATIO models with {len(set(envelopes))} ADSR shapes and {len(set(filter_cutoffs))} filter cutoff values.")
