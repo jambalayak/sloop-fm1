@@ -82,8 +82,8 @@ UI_SMALL static int edit_xform_stale(void)
     if (song.sel != edit_xform_track || edit_xform_track >= NPART)
         return 1;
     t = &trk[edit_xform_track];
-    return sequence_pattern_fingerprint(t) != edit_xform_fingerprint ||
-           t->p[P_ROOT] != edit_xform_src_root || t->p[P_SCALE] != edit_xform_src_scale;
+    return sequence_transform_stale(t, edit_xform_fingerprint,
+                                    edit_xform_src_root, edit_xform_src_scale);
 }
 UI_SMALL static void edit_xform_build(track_t *t)
 {
