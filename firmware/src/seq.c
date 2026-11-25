@@ -185,10 +185,11 @@ static uint8_t scale_remap_note(uint8_t note, uint8_t src_root, uint8_t src_scal
     index = best_degree % dc;
     if (index < 0) { index += dc; cycle--; }
     i = 0;
-    while (index > 0) {
-        i++;
-        if (dm & (1u << i)) index--;
-    }
+    for (oct = 0; oct < 12; oct++)
+        if (dm & (1u << oct)) {
+            if (!index) { i = oct; break; }
+            index--;
+        }
     pitch = (int32_t)dst_root + 12 * cycle + i;
     if (clipped) *clipped = (uint8_t)(pitch < 0 || pitch > 127);
     out = (uint8_t)clamp(pitch, 0, 127);
