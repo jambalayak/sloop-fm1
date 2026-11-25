@@ -73,6 +73,9 @@ jobs:
           cc -O1 -Wall -Wno-unused-function -o build/midi_uart_test tests/midi_uart_test.c
           build/midi_uart_test
 
+      - name: Check HORATIO MIDI clock transport and timing
+        run: python3 tools/check_horatio_midi_clock.py
+
       - name: Check HORATIO factory preset browser
         run: python3 tools/check_horatio_preset_bank.py
 
