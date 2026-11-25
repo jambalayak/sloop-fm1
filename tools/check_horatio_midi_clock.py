@@ -47,7 +47,7 @@ require("START, CONTINUE and STOP reach transport handling",
         "if (st == 0xFCu)" in event and "transport_req = 2" in event)
 require("clock times are accepted only in the 40..240 BPM beat range",
         "dt >= 250u && dt <= 1500u" in event and "clamp((int32_t)((t10 + 5u) / 10u), 40, 240)" in tempo)
-require("tempo measurement averages up to eight beats", "#define MCLK_NB 8u" in clock and "mclk.nb < MCLK_NB" in clock)
+require("tempo measurement averages up to eight beats", "#define MCLK_NB 8u" in seq and "mclk.nb < MCLK_NB" in tempo)
 require("interpolation never runs beyond the next incoming pulse",
         "if (el > mclk.iv_ms)" in advance and "off = MCLK_PULSE_U - 1u" in advance)
 require("late sequencer blocks catch up at a bounded rate",
