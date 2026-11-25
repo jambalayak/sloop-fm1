@@ -41,6 +41,19 @@ require("MIX uses equal-power dry and wet gains",
 require("both stereo outputs blend the granular return",
         "mix_l[i] = (int32_t)((float)mix_l[i] * dry_gain + (float)wet_l[i] * wet_mix_gain);" in beads and
         "mix_r[i] = (int32_t)((float)mix_r[i] * dry_gain + (float)wet_r[i] * wet_mix_gain);" in beads)
+
+require("wet RMS compensation only measures non-silent dry and wet blocks",
+        "if (dry_energy > 0.000001f && wet_energy > 0.000001f)" in beads)
+require("wet RMS compensation is bounded below",
+        "if (target_gain < 0.75f) target_gain = 0.75f;" in beads)
+require("wet RMS compensation is bounded above",
+        "if (target_gain > 1.80f) target_gain = 1.80f;" in beads)
+require("wet RMS compensation is smoothed between blocks",
+        "beads_wet_gain += (target_gain - beads_wet_gain) * 0.125f;" in beads)
+require("dry and wet compensation cannot divide by a silent wet block",
+        "wet_energy > 0.000001f" in beads and
+        "target_gain = beads_sqrt(dry_energy / wet_energy);" in beads)
+
 require("the Beads return remains before the master effects chain",
         fx.find("horatio_granular_process(mix_l") < fx.find("dust_process(mix_l, mix_r, n);", end))
 
