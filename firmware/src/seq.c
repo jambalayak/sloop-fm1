@@ -642,6 +642,39 @@ static void undo_mark(const track_t *t, uint32_t sess)
     undo.undone = 0;
 }
 #define UNDO_REC(t) (((t)->pass << 2) | 1u)      /* a recording pass of track t */
+/* Commit a compact pitch preview as one undoable edit. The caller must validate that the
+ * preview still belongs to this track/pattern before calling; only active NOTE/TIE pitches
+ * are copied, so locks, timing, velocity and all other step metadata remain untouched. */
+static uint8_t sequence_transform_commit(track_t *t, const uint8_t pitch[NSTEP][4], uint32_t sess)
+{
+    uint32_t i, k;
+    uint8_t changed = 0;
+    for (i = 0; i < NSTEP; i++) {
+        const step_t *st = &t->step[i];
+        uint32_t n;
+        if (st->time != ST_NOTE && st->time != ST_TIE)
+            continue;
+        n = st->n > 4u ? 4u : st->n;
+        for (k = 0; k < n; k++)
+            changed |= (uint8_t)(st->note[k] != pitch[i][k]);
+    }
+    if (!changed)
+        return 0;
+    undo_mark(t, sess);
+    fm1_irq_off();
+    for (i = 0; i < NSTEP; i++) {
+        step_t *st = &t->step[i];
+        uint32_t n;
+        if (st->time != ST_NOTE && st->time != ST_TIE)
+            continue;
+        n = st->n > 4u ? 4u : st->n;
+        for (k = 0; k < n; k++)
+            st->note[k] = pitch[i][k];
+    }
+    fm1_irq_on();
+    sync_reload = 1;
+    return 1;
+}
 static uint32_t undo_erase_sess;
 
 /* ------------------------------------------------------- recording --- */
