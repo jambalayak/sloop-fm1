@@ -3082,9 +3082,16 @@ static void mclk_event(uint32_t st, uint32_t src)  /* a realtime message; src 1 
         mclk.iv_ms = mclk.iv_ms ? (mclk.iv_ms * 3u + iv + 2u) / 4u : iv;
     }
     if (!mclk.alive || now - mclk.last_ms >= 500u) {   /* (re)started: count a fresh beat */
+        uint32_t lost = !mclk.alive || now - mclk.last_ms >= 500u;
         mclk.n24 = 0;
         mclk.nb = 0;
+        mclk.iv_ms = 0;                            /* never interpolate a restarted clock from its old tempo */
         mclk.beat_ms = now;
+        if (lost && song.playing) {                /* the internal clock kept moving during the fallback */
+            uint32_t pos = clk_beat * BEAT_U + clk_pos;
+            mclk.pos = mclk.done = pos;            /* rejoin at the sequencer's live phase; no catch-up stall */
+            mclk.have = 1;
+        }
     } else if (++mclk.n24 == 24u) {                /* a beat: the tempo */
         uint32_t dt = now - mclk.beat_ms;
         mclk.n24 = 0;
