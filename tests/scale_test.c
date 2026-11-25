@@ -119,6 +119,34 @@ static void sequence_transform_test(void)
     assert(clipped == 1u && dst[0].note[0] == 12u && dst[0].note[1] == 72u && dst[0].note[2] == 127u);
     sequence_transform_preview(src, pitch_preview, SEQ_XFORM_TRANSPOSE, 12, 0, 1, 0, 1, &clipped);
     assert(clipped == 1u && pitch_preview[0][0] == 12u && pitch_preview[0][1] == 72u && pitch_preview[0][2] == 127u);
+    /* Applying a compact preview is a single undo-marked pitch-only mutation. */
+    {
+        track_t *t = &trk[0];
+        step_t saved[NSTEP];
+        int8_t micro_saved[NSTEP];
+        int16_t len_saved = t->p[P_SLEN];
+        memcpy(saved, t->step, sizeof saved);
+        memcpy(micro_saved, t->micro, sizeof micro_saved);
+        memset(t->step, 0, sizeof t->step);
+        t->step[0].time = ST_NOTE; t->step[0].n = 2;
+        t->step[0].note[0] = 50; t->step[0].note[1] = 60; t->step[0].vel = 91;
+        t->step[1].time = ST_TIE; t->step[1].n = 1; t->step[1].note[0] = 70;
+        t->step[2].time = ST_REST; t->step[2].n = 1; t->step[2].note[0] = 99;
+        memset(pitch_preview, 0, sizeof pitch_preview);
+        for (i = 0; i < NSTEP; i++)
+            for (k = 0; k < 4u; k++)
+                pitch_preview[i][k] = t->step[i].note[k];
+        pitch_preview[0][0] = 55; pitch_preview[0][1] = 65; pitch_preview[1][0] = 75;
+        assert(sequence_transform_commit(t, pitch_preview, (undo_sess += 4u) | 3u));
+        assert(t->step[0].note[0] == 55 && t->step[0].note[1] == 65);
+        assert(t->step[1].note[0] == 75 && t->step[2].note[0] == 99);
+        assert(t->step[0].vel == 91 && t->step[0].time == ST_NOTE && t->step[1].time == ST_TIE);
+        assert(!sequence_transform_commit(t, pitch_preview, (undo_sess += 4u) | 3u));
+        memcpy(t->step, saved, sizeof saved);
+        memcpy(t->micro, micro_saved, sizeof micro_saved);
+        t->p[P_SLEN] = len_saved;
+        undo.valid = 0;
+    }
     puts("sequence transform: transpose/remap previews preserve non-pitch bytes, ties and untouched tail; clipping counted");
 }
 
