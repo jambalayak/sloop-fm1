@@ -447,3 +447,38 @@ has now been added to compile and run `tests/midi_uart_test.c` after the
 HORATIO firmware link. That test verifies USB/TRS parser handling and realtime
 message queuing; it does not replace a physical test with an external MIDI
 master, nor does it exercise end-to-end sequencer phase/tempo accuracy.
+
+
+## Build 506 regression checkpoint — 25 November 2026
+
+Build 506 (commit `9150fd9`) passes the full HORATIO-1 workflow, including
+firmware compilation, scale/keyboard host tests, USB/TRS MIDI realtime input,
+external MIDI clock contract checks, factory preset/model checks, Plaits audio
+smoke, compact Beads granular smoke, and `.fwsc` package export.
+
+Two recent correctness fixes are included:
+
+- **External MIDI Start phase reset:** MIDI Start clears stale pulse interval
+  and beat-history state, resets the sequencer clock phase to zero, and marks
+  the first incoming clock pulse as the new downbeat. The fallback relock path
+  is suppressed for that first pulse so a previous internal-clock phase cannot
+  override Start. Continue retains the stopped phase. Source-level regression
+  coverage is in `tools/check_horatio_midi_clock.py`; parser coverage remains
+  in `tests/midi_uart_test.c`.
+- **Beads feedback readout invalidation:** the Beads graph signature now
+  includes Pitch and Feedback as well as Shape and Size, so both displayed
+  readout regions refresh when those controls change. A host regression test
+  changes Feedback and verifies the graph signature changes.
+
+The granular audio smoke test also compares rendered output with Feedback at
+zero and maximum and requires a material output difference. Its sustained
+maximum-feedback stress case checks that the wet return remains audible and
+within Q15 bounds. This is automated host evidence that the parameter reaches
+the DSP path; it is not a substitute for listening on the physical FM-1.
+
+Build 506 is the current known-good sound baseline. Preserve the approved
+Beads character, Particle model adaptation, four-voice behaviour, and memory
+layout unless a reproducible defect justifies a measured change. The package
+has passed the Harbor-compatible export workflow, but physical FM-1 audio,
+external MIDI-master timing, CPU load, and runtime stack headroom remain
+hardware validation items.
