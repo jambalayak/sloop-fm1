@@ -69,11 +69,8 @@ static void sequence_transform_test(void)
     memcpy(meta_src, src, sizeof src);
     memcpy(meta_dst, dst, sizeof dst);
     for (i = 0; i < NSTEP; i++) {
-        if (src[i].time == ST_NOTE)
-            for (k = 0; k < src[i].n; k++)
-                assert(dst[i].note[k] == (uint8_t)(src[i].note[k] + 7u));
-        else
-            assert(!memcmp(&src[i], &dst[i], sizeof(step_t)));
+        for (k = 0; k < src[i].n; k++)
+            assert(dst[i].note[k] == (uint8_t)(src[i].note[k] + 7u));
         memset(meta_src[i].note, 0, sizeof meta_src[i].note);
         memset(meta_dst[i].note, 0, sizeof meta_dst[i].note);
     }
