@@ -28,7 +28,7 @@ clock = section(seq, "static int mclk_on(void)", "/* everything that happens bet
 tempo = section(seq, "static void mclk_tempo(", "static void mclk_event(")
 event = section(clock, "static void mclk_event(", "static uint32_t mclk_adv(")
 advance = section(clock, "static uint32_t mclk_adv(", "/* 2.7, GLO > MIDI 3 > CLK OUT")
-output = section(seq, "static void clkout_block(", "/* everything that happens between")
+output = section(seq, "static void clkout_block(", "static void events_block(")
 
 require("clock uses MIDI's 24 PPQN", "#define MCLK_PULSE_U (BEAT_U / 24u)" in seq)
 require("input follows the selected USB/TRS source", "src != (uint32_t)song.g[G_SYNC]" in event)
