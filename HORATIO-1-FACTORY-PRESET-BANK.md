@@ -116,7 +116,7 @@ The model index is zero-based in firmware. The recipe bank order follows the sou
 - AUX notes are translated to the HORATIO AUX MIX control: OUT-only/no-AUX = 0, OUT+AUX mix = 64, AUX-only = 127.
 - The source's frequency ranges are playing-range guidance, not a Plaits parameter, so they are not applied as pitch limits.
 - Timbre attenuator/CV, Morph attenuator/CV and FM attenuator/CV are modulation-patch instructions. HORATIO's current preset schema does not store those patch routings; their static knob values are imported, but external CV/modulation behavior is not recreated.
-- “Trigger yes/no” is preserved in the source list but the current HORATIO Plaits adapter triggers notes from the sequencer/keyboard uniformly. Per-recipe trigger-patch behavior is not yet implemented.
+- “Trigger yes/no” is implemented per recipe. The 12 source recipes marked “no” leave Plaits' trigger input unpatched; all recipes marked “yes” retain normal keyboard/sequencer triggering. The factory-bank validator checks all 91 source rows against the firmware metadata. This reproduces the source patch distinction; it does not mean those patches have identical envelopes or sound to the original modular setup.
 - Envelope LED counts are indicators from the original module, not ADSR values. They are not copied into unrelated HORATIO envelope parameters.
 - The three “ANY 32 DX7 FM Synthesis Patches” rows are instructions to curate external patch banks, not sound settings. They are not represented as fake presets. The five rows under the source's “INCOMPLETE - FUTURE AREA” section are also excluded.
 - Plaits' individual percussion models remain available as synth models. HORATIO still has no drum machine, drum track, drum kit or drum sequencer.
