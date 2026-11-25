@@ -236,6 +236,39 @@ static void sequence_transform_steps(const step_t *src, step_t *dst, uint32_t co
         *clipped = (uint16_t)nclip;
 }
 
+/* Compact pitch-only preview for the EDIT transform workflow.
+ * Four bytes per step (256 B total): no duplicate step metadata, locks or microtiming.
+ * The caller owns the buffer and commits it only after explicit confirmation. */
+static void sequence_transform_preview(const step_t *src, uint8_t dst[NSTEP][4],
+                                       uint8_t mode, int8_t semitones,
+                                       uint8_t src_root, uint8_t src_scale,
+                                       uint8_t dst_root, uint8_t dst_scale,
+                                       uint16_t *clipped)
+{
+    uint32_t i, k, nclip = 0;
+    for (i = 0; i < NSTEP; i++) {
+        uint32_t n = src[i].n > 4u ? 4u : src[i].n;
+        for (k = 0; k < 4u; k++)
+            dst[i][k] = src[i].note[k];
+        if (src[i].time != ST_NOTE && src[i].time != ST_TIE)
+            continue;
+        for (k = 0; k < n; k++) {
+            uint8_t was_clipped = 0;
+            if (mode == SEQ_XFORM_REMAP) {
+                dst[i][k] = scale_remap_note(src[i].note[k], src_root, src_scale,
+                                             dst_root, dst_scale, &was_clipped);
+            } else {
+                int32_t pitch = (int32_t)src[i].note[k] + semitones;
+                was_clipped = (uint8_t)(pitch < 0 || pitch > 127);
+                dst[i][k] = (uint8_t)clamp(pitch, 0, 127);
+            }
+            nclip += was_clipped;
+        }
+    }
+    if (clipped)
+        *clipped = (uint16_t)nclip;
+}
+
 /* ---------------------------------------------------------- layers --- */
 enum { LY_PLAY, LY_FX, LY_ERASE, LY_ROLL, LY_STEP, LY_SCALE, LY_MIX, LY_SONG, LY_COUNT };
 static uint32_t ly_bit[LY_COUNT];        /* the button (fm1_in.buttons bit) of each layer: the UI sets them */
