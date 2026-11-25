@@ -158,6 +158,31 @@ static void sequence_transform_test(void)
         t->p[P_SLEN] = len_saved;
         undo.valid = 0;
     }
+    /* A preview fingerprint becomes stale after any step, microtiming or length edit. */
+    {
+        track_t *t = &trk[0];
+        step_t saved[NSTEP];
+        int8_t micro_saved[NSTEP];
+        int16_t len_saved = t->p[P_SLEN];
+        uint32_t fingerprint;
+        memcpy(saved, t->step, sizeof saved);
+        memcpy(micro_saved, t->micro, sizeof micro_saved);
+        fingerprint = sequence_pattern_fingerprint(t);
+        assert(fingerprint == sequence_pattern_fingerprint(t));
+        t->step[0].note[0] ^= 1u;
+        assert(fingerprint != sequence_pattern_fingerprint(t));
+        t->step[0].note[0] ^= 1u;
+        assert(fingerprint == sequence_pattern_fingerprint(t));
+        t->micro[0] = (int8_t)(t->micro[0] + 1);
+        assert(fingerprint != sequence_pattern_fingerprint(t));
+        memcpy(t->micro, micro_saved, sizeof micro_saved);
+        assert(fingerprint == sequence_pattern_fingerprint(t));
+        t->p[P_SLEN] = (int16_t)(len_saved == NSTEP ? NSTEP - 1 : len_saved + 1);
+        assert(fingerprint != sequence_pattern_fingerprint(t));
+        t->p[P_SLEN] = len_saved;
+        memcpy(t->step, saved, sizeof saved);
+        assert(fingerprint == sequence_pattern_fingerprint(t));
+    }
     puts("sequence transform: transpose/remap previews preserve non-pitch bytes, ties and untouched tail; clipping counted");
 }
 
