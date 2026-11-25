@@ -197,6 +197,20 @@ UI_SMALL static void pattern_length(track_t *t, int32_t d)       /* x2 (the patt
         ui_say("STEPS ", b);
     }
 }
+
+/* Retained for the USB editor's direct transpose command (editor.c). The panel's EDIT layer
+ * uses the preview/Apply path above instead. */
+UI_SMALL static void pattern_transpose(track_t *t, int32_t d)
+{
+    uint32_t i, j;
+    layer_undo_mark(t);
+    fm1_irq_off();
+    for (i = 0; i < NSTEP; i++)
+        if (t->step[i].time == ST_NOTE || t->step[i].time == ST_TIE)
+            for (j = 0; j < t->step[i].n && j < 4u; j++)
+                t->step[i].note[j] = (uint8_t)clamp(t->step[i].note[j] + (d > 0 ? 1 : -1), 0, 127);
+    fm1_irq_on();
+}
 /* ------------------------------------------------------------- SEQ --- */
 /* a step key (white key w) of the SEQ layer, Elektron style: an empty step is set at once (drums: the
  * sound's lane; synth: the pen, the chord / note played last); a set one goes when its key is let go,
