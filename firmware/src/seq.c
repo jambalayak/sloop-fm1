@@ -676,15 +676,6 @@ static uint8_t sequence_transform_stale(const track_t *t, uint32_t fingerprint,
                      t->p[P_ROOT] != src_root || t->p[P_SCALE] != src_scale);
 }
 
-/* The pattern fingerprint alone is not enough: a live key/scale change also invalidates
- * the musical context in which the preview was calculated. */
-static uint8_t sequence_transform_stale(const track_t *t, uint32_t fingerprint,
-                                        uint8_t src_root, uint8_t src_scale)
-{
-    return (uint8_t)(sequence_pattern_fingerprint(t) != fingerprint ||
-                     t->p[P_ROOT] != src_root || t->p[P_SCALE] != src_scale);
-}
-
 /* Check freshness, capture undo and apply as one IRQ-safe transaction. Returns -1 if stale,
  * 0 for a no-op, 1 when pitches were committed. Only active NOTE/TIE pitch bytes are written. */
 static int sequence_transform_commit_impl(track_t *t, const uint8_t pitch[NSTEP][4], uint32_t sess,
