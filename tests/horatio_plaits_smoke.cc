@@ -46,6 +46,38 @@ int main(void) {
     }
 
 
+    /* The Rochefsky recipes marked "trigger: no" must also render when
+     * Plaits' trigger input is explicitly left unpatched. Cover each model
+     * used by those recipes, not just the ordinary patched-trigger path. */
+    {
+        static const uint8_t unpatched_models[] = {15u, 17u, 8u, 14u, 12u};
+        uint32_t m;
+        for (m = 0; m < sizeof(unpatched_models); ++m) {
+            uint32_t i;
+            int32_t peak = 0;
+            uint64_t energy = 0;
+            horatio_plaits_all_off(0);
+            horatio_plaits_render(0, samples, 48);
+            horatio_plaits_configure(0, unpatched_models[m], 60 * 128,
+                                     16384, 16384, 16384,
+                                     24575, 16384, 0, 32767, 0);
+            horatio_plaits_note_on(0);
+            horatio_plaits_render(0, samples, 1024);
+            for (i = 0; i < 1024; ++i) {
+                int32_t value = samples[i];
+                int32_t magnitude = value < 0 ? -value : value;
+                if (magnitude > peak) peak = magnitude;
+                energy += (uint64_t)(magnitude * magnitude);
+            }
+            if (peak < 2 || energy < 1024u) {
+                fprintf(stderr,
+                        "Unpatched-trigger Plaits model %u produced no meaningful audio\\n",
+                        (unsigned)unpatched_models[m]);
+                ++silent;
+            }
+        }
+    }
+
     /* Exercise every real patch in all three bundled DX7 banks. HARMONICS
      * selects one of 32 patches in each six-op model. */
     for (model = 2; model <= 4; ++model) {
