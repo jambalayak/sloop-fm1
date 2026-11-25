@@ -164,6 +164,53 @@ if len(set(names)) != len(names):
 if [name for _, name in bank] != names:
     raise SystemExit("Factory browser names/order do not match the Plaits preset table")
 
+# Guard the real factory-preset application path as well as the preset data.
+# Sound parameters (including ADSR and all LFO controls) must return to their
+# defaults before a new recipe is applied, otherwise a static preset can inherit
+# modulation from the preset that was loaded before it.
+apply_start = ui.index("UI_SMALL static void apply_preset_to")
+apply_end = ui.index("/* the engine's defaults", apply_start)
+apply_block = ui[apply_start:apply_end]
+reset_at = apply_block.find("for (i = 0; i < P_E0; i++)")
+adsr_at = apply_block.find("t->p[P_ATK] = e->presets[pi].env[0]")
+extras_at = apply_block.find("preset_extras(t->p, pr)")
+lfo_at = apply_block.find("if (pr->lfo[0])")
+if min(reset_at, adsr_at, extras_at, lfo_at) < 0 or not (
+    reset_at < adsr_at < extras_at < lfo_at
+):
+    raise SystemExit("Factory preset loader must reset sound controls, then load ADSR, extras and LFO")
+for parameter in ("P_ATK", "P_DEC", "P_SUS", "P_REL"):
+    if f"t->p[{parameter}]" not in apply_block:
+        raise SystemExit(f"Factory preset loader does not load {parameter}")
+for parameter, index in (
+    ("P_LRATE", 1), ("P_LWAVE", 2), ("P_LFADE", 3),
+    ("P_LSYNC", 4), ("P_LTRIG", 5), ("P_LPOL", 6),
+):
+    if f"t->p[{parameter}] = pr->lfo[{index}]" not in apply_block:
+        raise SystemExit(f"Factory LFO loader does not apply {parameter}")
+if "if (pr->lfo[7] == 1)" not in apply_block or "if (pr->lfo[9] == 4)" not in apply_block:
+    raise SystemExit("Factory LFO loader is missing one of the four modulation destinations")
+
+lfo_profiles = []
+for line in preset_lines:
+    match = re.search(r"LFO\\(([^)]*)\\)", line)
+    if not match:
+        continue
+    values = [int(value.strip()) for value in match.group(1).split(",")]
+    if len(values) != 10:
+        raise SystemExit("Every factory LFO profile must contain exactly ten values")
+    rate, wave, fade, sync, trig, polarity, dest1, depth1, dest2, depth2 = values
+    if not (0 <= rate <= 127 and 0 <= wave <= 4 and 0 <= fade <= 127 and
+            0 <= sync <= 10 and 0 <= trig <= 1 and 0 <= polarity <= 1 and
+            0 <= dest1 <= 4 and 0 <= depth1 <= 127 and
+            0 <= dest2 <= 4 and 0 <= depth2 <= 127):
+        raise SystemExit(f"Factory LFO profile is outside parameter ranges: {values}")
+    if (dest1 == 0 and depth1 != 0) or (dest2 == 0 and depth2 != 0):
+        raise SystemExit(f"Factory LFO profile has a depth without a destination: {values}")
+    lfo_profiles.append(tuple(values))
+if not lfo_profiles:
+    raise SystemExit("Factory preset bank has no programmed LFO profiles")
+
 
 # The three Plaits 1.2 six-op models each contain 32 real DX7-format factory patches.
 fm_rows = re.findall(r'\{"(DX([1-3])-([0-9]{2}) [^"]+)",\s*\{\s*(\d+)\s*,\s*(\d+)', preset_block)
