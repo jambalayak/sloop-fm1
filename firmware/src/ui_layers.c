@@ -3,7 +3,9 @@
  * button is held the screen shows what the 16 white keys and KNOB 1..4 do now; tapped (pressed and
  * let go without touching anything) the button opens its pages as before.
  *   FX    punch-in effects (punch.c)       knobs: FILTER  DUST  DUCK
- *   EDIT  erase that sound / note (seq.c)  knobs: SHIFT  LENGTH x2 / half  TRANSPOSE   OCT- undo  OCT+ redo
+ *   EDIT  erase that sound / note (seq.c)  knobs: SHIFT  LENGTH x2 / half  K3 transpose preview  K4 scale preview
+ *         while previewing: K1 destination root, K2 destination scale (remap), K3 interval (transpose), K4 mode;
+ *         OCT- cancels / otherwise undo, OCT+ applies / otherwise redo
  *   ARP   note repeat (seq.c roll)         knobs: RATE
  *   SEQ   steps 1..16 of the page          knobs: SOUND / NOTE  DIV  SWING  LENGTH;  a step key held:
  *         (black keys 1..4 or OCT- / OCT+: pages; SOUND / NOTE  LEVEL  RATCHET  NUDGE, PRESETS the value of a
