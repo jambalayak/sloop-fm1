@@ -31,7 +31,7 @@ static void sequence_scale_remap_test(void)
     /* C major E -> D minor's third (F), preserving scale degree. */
     assert(scale_remap_note(64, 0, 1, 2, 2, &clipped) == 5 + 60 && !clipped);
     /* Negative register and destination clipping are deterministic. */
-    n = scale_remap_note(0, 0, 1, 11, 1, &clipped);
+    n = scale_remap_note(0, 11, 1, 0, 1, &clipped);
     assert(n == 0 && clipped);
     n = scale_remap_note(127, 0, 1, 11, 1, &clipped);
     assert(n == 127 && clipped);
