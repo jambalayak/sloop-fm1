@@ -521,7 +521,8 @@ UI_SMALL static uint32_t graph_signature(void)
         for (q = 0; q < FAV_N; q++) h = h * 31u + fav[q];
     }
     if (pg->graph == GR_BEADS)
-        h ^= (uint32_t)song.g[G_BD_SHAPE] * 2654435761u + (uint32_t)song.g[G_BD_SIZE] * 31u;
+        h ^= (uint32_t)song.g[G_BD_SHAPE] * 2654435761u + (uint32_t)song.g[G_BD_SIZE] * 31u +
+             (uint32_t)song.g[G_BD_PITCH] * 2246822519u + (uint32_t)song.g[G_BD_FB] * 3266489917u;
     if (pg->graph == GR_SLCR && t->p[P_SLCR])        /* the SLICER's step playing */
         h ^= (sl[song.sel].idx + 1u) * 2654435761u;
     if (pg->graph == GR_SLOTS)                       /* (a checksum over each slot) */
