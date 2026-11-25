@@ -2112,6 +2112,14 @@ int main(int argc, char **argv)
             ok = 0;
         } else {
             ui.page = (uint8_t)j; ui.home = 0; ui.fam_last[FAM_FX] = (uint8_t)j; page_entered(); ui.force = 1; frames(2);
+            {
+                uint32_t sig0 = graph_signature();
+                song.g[G_BD_FB] = 22;
+                sig0 = graph_signature();
+                song.g[G_BD_FB] = 23;
+                ok &= graph_signature() != sig0;
+                song.g[G_BD_FB] = 22;
+            }
             song.g[G_BD_SIZE] = 64;
             size0 = song.g[G_BD_SIZE];
             encs[panel.enc[EN_K4]] = 1; frame();
