@@ -694,6 +694,15 @@ static uint32_t sequence_pattern_fingerprint(const track_t *t)
     return h;
 }
 
+/* The pattern fingerprint alone is not enough: a live key/scale change also invalidates
+ * the musical context in which the preview was calculated. */
+static uint8_t sequence_transform_stale(const track_t *t, uint32_t fingerprint,
+                                        uint8_t src_root, uint8_t src_scale)
+{
+    return (uint8_t)(sequence_pattern_fingerprint(t) != fingerprint ||
+                     t->p[P_ROOT] != src_root || t->p[P_SCALE] != src_scale);
+}
+
 static uint32_t undo_erase_sess;
 
 /* ------------------------------------------------------- recording --- */
