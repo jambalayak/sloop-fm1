@@ -678,6 +678,22 @@ static uint8_t sequence_transform_commit(track_t *t, const uint8_t pitch[NSTEP][
     sync_reload = 1;
     return 1;
 }
+/* Fingerprint the editable pattern payload used by a transform preview. This deliberately
+ * includes every step byte, microtiming and length: any intervening pattern edit makes Apply stale. */
+static uint32_t sequence_pattern_fingerprint(const track_t *t)
+{
+    const uint8_t *p = (const uint8_t *)t->step;
+    uint32_t h = 2166136261u, i;
+    for (i = 0; i < sizeof t->step; i++)
+        h = (h ^ p[i]) * 16777619u;
+    p = (const uint8_t *)t->micro;
+    for (i = 0; i < sizeof t->micro; i++)
+        h = (h ^ p[i]) * 16777619u;
+    h = (h ^ (uint8_t)t->p[P_SLEN]) * 16777619u;
+    h = (h ^ (uint8_t)((uint16_t)t->p[P_SLEN] >> 8)) * 16777619u;
+    return h;
+}
+
 static uint32_t undo_erase_sess;
 
 /* ------------------------------------------------------- recording --- */
