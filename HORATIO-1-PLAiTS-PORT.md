@@ -490,3 +490,9 @@ Build 509 adds a host-side source contract test for the complete HORATIO Beads i
 The contract complements (and does not replace) the compact Beads granular audio smoke test, which exercises the DSP implementation itself. Both checks passed in Build 509, along with the Plaits audio smoke test, MIDI clock/transport, preset and model-map checks, firmware compilation and package export.
 
 No DSP parameters, sound character, memory layout, or user-facing controls were changed for this checkpoint. Build 507 remains the documented pre-contract package; Build 509 is the latest validated package. Host tests cannot establish physical FM-1 audio quality, CPU load, runtime stack headroom, or hardware MIDI timing. Those still require device testing.
+
+## Build 511 Beads wet-level safety contract — 25 November 2026
+
+Extended the Beads integration source contract to cover the existing wet-return RMS compensation in `firmware/src/fx.c`. The test now checks that compensation is calculated only when both dry and wet energy are non-silent, the target gain is bounded to 0.75–1.80, and the gain moves toward its target smoothly between blocks. This guards the existing implementation against regressions involving silent blocks, unbounded compensation, or abrupt gain changes.
+
+Build 511 passed the complete CI workflow, including this extended integration contract, Plaits and granular DSP smoke tests, MIDI/preset checks, firmware compilation, and package export. This was a test-only change: no DSP, parameters, sound, memory allocation, or interface behaviour was altered. Build 510 remains the latest firmware package with identical audio behaviour.
