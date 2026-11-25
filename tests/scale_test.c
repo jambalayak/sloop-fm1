@@ -230,6 +230,34 @@ static void sequence_transform_test(void)
                                                  (uint8_t)t->p[P_SCALE]) == 1);
         assert(t->step[0].note[0] == 67);
         assert(undo.valid && undo.trk == trk_index(t));
+        /* A no-op must not create an undo entry. */
+        undo.valid = 0;
+        assert(sequence_transform_commit_checked(t, pitch_preview, (undo_sess += 4u) | 3u,
+                                                 sequence_pattern_fingerprint(t),
+                                                 (uint8_t)t->p[P_ROOT],
+                                                 (uint8_t)t->p[P_SCALE]) == 0);
+        assert(!undo.valid);
+        /* Root and scale changes also invalidate a preview atomically. */
+        pitch_preview[0][0] = 70;
+        fingerprint = sequence_pattern_fingerprint(t);
+        {
+            int16_t root = t->p[P_ROOT];
+            t->p[P_ROOT] = (int16_t)((root + 1) % 12);
+            assert(sequence_transform_commit_checked(t, pitch_preview, (undo_sess += 4u) | 3u,
+                                                     fingerprint, (uint8_t)root,
+                                                     (uint8_t)t->p[P_SCALE]) == -1);
+            assert(t->step[0].note[0] == 67 && !undo.valid);
+            t->p[P_ROOT] = root;
+        }
+        {
+            int16_t scale = t->p[P_SCALE];
+            t->p[P_SCALE] = (int16_t)((scale + 1) % NSCALES);
+            assert(sequence_transform_commit_checked(t, pitch_preview, (undo_sess += 4u) | 3u,
+                                                     fingerprint, (uint8_t)t->p[P_ROOT],
+                                                     (uint8_t)scale) == -1);
+            assert(t->step[0].note[0] == 67 && !undo.valid);
+            t->p[P_SCALE] = scale;
+        }
         memcpy(t->step, saved, sizeof saved);
         memcpy(t->micro, micro_saved, sizeof micro_saved);
         undo.valid = 0;
