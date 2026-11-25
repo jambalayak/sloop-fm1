@@ -214,8 +214,7 @@ static void sequence_transform_steps(const step_t *src, step_t *dst, uint32_t co
     for (i = 0; i < count; i++) {
         step_t *s = &dst[i];
         uint32_t n = s->n > 4u ? 4u : s->n;
-        if (s->time != ST_NOTE)
-            continue;
+        /* TIE steps can carry continuation-note pitches too; transform every active slot. */
         for (k = 0; k < n; k++) {
             int32_t pitch;
             uint8_t was_clipped = 0;
