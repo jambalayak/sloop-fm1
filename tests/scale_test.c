@@ -122,8 +122,8 @@ static void sequence_transform_test(void)
     /* Applying a compact preview is a single undo-marked pitch-only mutation. */
     {
         track_t *t = &trk[0];
-        step_t saved[NSTEP];
-        int8_t micro_saved[NSTEP];
+        step_t saved[NSTEP], undo_expected[NSTEP];
+        int8_t micro_saved[NSTEP], undo_micro_expected[NSTEP];
         int16_t len_saved = t->p[P_SLEN];
         memcpy(saved, t->step, sizeof saved);
         memcpy(micro_saved, t->micro, sizeof micro_saved);
@@ -136,6 +136,8 @@ static void sequence_transform_test(void)
         t->step[1].time = ST_TIE; t->step[1].n = 1; t->step[1].note[0] = 70;
         t->step[1].lvl = 2u;
         t->step[2].time = ST_REST; t->step[2].n = 1; t->step[2].note[0] = 99;
+        memcpy(undo_expected, t->step, sizeof undo_expected);
+        memcpy(undo_micro_expected, t->micro, sizeof undo_micro_expected);
         memset(pitch_preview, 0, sizeof pitch_preview);
         for (i = 0; i < NSTEP; i++)
             for (k = 0; k < 4u; k++)
@@ -148,8 +150,8 @@ static void sequence_transform_test(void)
         assert(t->step[1].lvl == 2u && t->step[0].time == ST_NOTE && t->step[1].time == ST_TIE);
         /* Undo's captured image must be the exact pre-transform pattern, including microtiming. */
         assert(undo.valid && undo.trk == trk_index(t));
-        assert(!memcmp(undo.st, saved, sizeof saved));
-        assert(!memcmp(undo.micro, micro_saved, sizeof micro_saved));
+        assert(!memcmp(undo.st, undo_expected, sizeof undo_expected));
+        assert(!memcmp(undo.micro, undo_micro_expected, sizeof undo_micro_expected));
         assert(!sequence_transform_commit(t, pitch_preview, (undo_sess += 4u) | 3u));
         memcpy(t->step, saved, sizeof saved);
         memcpy(t->micro, micro_saved, sizeof micro_saved);
