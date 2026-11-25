@@ -58,6 +58,105 @@ UI_SMALL static void layer_undo_mark(track_t *t)
         ui.step_sess = (undo_sess += 4u) | 3u;
     undo_mark(t, ui.step_sess);
 }
+/* EDIT's non-destructive pitch transform preview. The only working buffer is 256 bytes:
+ * four pitch bytes per step. The fingerprint prevents Apply after a pattern edit or record pass. */
+static uint8_t edit_xform_active, edit_xform_mode, edit_xform_track;
+static uint8_t edit_xform_src_root, edit_xform_src_scale, edit_xform_dst_root, edit_xform_dst_scale;
+static int8_t edit_xform_semitones;
+static uint16_t edit_xform_clipped;
+static uint32_t edit_xform_fingerprint;
+static uint8_t edit_xform_pitch[NSTEP][4];
+
+UI_SMALL static void edit_xform_clear(void)
+{
+    edit_xform_active = 0;
+    ui.force = 1;
+}
+UI_SMALL static int edit_xform_stale(void)
+{
+    const track_t *t;
+    if (!edit_xform_active)
+        return 0;
+    if (song.sel != edit_xform_track || edit_xform_track >= NPART)
+        return 1;
+    t = &trk[edit_xform_track];
+    return sequence_pattern_fingerprint(t) != edit_xform_fingerprint ||
+           t->p[P_ROOT] != edit_xform_src_root || t->p[P_SCALE] != edit_xform_src_scale;
+}
+UI_SMALL static void edit_xform_build(track_t *t)
+{
+    sequence_transform_preview(t->step, edit_xform_pitch, edit_xform_mode, edit_xform_semitones,
+                               edit_xform_src_root, edit_xform_src_scale,
+                               edit_xform_dst_root, edit_xform_dst_scale, &edit_xform_clipped);
+    edit_xform_fingerprint = sequence_pattern_fingerprint(t);
+    ui.force = 1;
+}
+UI_SMALL static int edit_xform_start(track_t *t, uint8_t mode, int32_t semitones)
+{
+    if (trk_index(t) >= NPART) {
+        ui_message("SYNTH TRACKS ONLY");
+        return 0;
+    }
+    edit_xform_track = (uint8_t)trk_index(t);
+    edit_xform_src_root = (uint8_t)clamp(t->p[P_ROOT], 0, 11);
+    edit_xform_src_scale = (uint8_t)clamp(t->p[P_SCALE], 0, NSCALES - 1);
+    edit_xform_dst_root = edit_xform_src_root;
+    edit_xform_dst_scale = edit_xform_src_scale;
+    edit_xform_semitones = (int8_t)clamp(semitones, -24, 24);
+    edit_xform_mode = mode;
+    edit_xform_active = 1;
+    edit_xform_build(t);
+    ui_message(mode == SEQ_XFORM_REMAP ? "SCALE PREVIEW" : "TRANSPOSE PREVIEW");
+    return 1;
+}
+UI_SMALL static void edit_xform_cancel(void)
+{
+    edit_xform_clear();
+    ui_message("PREVIEW CANCELLED");
+}
+UI_SMALL static void edit_xform_apply(void)
+{
+    track_t *t;
+    if (!edit_xform_active)
+        return;
+    if (edit_xform_stale()) {
+        edit_xform_clear();
+        ui_message("PREVIEW STALE");
+        return;
+    }
+    t = &trk[edit_xform_track];
+    if (sequence_transform_commit(t, edit_xform_pitch, (undo_sess += 4u) | 3u))
+        ui_message("TRANSFORM APPLIED");
+    else
+        ui_message("NO PITCH CHANGE");
+    edit_xform_clear();
+}
+UI_SMALL static void edit_xform_knob(track_t *t, uint32_t k, int32_t s)
+{
+    if (!edit_xform_active) {
+        if (k == 2u)
+            (void)edit_xform_start(t, SEQ_XFORM_TRANSPOSE, s);
+        else if (k == 3u)
+            (void)edit_xform_start(t, SEQ_XFORM_REMAP, 0);
+        return;
+    }
+    if (edit_xform_stale()) {
+        edit_xform_clear();
+        ui_message("PREVIEW STALE");
+        return;
+    }
+    if (k == 0u && edit_xform_mode == SEQ_XFORM_REMAP)
+        edit_xform_dst_root = (uint8_t)clamp((int32_t)edit_xform_dst_root + s, 0, 11);
+    else if (k == 1u && edit_xform_mode == SEQ_XFORM_REMAP)
+        edit_xform_dst_scale = (uint8_t)clamp((int32_t)edit_xform_dst_scale + s, 0, NSCALES - 1);
+    else if (k == 2u && edit_xform_mode == SEQ_XFORM_TRANSPOSE)
+        edit_xform_semitones = (int8_t)clamp((int32_t)edit_xform_semitones + s, -24, 24);
+    else if (k == 3u)
+        edit_xform_mode = edit_xform_mode == SEQ_XFORM_TRANSPOSE ? SEQ_XFORM_REMAP : SEQ_XFORM_TRANSPOSE;
+    else
+        return;
+    edit_xform_build(t);
+}
 UI_SMALL static void pattern_rotate(track_t *t, int32_t d)       /* every step one later (d > 0) / earlier */
 {
     uint32_t len = trk_len(t), i;
@@ -96,18 +195,6 @@ UI_SMALL static void pattern_length(track_t *t, int32_t d)       /* x2 (the patt
         ui_say("STEPS ", b);
     }
 }
-UI_SMALL static void pattern_transpose(track_t *t, int32_t d)    /* every note a semitone up / down (synth parts) */
-{
-    uint32_t i, j;
-     layer_undo_mark(t);
-    fm1_irq_off();
-    for (i = 0; i < NSTEP; i++)
-        if (t->step[i].time == ST_NOTE || t->step[i].time == ST_TIE)
-            for (j = 0; j < t->step[i].n && j < 4u; j++)
-                t->step[i].note[j] = (uint8_t)clamp(t->step[i].note[j] + (d > 0 ? 1 : -1), 0, 127);
-    fm1_irq_on();
-}
-
 /* ------------------------------------------------------------- SEQ --- */
 /* a step key (white key w) of the SEQ layer, Elektron style: an empty step is set at once (drums: the
  * sound's lane; synth: the pen, the chord / note played last); a set one goes when its key is let go,
@@ -473,12 +560,15 @@ UI_SMALL static void layer_knobs(uint32_t layer)
                 t->p[P_TFLT] = (int16_t)clamp(t->p[P_TFLT] + accel(EN_K4, s, 127), -64, 63);
             break;
         case LY_ERASE:
-            if (k == 0u)
+            if (edit_xform_active) {
+                edit_xform_knob(t, k, s);
+            } else if (k == 0u) {
                 pattern_rotate(t, s);
-            else if (k == 1u)
+            } else if (k == 1u) {
                 pattern_length(t, s);
-            else if (k == 2u)
-                pattern_transpose(t, s);
+            } else {
+                edit_xform_knob(t, k, s);       /* K3 transpose preview; K4 scale-remap preview */
+            }
             break;
         case LY_ROLL:
             if (k == 0u)
@@ -733,11 +823,40 @@ UI_SMALL static void layer_screen_draw(void)
             tl[i].top = present && !down ? (layer == LY_ERASE ? TE_RED : col) : 0;
         }
         if (layer == LY_ERASE) {
-            lab[0] = "shift", lab[1] = "length", lab[2] = "transp";
-            str_cpy(v[0], "<  >", 8);
-            fmt_int(v[1], t->p[P_SLEN]);
-            str_cpy(v[2], "-  +", 8);
-            str_cpy(sub, undo.valid ? (undo.undone ? "oct+ redo" : "oct- undo") : sub, sizeof sub);
+            if (edit_xform_active) {
+                uint8_t stale = (uint8_t)edit_xform_stale();
+                col = stale ? TE_RED : TE_COL[sel & 3u];
+                str_cpy(sub, stale ? "preview stale - cancel" : "OCT+ apply  OCT- cancel", sizeof sub);
+                hdr_r[0] = 0;
+                if (edit_xform_mode == SEQ_XFORM_TRANSPOSE) {
+                    lab[0] = "semitones";
+                    if (edit_xform_semitones < 0) {
+                        v[0][0] = '-';
+                        fmt_int(v[0] + 1, -edit_xform_semitones);
+                    } else {
+                        fmt_int(v[0], edit_xform_semitones);
+                    }
+                    lab[1] = "clipped";
+                    fmt_int(v[1], edit_xform_clipped);
+                    lab[2] = "mode";
+                    str_cpy(v[2], "trans", 8);
+                } else {
+                    lab[0] = "to root";
+                    str_cpy(v[0], N_NOTE[edit_xform_dst_root % 12u], 8);
+                    lab[1] = "to scale";
+                    te_lower(v[1], N_SCALE[edit_xform_dst_scale % NSCALES], 8);
+                    lab[2] = "mode";
+                    str_cpy(v[2], "remap", 8);
+                    lab[3] = "clipped";
+                    fmt_int(v[3], edit_xform_clipped);
+                }
+            } else {
+                lab[0] = "shift", lab[1] = "length", lab[2] = "transp";
+                str_cpy(v[0], "<  >", 8);
+                fmt_int(v[1], t->p[P_SLEN]);
+                str_cpy(v[2], "-  +", 8);
+                str_cpy(sub, undo.valid ? (undo.undone ? "oct+ redo" : "oct- undo") : sub, sizeof sub);
+            }
         } else {
             lab[0] = "rate";
             str_cpy(v[0], N_ROLL[clamp(song.g[G_ROLL], 0, 4)], 8);
