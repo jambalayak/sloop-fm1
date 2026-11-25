@@ -163,15 +163,11 @@ static void sequence_transform_test(void)
         track_t *t = &trk[0];
         step_t saved[NSTEP];
         int8_t micro_saved[NSTEP];
-        plock_t locks_saved[NLOCK];
-        uint8_t fill_saved[sizeof t->fill];
         int16_t len_saved = t->p[P_SLEN];
         uint32_t fingerprint;
         int16_t root_saved = t->p[P_ROOT], scale_saved = t->p[P_SCALE];
         memcpy(saved, t->step, sizeof saved);
         memcpy(micro_saved, t->micro, sizeof micro_saved);
-        memcpy(locks_saved, t->lock, sizeof locks_saved);
-        memcpy(fill_saved, t->fill, sizeof fill_saved);
         fingerprint = sequence_pattern_fingerprint(t);
         assert(fingerprint == sequence_pattern_fingerprint(t));
         assert(!sequence_transform_stale(t, fingerprint, (uint8_t)root_saved, (uint8_t)scale_saved));
