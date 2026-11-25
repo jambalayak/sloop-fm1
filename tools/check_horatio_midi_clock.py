@@ -65,7 +65,7 @@ require("clock relock clears stale pulse interpolation and beat history",
 require("clock relock rejoins the live sequencer phase after internal fallback",
         "uint32_t pos = clk_beat * BEAT_U + clk_pos;" in event and
         "mclk.pos = mclk.done = pos;" in event and
-        "if (lost && song.playing)" in event)
+        "if (lost && song.playing && !mclk.restart)" in event)
 require("clock output is suppressed while following external sync",
         "!song.g[G_CLKOUT] || song.g[G_SYNC]" in output)
 require("internal clock output sends START, STOP and 24 PPQN pulses",
