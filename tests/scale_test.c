@@ -47,6 +47,59 @@ static void sequence_scale_remap_test(void)
     puts("sequence scales: nearest-degree mapping, downward ties, 15 scales, roots, register and MIDI clipping ok");
 }
 
+static void sequence_transform_test(void)
+{
+    step_t src[NSTEP], dst[NSTEP], meta_src[NSTEP], meta_dst[NSTEP];
+    uint16_t clipped;
+    uint32_t i, k;
+    memset(src, 0, sizeof src);
+    for (i = 0; i < NSTEP; i++) {
+        src[i].time = (i % 3u) ? ST_NOTE : ST_TIE;
+        src[i].n = (i % 3u) ? (uint8_t)(1u + i % 4u) : 2u;
+        src[i].flags = (uint8_t)(0xA5u ^ i);
+        src[i].vel = (uint8_t)(40u + i);
+        src[i].lvl = (uint8_t)(i * 3u);
+        src[i].rat = (uint8_t)(i * 5u);
+        for (k = 0; k < 4u; k++)
+            src[i].note[k] = (uint8_t)(48u + i % 24u + k * 3u);
+    }
+    /* Transpose changes only active NOTE pitches; ties and all other bytes survive. */
+    sequence_transform_steps(src, dst, NSTEP, SEQ_XFORM_TRANSPOSE, 7, 0, 1, 2, 2, &clipped);
+    assert(clipped == 0u);
+    memcpy(meta_src, src, sizeof src);
+    memcpy(meta_dst, dst, sizeof dst);
+    for (i = 0; i < NSTEP; i++) {
+        if (src[i].time == ST_NOTE)
+            for (k = 0; k < src[i].n; k++)
+                assert(dst[i].note[k] == (uint8_t)(src[i].note[k] + 7u));
+        else
+            assert(!memcmp(&src[i], &dst[i], sizeof(step_t)));
+        memset(meta_src[i].note, 0, sizeof meta_src[i].note);
+        memset(meta_dst[i].note, 0, sizeof meta_dst[i].note);
+    }
+    assert(!memcmp(meta_src, meta_dst, sizeof meta_src));
+    /* Remap likewise preserves every non-pitch byte and reports clipped slots. */
+    sequence_transform_steps(src, dst, NSTEP, SEQ_XFORM_REMAP, 0, 0, 1, 7, 2, &clipped);
+    assert(clipped <= NSTEP * 4u);
+    memcpy(meta_dst, dst, sizeof dst);
+    for (i = 0; i < NSTEP; i++) {
+        memset(meta_src[i].note, 0, sizeof meta_src[i].note);
+        memset(meta_dst[i].note, 0, sizeof meta_dst[i].note);
+    }
+    assert(!memcmp(meta_src, meta_dst, sizeof meta_src));
+    /* A short preview transforms only the requested prefix; the tail is copied intact. */
+    sequence_transform_steps(src, dst, 8, SEQ_XFORM_TRANSPOSE, -12, 0, 1, 0, 1, &clipped);
+    for (i = 8; i < NSTEP; i++)
+        assert(!memcmp(&src[i], &dst[i], sizeof(step_t)));
+    /* MIDI clipping is counted per note slot, not per step. */
+    memset(src, 0, sizeof src);
+    src[0].time = ST_NOTE; src[0].n = 3;
+    src[0].note[0] = 0; src[0].note[1] = 60; src[0].note[2] = 127;
+    sequence_transform_steps(src, dst, 1, SEQ_XFORM_TRANSPOSE, 12, 0, 1, 0, 1, &clipped);
+    assert(clipped == 1u && dst[0].note[0] == 12u && dst[0].note[1] == 72u && dst[0].note[2] == 127u);
+    puts("sequence transform: transpose/remap previews preserve non-pitch bytes, ties and untouched tail; clipping counted");
+}
+
 static void mapping_test(void)
 {
     track_t *t = &trk[0];
@@ -501,6 +554,7 @@ int main(void)
 {
     host_tracks_init();
     sequence_scale_remap_test();
+    sequence_transform_test();
     mapping_test();
     key_events_test();
     black_key_chord_test();
