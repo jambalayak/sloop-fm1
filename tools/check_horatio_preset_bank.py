@@ -193,7 +193,7 @@ if "if (pr->lfo[7] == 1)" not in apply_block or "if (pr->lfo[9] == 4)" not in ap
 
 lfo_profiles = []
 for line in preset_lines:
-    match = re.search(r"LFO\\(([^)]*)\\)", line)
+    match = re.search(r"LFO\(([^)]*)\)", line)
     if not match:
         continue
     values = [int(value.strip()) for value in match.group(1).split(",")]
