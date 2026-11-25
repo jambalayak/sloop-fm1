@@ -82,15 +82,23 @@ UI_SMALL static int edit_xform_stale(void)
     if (song.sel != edit_xform_track || edit_xform_track >= NPART)
         return 1;
     t = &trk[edit_xform_track];
-    return sequence_transform_stale(t, edit_xform_fingerprint,
-                                    edit_xform_src_root, edit_xform_src_scale);
+    {
+        uint8_t stale;
+        fm1_irq_off();
+        stale = sequence_transform_stale(t, edit_xform_fingerprint,
+                                         edit_xform_src_root, edit_xform_src_scale);
+        fm1_irq_on();
+        return stale;
+    }
 }
 UI_SMALL static void edit_xform_build(track_t *t)
 {
+    fm1_irq_off();
     sequence_transform_preview(t->step, edit_xform_pitch, edit_xform_mode, edit_xform_semitones,
                                edit_xform_src_root, edit_xform_src_scale,
                                edit_xform_dst_root, edit_xform_dst_scale, &edit_xform_clipped);
     edit_xform_fingerprint = sequence_pattern_fingerprint(t);
+    fm1_irq_on();
     ui.force = 1;
 }
 UI_SMALL static int edit_xform_start(track_t *t, uint8_t mode, int32_t semitones)
@@ -127,10 +135,17 @@ UI_SMALL static void edit_xform_apply(void)
         return;
     }
     t = &trk[edit_xform_track];
-    if (sequence_transform_commit(t, edit_xform_pitch, (undo_sess += 4u) | 3u))
-        ui_message("TRANSFORM APPLIED");
-    else
-        ui_message("NO PITCH CHANGE");
+    {
+        int rc = sequence_transform_commit_checked(t, edit_xform_pitch, (undo_sess += 4u) | 3u,
+                                                   edit_xform_fingerprint, edit_xform_src_root,
+                                                   edit_xform_src_scale);
+        if (rc < 0)
+            ui_message("PREVIEW STALE");
+        else if (rc)
+            ui_message("TRANSFORM APPLIED");
+        else
+            ui_message("NO PITCH CHANGE");
+    }
     edit_xform_clear();
 }
 UI_SMALL static void edit_xform_knob(track_t *t, uint32_t k, int32_t s)
