@@ -25,6 +25,7 @@ def section(source, start, end):
     return source[a:b]
 
 clock = section(seq, "static int mclk_on(void)", "/* everything that happens between")
+tempo = section(seq, "static void mclk_tempo(", "static void mclk_event(")
 event = section(clock, "static void mclk_event(", "static uint32_t mclk_adv(")
 advance = section(clock, "static uint32_t mclk_adv(", "/* 2.7, GLO > MIDI 3 > CLK OUT")
 output = section(seq, "static void clkout_block(", "/* everything that happens between")
@@ -45,7 +46,7 @@ require("START, CONTINUE and STOP reach transport handling",
         "transport_req = 3" in event and "else if (!song.playing)" in event and
         "if (st == 0xFCu)" in event and "transport_req = 2" in event)
 require("clock times are accepted only in the 40..240 BPM beat range",
-        "dt >= 250u && dt <= 1500u" in event and "clamp((int32_t)((t10 + 5u) / 10u), 40, 240)" in event)
+        "dt >= 250u && dt <= 1500u" in event and "clamp((int32_t)((t10 + 5u) / 10u), 40, 240)" in tempo)
 require("tempo measurement averages up to eight beats", "#define MCLK_NB 8u" in clock and "mclk.nb < MCLK_NB" in clock)
 require("interpolation never runs beyond the next incoming pulse",
         "if (el > mclk.iv_ms)" in advance and "off = MCLK_PULSE_U - 1u" in advance)
