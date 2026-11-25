@@ -54,6 +54,12 @@ require("late sequencer blocks catch up at a bounded rate",
 require("missing external clock falls back to internal tempo after 500 ms",
         "fm1_ms - mclk.last_ms < 500u" in clock and
         "mclk_on() && song.playing ? mclk_adv(n) : n * (uint32_t)song.g[G_BPM]" in seq)
+require("clock relock clears stale pulse interpolation and beat history",
+        "mclk.iv_ms = 0;" in event and "mclk.nb = 0;" in event)
+require("clock relock rejoins the live sequencer phase after internal fallback",
+        "uint32_t pos = clk_beat * BEAT_U + clk_pos;" in event and
+        "mclk.pos = mclk.done = pos;" in event and
+        "if (lost && song.playing)" in event)
 require("clock output is suppressed while following external sync",
         "!song.g[G_CLKOUT] || song.g[G_SYNC]" in output)
 require("internal clock output sends START, STOP and 24 PPQN pulses",
