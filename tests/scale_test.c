@@ -103,6 +103,10 @@ static void sequence_transform_test(void)
         memset(meta_dst[i].note, 0, sizeof meta_dst[i].note);
     }
     assert(!memcmp(meta_src, meta_dst, sizeof meta_src));
+    sequence_transform_preview(src, pitch_preview, SEQ_XFORM_REMAP, 0, 0, 1, 7, 2, &clipped);
+    for (i = 0; i < NSTEP; i++)
+        for (k = 0; k < 4u; k++)
+            assert(pitch_preview[i][k] == dst[i].note[k]);
     /* A short preview transforms only the requested prefix; the tail is copied intact. */
     sequence_transform_steps(src, dst, 8, SEQ_XFORM_TRANSPOSE, -12, 0, 1, 0, 1, &clipped);
     for (i = 8; i < NSTEP; i++)
@@ -113,6 +117,8 @@ static void sequence_transform_test(void)
     src[0].note[0] = 0; src[0].note[1] = 60; src[0].note[2] = 127;
     sequence_transform_steps(src, dst, 1, SEQ_XFORM_TRANSPOSE, 12, 0, 1, 0, 1, &clipped);
     assert(clipped == 1u && dst[0].note[0] == 12u && dst[0].note[1] == 72u && dst[0].note[2] == 127u);
+    sequence_transform_preview(src, pitch_preview, SEQ_XFORM_TRANSPOSE, 12, 0, 1, 0, 1, &clipped);
+    assert(clipped == 1u && pitch_preview[0][0] == 12u && pitch_preview[0][1] == 72u && pitch_preview[0][2] == 127u);
     puts("sequence transform: transpose/remap previews preserve non-pitch bytes, ties and untouched tail; clipping counted");
 }
 
