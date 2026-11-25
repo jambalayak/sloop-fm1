@@ -199,6 +199,41 @@ static void sequence_transform_test(void)
         memcpy(t->step, saved, sizeof saved);
         assert(fingerprint == sequence_pattern_fingerprint(t));
     }
+    /* The UI's checked commit must reject stale data without touching pattern or undo state. */
+    {
+        track_t *t = &trk[0];
+        step_t saved[NSTEP], stale_expected[NSTEP];
+        int8_t micro_saved[NSTEP];
+        uint32_t fingerprint;
+        memcpy(saved, t->step, sizeof saved);
+        memcpy(micro_saved, t->micro, sizeof micro_saved);
+        memset(t->step, 0, sizeof t->step);
+        memset(t->micro, 0, sizeof t->micro);
+        t->step[0].time = ST_NOTE;
+        t->step[0].n = 1;
+        t->step[0].note[0] = 60;
+        memset(pitch_preview, 0, sizeof pitch_preview);
+        pitch_preview[0][0] = 67;
+        fingerprint = sequence_pattern_fingerprint(t);
+        t->step[0].note[0] = 61; /* Simulate an edit after preview generation. */
+        memcpy(stale_expected, t->step, sizeof stale_expected);
+        undo.valid = 0;
+        assert(sequence_transform_commit_checked(t, pitch_preview, (undo_sess += 4u) | 3u,
+                                                 fingerprint, (uint8_t)t->p[P_ROOT],
+                                                 (uint8_t)t->p[P_SCALE]) == -1);
+        assert(!memcmp(t->step, stale_expected, sizeof stale_expected));
+        assert(!undo.valid);
+        /* A fresh preview is accepted and changes only the active pitch byte. */
+        fingerprint = sequence_pattern_fingerprint(t);
+        assert(sequence_transform_commit_checked(t, pitch_preview, (undo_sess += 4u) | 3u,
+                                                 fingerprint, (uint8_t)t->p[P_ROOT],
+                                                 (uint8_t)t->p[P_SCALE]) == 1);
+        assert(t->step[0].note[0] == 67);
+        assert(undo.valid && undo.trk == trk_index(t));
+        memcpy(t->step, saved, sizeof saved);
+        memcpy(t->micro, micro_saved, sizeof micro_saved);
+        undo.valid = 0;
+    }
     puts("sequence transform: transpose/remap previews preserve non-pitch bytes, ties and untouched tail; clipping counted");
 }
 
