@@ -50,6 +50,7 @@ static void sequence_scale_remap_test(void)
 static void sequence_transform_test(void)
 {
     step_t src[NSTEP], dst[NSTEP], meta_src[NSTEP], meta_dst[NSTEP];
+    uint8_t pitch_preview[NSTEP][4];
     uint16_t clipped;
     uint32_t i, k;
     memset(src, 0, sizeof src);
@@ -84,6 +85,14 @@ static void sequence_transform_test(void)
         memset(meta_dst[i].note, 0, sizeof meta_dst[i].note);
     }
     assert(!memcmp(meta_src, meta_dst, sizeof meta_src));
+    /* The compact preview stores pitches only, keeps REST storage inert, and never mutates source. */
+    sequence_transform_preview(src, pitch_preview, SEQ_XFORM_TRANSPOSE, -5, 0, 1, 0, 1, &clipped);
+    assert(clipped == 0u);
+    for (i = 0; i < NSTEP; i++)
+        for (k = 0; k < 4u; k++)
+            assert(pitch_preview[i][k] == ((src[i].time == ST_NOTE || src[i].time == ST_TIE) && k < src[i].n
+                                           ? (uint8_t)(src[i].note[k] - 5u) : src[i].note[k]));
+    assert(!memcmp(meta_src, src, sizeof src));
     /* Remap likewise preserves every non-pitch byte and reports clipped slots. */
     sequence_transform_steps(src, dst, NSTEP, SEQ_XFORM_REMAP, 0, 0, 1, 7, 2, &clipped);
     assert(clipped <= NSTEP * 4u);
