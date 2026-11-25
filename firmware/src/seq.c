@@ -689,6 +689,12 @@ static uint32_t sequence_pattern_fingerprint(const track_t *t)
     p = (const uint8_t *)t->micro;
     for (i = 0; i < sizeof t->micro; i++)
         h = (h ^ p[i]) * 16777619u;
+    p = (const uint8_t *)t->lock;
+    for (i = 0; i < sizeof t->lock; i++)
+        h = (h ^ p[i]) * 16777619u;
+    p = (const uint8_t *)t->fill;
+    for (i = 0; i < sizeof t->fill; i++)
+        h = (h ^ p[i]) * 16777619u;
     h = (h ^ (uint8_t)t->p[P_SLEN]) * 16777619u;
     h = (h ^ (uint8_t)((uint16_t)t->p[P_SLEN] >> 8)) * 16777619u;
     return h;
