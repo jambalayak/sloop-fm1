@@ -68,6 +68,11 @@ jobs:
           rm -rf build
           HORATIO_PLAITS=1 ./build.sh
 
+      - name: Test USB and TRS MIDI realtime input
+        run: |
+          cc -O1 -Wall -Wno-unused-function -o build/midi_uart_test tests/midi_uart_test.c
+          build/midi_uart_test
+
       - name: Check HORATIO factory preset browser
         run: python3 tools/check_horatio_preset_bank.py
 
