@@ -398,3 +398,52 @@ the Particle model must be auditioned on the FM-1 for sound quality. If the
 reduced diffusion is not musically acceptable, revisit the memory design
 rather than silently removing one of the 16 models or reducing four-note
 paraphony.
+
+## Build 476 measured integration checkpoint — 25 November 2026
+
+Build 476 (commit `6a2f05c`) successfully links the HORATIO-1 Plaits and
+compact Beads granular implementation into the installable FM-1 image. The
+firmware passed the factory preset browser, 23-model map (Speech excluded),
+PRESET encoder, per-preset LFO, ADSR, octave/LED, Plaits audio smoke, and
+Beads granular smoke checks. The owner then installed it in Harbor and
+reported that it looks and sounds great. This is a Harbor application test,
+not yet a physical FM-1 hardware measurement.
+
+The target linker/budget report for the HORATIO image is:
+
+- Firmware image: **566,872 B** of a **581,564 B** app slot (**14,692 B free**).
+- `.data + .bss`: **92,896 B** of 98,304 B (**5,408 B free**).
+- `.lowram`: **22,260 B** of 29,384 B (**7,124 B free**).
+- Shared `.pool`: **330,688 B** of 344,064 B (**13,376 B free**).
+- Compact Beads granular buffer: **18,440 B**, eight grains in the smoke test.
+
+These figures supersede the earlier pre-integration reference-build headroom
+when assessing the current HORATIO image. The memory margin is now tight:
+do not add voices, large buffers, or delay/granular storage without checking
+the final linker report. Do not shorten the delay or remove an effect without
+a deliberate sound-design decision. CI memory figures are link-time static
+usage; they do not measure runtime stack high-water marks or audio CPU load.
+
+The current firmware exposes **23 visible Plaits-family models**, with the
+Speech model excluded. This is the implemented model map verified by
+`tools/check_horatio_model_map.py` and the Build 476 smoke test; it is broader
+than the earlier 16-original-model-only design described in the historical
+planning sections above. The Particle diffuser has a reduced per-voice
+footprint from the documented memory adaptation, so its diffusion/decay
+character is not identical to stock Plaits. The owner has approved the
+current Harbor sound; preserve it unless a measured defect is found.
+
+### MIDI clock audit
+
+The existing sequencer already supports external MIDI clock at 24 pulses
+per quarter note, selectable USB or TRS input, Start/Continue/Stop transport,
+smoothed tempo tracking, interpolation between clock pulses, and fallback to
+internal tempo after 500 ms without external pulses. MIDI clock output is
+also implemented when enabled. The TRS parser and USB-MIDI parser queue
+realtime clock and Start messages into the common sequencer event queue.
+
+Build 476's workflow did not run the existing host MIDI parser test. A CI step
+has now been added to compile and run `tests/midi_uart_test.c` after the
+HORATIO firmware link. That test verifies USB/TRS parser handling and realtime
+message queuing; it does not replace a physical test with an external MIDI
+master, nor does it exercise end-to-end sequencer phase/tempo accuracy.
