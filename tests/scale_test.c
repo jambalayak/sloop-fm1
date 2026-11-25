@@ -19,6 +19,34 @@ static const struct { uint8_t count, notes[12]; } EXPECTED[] = {
     {8, {0, 2, 3, 5, 6, 8, 9, 11}},
 };
 
+
+/* Sequence remapping: nearest source degree (ties down), octave/register,
+ * all scale/root combinations and explicit MIDI-boundary clipping. */
+static void sequence_scale_remap_test(void)
+{
+    uint8_t clipped, n;
+    uint32_t src, dst, root, note;
+    /* C major: F# is equidistant from F and G; ties resolve downward. */
+    assert(scale_remap_note(66, 0, 1, 0, 2, &clipped) == 65 && !clipped);
+    /* C major E -> D minor's third (F), preserving scale degree. */
+    assert(scale_remap_note(64, 0, 1, 2, 2, &clipped) == 5 + 60 && !clipped);
+    /* Negative register and destination clipping are deterministic. */
+    n = scale_remap_note(0, 0, 1, 11, 1, &clipped);
+    assert(n == 0 && clipped);
+    n = scale_remap_note(127, 0, 1, 11, 1, &clipped);
+    assert(n == 127 && clipped);
+    for (src = 0; src < NSCALES; src++)
+        for (dst = 0; dst < NSCALES; dst++)
+            for (root = 0; root < 12; root++)
+                for (note = 0; note < 128; note++) {
+                    n = scale_remap_note((uint8_t)note, (uint8_t)root, (uint8_t)src,
+                                         (uint8_t)((root + 5u) % 12u), (uint8_t)dst, &clipped);
+                    assert(n <= 127u);
+                    assert(clipped <= 1u);
+                }
+    puts("sequence scales: nearest-degree mapping, downward ties, 15 scales, roots, register and MIDI clipping ok");
+}
+
 static void mapping_test(void)
 {
     track_t *t = &trk[0];
@@ -472,6 +500,7 @@ static void kbd_hold_test(void)
 int main(void)
 {
     host_tracks_init();
+    sequence_scale_remap_test();
     mapping_test();
     key_events_test();
     black_key_chord_test();
