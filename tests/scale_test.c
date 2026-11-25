@@ -128,9 +128,13 @@ static void sequence_transform_test(void)
         memcpy(saved, t->step, sizeof saved);
         memcpy(micro_saved, t->micro, sizeof micro_saved);
         memset(t->step, 0, sizeof t->step);
+        memset(t->micro, 0, sizeof t->micro);
+        t->micro[0] = -7; t->micro[1] = 11;
         t->step[0].time = ST_NOTE; t->step[0].n = 2;
         t->step[0].note[0] = 50; t->step[0].note[1] = 60; t->step[0].vel = 91;
+        t->step[0].flags = 0x5Au; t->step[0].rat = 3u;
         t->step[1].time = ST_TIE; t->step[1].n = 1; t->step[1].note[0] = 70;
+        t->step[1].lvl = 2u;
         t->step[2].time = ST_REST; t->step[2].n = 1; t->step[2].note[0] = 99;
         memset(pitch_preview, 0, sizeof pitch_preview);
         for (i = 0; i < NSTEP; i++)
@@ -140,7 +144,12 @@ static void sequence_transform_test(void)
         assert(sequence_transform_commit(t, pitch_preview, (undo_sess += 4u) | 3u));
         assert(t->step[0].note[0] == 55 && t->step[0].note[1] == 65);
         assert(t->step[1].note[0] == 75 && t->step[2].note[0] == 99);
-        assert(t->step[0].vel == 91 && t->step[0].time == ST_NOTE && t->step[1].time == ST_TIE);
+        assert(t->step[0].vel == 91 && t->step[0].flags == 0x5Au && t->step[0].rat == 3u);
+        assert(t->step[1].lvl == 2u && t->step[0].time == ST_NOTE && t->step[1].time == ST_TIE);
+        /* Undo's captured image must be the exact pre-transform pattern, including microtiming. */
+        assert(undo.valid && undo.trk == trk_index(t));
+        assert(!memcmp(undo.st, saved, sizeof saved));
+        assert(!memcmp(undo.micro, micro_saved, sizeof micro_saved));
         assert(!sequence_transform_commit(t, pitch_preview, (undo_sess += 4u) | 3u));
         memcpy(t->step, saved, sizeof saved);
         memcpy(t->micro, micro_saved, sizeof micro_saved);
