@@ -645,39 +645,6 @@ static void undo_mark(const track_t *t, uint32_t sess)
     undo.undone = 0;
 }
 #define UNDO_REC(t) (((t)->pass << 2) | 1u)      /* a recording pass of track t */
-/* Commit a compact pitch preview as one undoable edit. The caller must validate that the
- * preview still belongs to this track/pattern before calling; only active NOTE/TIE pitches
- * are copied, so locks, timing, velocity and all other step metadata remain untouched. */
-static uint8_t sequence_transform_commit(track_t *t, const uint8_t pitch[NSTEP][4], uint32_t sess)
-{
-    uint32_t i, k;
-    uint8_t changed = 0;
-    for (i = 0; i < NSTEP; i++) {
-        const step_t *st = &t->step[i];
-        uint32_t n;
-        if (st->time != ST_NOTE && st->time != ST_TIE)
-            continue;
-        n = st->n > 4u ? 4u : st->n;
-        for (k = 0; k < n; k++)
-            changed |= (uint8_t)(st->note[k] != pitch[i][k]);
-    }
-    if (!changed)
-        return 0;
-    undo_mark(t, sess);
-    fm1_irq_off();
-    for (i = 0; i < NSTEP; i++) {
-        step_t *st = &t->step[i];
-        uint32_t n;
-        if (st->time != ST_NOTE && st->time != ST_TIE)
-            continue;
-        n = st->n > 4u ? 4u : st->n;
-        for (k = 0; k < n; k++)
-            st->note[k] = pitch[i][k];
-    }
-    fm1_irq_on();
-    sync_reload = 1;
-    return 1;
-}
 /* Fingerprint the editable pattern payload used by a transform preview. This deliberately
  * includes every step byte, microtiming and length: any intervening pattern edit makes Apply stale. */
 static uint32_t sequence_pattern_fingerprint(const track_t *t)
@@ -707,6 +674,65 @@ static uint8_t sequence_transform_stale(const track_t *t, uint32_t fingerprint,
 {
     return (uint8_t)(sequence_pattern_fingerprint(t) != fingerprint ||
                      t->p[P_ROOT] != src_root || t->p[P_SCALE] != src_scale);
+}
+
+/* The pattern fingerprint alone is not enough: a live key/scale change also invalidates
+ * the musical context in which the preview was calculated. */
+static uint8_t sequence_transform_stale(const track_t *t, uint32_t fingerprint,
+                                        uint8_t src_root, uint8_t src_scale)
+{
+    return (uint8_t)(sequence_pattern_fingerprint(t) != fingerprint ||
+                     t->p[P_ROOT] != src_root || t->p[P_SCALE] != src_scale);
+}
+
+/* Check freshness, capture undo and apply as one IRQ-safe transaction. Returns -1 if stale,
+ * 0 for a no-op, 1 when pitches were committed. Only active NOTE/TIE pitch bytes are written. */
+static int sequence_transform_commit_impl(track_t *t, const uint8_t pitch[NSTEP][4], uint32_t sess,
+                                          uint8_t check_fresh, uint32_t fingerprint,
+                                          uint8_t src_root, uint8_t src_scale)
+{
+    uint32_t i, k;
+    uint8_t changed = 0;
+    fm1_irq_off();
+    if (check_fresh && sequence_transform_stale(t, fingerprint, src_root, src_scale)) {
+        fm1_irq_on();
+        return -1;
+    }
+    for (i = 0; i < NSTEP; i++) {
+        const step_t *st = &t->step[i];
+        uint32_t n;
+        if (st->time != ST_NOTE && st->time != ST_TIE)
+            continue;
+        n = st->n > 4u ? 4u : st->n;
+        for (k = 0; k < n; k++)
+            changed |= (uint8_t)(st->note[k] != pitch[i][k]);
+    }
+    if (!changed) {
+        fm1_irq_on();
+        return 0;
+    }
+    undo_mark(t, sess);
+    for (i = 0; i < NSTEP; i++) {
+        step_t *st = &t->step[i];
+        uint32_t n;
+        if (st->time != ST_NOTE && st->time != ST_TIE)
+            continue;
+        n = st->n > 4u ? 4u : st->n;
+        for (k = 0; k < n; k++)
+            st->note[k] = pitch[i][k];
+    }
+    sync_reload = 1;
+    fm1_irq_on();
+    return 1;
+}
+static uint8_t sequence_transform_commit(track_t *t, const uint8_t pitch[NSTEP][4], uint32_t sess)
+{
+    return (uint8_t)sequence_transform_commit_impl(t, pitch, sess, 0, 0, 0, 0);
+}
+static int sequence_transform_commit_checked(track_t *t, const uint8_t pitch[NSTEP][4], uint32_t sess,
+                                              uint32_t fingerprint, uint8_t src_root, uint8_t src_scale)
+{
+    return sequence_transform_commit_impl(t, pitch, sess, 1, fingerprint, src_root, src_scale);
 }
 
 static uint32_t undo_erase_sess;
