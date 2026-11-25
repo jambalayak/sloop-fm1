@@ -15,12 +15,11 @@ static const char *const PL_MODEL_NAMES[HORATIO_PLAITS_MODELS] = {
 };
 
 /* Rochefsky's clock-face Harmonics, Timbre and Morph positions are translated
- * to Plaits 0..127. Other source instructions are documented in the companion
- * recipe-bank file where the current preset schema cannot represent them. */
-/* 92 Rochefsky recipes, three bank selectors and 96 bundled DX7 patches. Clock-face controls are translated to 0..127;
- * CV attenuators, pitch ranges, trigger-patch state and envelope LED counts are
- * retained in the companion recipe-bank document where the current preset
- * schema cannot represent them. AUX routing notes are translated to AUX MIX. */
+ * to Plaits 0..127. Per-recipe trigger-patch state is implemented below; CV
+ * attenuator routing, pitch-range guidance and envelope LED counts remain
+ * documented limitations in HORATIO-1-FACTORY-PRESET-BANK.md. */
+/* 91 Rochefsky recipes, three six-op bank selectors and 96 bundled DX7 patches.
+ * AUX routing notes are translated to AUX MIX. */
 static const preset_t PL_PRESETS[] = {
     {"BOWED HARM", {15, 25, 25, 64, 64, 64, 0, 127}, {25, 84, 104, 88}, 12, 0, {0, 0, 0, 0}, {0, 0, 0, 0}, 0, {P_TFLT + 1, -38, 0, 0, 0, 0, 0, 0}, LFO(32, 0, 42, 1, 0, 0, 3, 13, 2, 8), .trigger_unpatched = 1},
     {"MOSQUITO", {15, 0, 0, 0, 64, 64, 0, 127}, {1, 64, 8, 44}, 18, 0, {0, 0, 0, 0}, {0, 0, 0, 0}, 0, {P_TFLT + 1, 10, 0, 0, 0, 0, 0, 0}, .trigger_unpatched = 1},
