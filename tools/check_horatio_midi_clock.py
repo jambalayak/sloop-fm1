@@ -41,7 +41,12 @@ require("START resets clock phase while CONTINUE preserves the stopped phase",
         "mclk.have = 0;" in event and
         "else if (!song.playing)" in event and
         event.index("if (st == 0xFAu) {") < event.index("mclk.pos = mclk.done = 0;") and
-        event.index("mclk.pos = mclk.done = 0;") < event.index("} else if (!song.playing)"))
+        event.index("mclk.pos = mclk.done = 0;") < event.index("} else if (!song.playing)") &&
+        "mclk.alive = 0;" in event and "mclk.iv_ms = 0;" in event and
+        "mclk.n24 = mclk.nb = 0;" in event and "mclk.restart = 1;" in event)
+require("the first pulse after START is not mistaken for a fallback relock",
+        "lost && song.playing && !mclk.restart" in event and
+        "mclk.restart = 0;" in event)
 require("START, CONTINUE and STOP reach transport handling",
         "transport_req = 3" in event and "else if (!song.playing)" in event and
         "if (st == 0xFCu)" in event and "transport_req = 2" in event)
