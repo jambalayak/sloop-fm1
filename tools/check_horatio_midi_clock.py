@@ -34,8 +34,14 @@ require("input follows the selected USB/TRS source", "src != (uint32_t)song.g[G_
 require("USB and TRS clock and transport are queued", 
         "b == 0xF8u || b == 0xFAu || b == 0xFBu || b == 0xFCu" in uart and
         "cin == 0xFu && (st == 0xF8u || st == 0xFAu || st == 0xFBu || st == 0xFCu)" in usb)
+require("START resets clock phase while CONTINUE preserves the stopped phase",
+        "if (st == 0xFAu) {" in event and
+        "mclk.pos = mclk.done = 0;" in event and
+        "mclk.have = 0;" in event and
+        "else if (!song.playing)" in event and
+        event.index("if (st == 0xFAu) {") < event.index("mclk.pos = mclk.done = 0;") and
+        event.index("mclk.pos = mclk.done = 0;") < event.index("} else if (!song.playing)"))
 require("START, CONTINUE and STOP reach transport handling",
-        "if (st == 0xFAu || st == 0xFBu)" in event and
         "transport_req = 3" in event and "else if (!song.playing)" in event and
         "if (st == 0xFCu)" in event and "transport_req = 2" in event)
 require("clock times are accepted only in the 40..240 BPM beat range",
