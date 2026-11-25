@@ -831,26 +831,26 @@ UI_SMALL static void layer_screen_draw(void)
                 str_cpy(sub, stale ? "preview stale - cancel" : "OCT+ apply  OCT- cancel", sizeof sub);
                 hdr_r[0] = 0;
                 if (edit_xform_mode == SEQ_XFORM_TRANSPOSE) {
-                    lab[0] = "semitones";
+                    lab[2] = "semitones";
                     if (edit_xform_semitones < 0) {
-                        v[0][0] = '-';
-                        fmt_int(v[0] + 1, -edit_xform_semitones);
+                        v[2][0] = '-';
+                        fmt_int(v[2] + 1, -edit_xform_semitones);
                     } else {
-                        fmt_int(v[0], edit_xform_semitones);
+                        fmt_int(v[2], edit_xform_semitones);
                     }
-                    lab[1] = "clipped";
-                    fmt_int(v[1], edit_xform_clipped);
-                    lab[2] = "mode";
-                    str_cpy(v[2], "trans", 8);
+                    lab[3] = "mode";
+                    str_cpy(v[3], "trans", 8);
+                    str_cpy(hdr_r, "clip ", sizeof hdr_r);
+                    fmt_int(hdr_r + 5, edit_xform_clipped);
                 } else {
                     lab[0] = "to root";
                     str_cpy(v[0], N_NOTE[edit_xform_dst_root % 12u], 8);
                     lab[1] = "to scale";
                     te_lower(v[1], N_SCALE[edit_xform_dst_scale % NSCALES], 8);
-                    lab[2] = "mode";
-                    str_cpy(v[2], "remap", 8);
-                    lab[3] = "clipped";
-                    fmt_int(v[3], edit_xform_clipped);
+                    lab[2] = "clipped";
+                    fmt_int(v[2], edit_xform_clipped);
+                    lab[3] = "mode";
+                    str_cpy(v[3], "remap", 8);
                 }
             } else {
                 lab[0] = "shift", lab[1] = "length", lab[2] = "transp";
