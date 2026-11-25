@@ -213,7 +213,10 @@ static void sequence_transform_steps(const step_t *src, step_t *dst, uint32_t co
         count = NSTEP;
     for (i = 0; i < count; i++) {
         step_t *s = &dst[i];
-        uint32_t n = s->n > 4u ? 4u : s->n;
+        uint32_t n;
+        if (s->time != ST_NOTE && s->time != ST_TIE)
+            continue;                               /* REST / empty steps are not note data */
+        n = s->n > 4u ? 4u : s->n;
         /* TIE steps can carry continuation-note pitches too; transform every active slot. */
         for (k = 0; k < n; k++) {
             int32_t pitch;
