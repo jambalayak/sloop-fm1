@@ -482,3 +482,11 @@ layout unless a reproducible defect justifies a measured change. The package
 has passed the Harbor-compatible export workflow, but physical FM-1 audio,
 external MIDI-master timing, CPU load, and runtime stack headroom remain
 hardware validation items.
+
+## Build 509 Beads integration contract checkpoint — 25 November 2026
+
+Build 509 adds a host-side source contract test for the complete HORATIO Beads integration in `firmware/src/fx.c`. The test verifies that the effect enable flag gates processing; initialization occurs once at the host sample rate; Density, Time, Size, Pitch, Shape, Feedback, Freeze, Reverse and capture-rate controls reach the granular engine; the processor receives the live stereo mix; and the returned stereo signal is blended with the dry signal using the existing equal-power MIX gains before the downstream master effects chain.
+
+The contract complements (and does not replace) the compact Beads granular audio smoke test, which exercises the DSP implementation itself. Both checks passed in Build 509, along with the Plaits audio smoke test, MIDI clock/transport, preset and model-map checks, firmware compilation and package export.
+
+No DSP parameters, sound character, memory layout, or user-facing controls were changed for this checkpoint. Build 507 remains the documented pre-contract package; Build 509 is the latest validated package. Host tests cannot establish physical FM-1 audio quality, CPU load, runtime stack headroom, or hardware MIDI timing. Those still require device testing.
