@@ -924,17 +924,23 @@ UI_SMALL static int layers_input(uint32_t note_edges, uint32_t *pressed, uint32_
             ui.force = 1;                                 /* (the layer's sub line says it) */
         thr_req = (uint8_t)q;
     }
-    if (held == LY_ERASE) {                               /* EDIT + OCT- / OCT+: undo / redo */
+    if (held == LY_ERASE) {                               /* EDIT + OCT: preview cancel/apply, otherwise undo/redo */
         uint32_t ob = 1u << panel.btn[B_OCTDN], pb = 1u << panel.btn[B_OCTUP];
         static uint32_t prev;
         uint32_t b = fm1_in.buttons & (ob | pb), press = b & ~prev;
         prev = b;
         if (press) {
             used[held] = 1;
-            if (press & ob)
+            if (edit_xform_active) {
+                if (press & ob)
+                    edit_xform_cancel();
+                else
+                    edit_xform_apply();
+            } else if (press & ob) {
                 ui_message(undo_swap(0) ? "UNDO" : "NOTHING TO UNDO");
-            else
+            } else {
                 ui_message(undo_swap(1) ? "REDO" : "NOTHING TO REDO");
+            }
         }
     }
     if (held == LY_STEP) {                                /* SEQ + OCT- / OCT+: the page; a step held: OCT- its nudge, locks and
