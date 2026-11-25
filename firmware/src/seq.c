@@ -3062,12 +3062,13 @@ static void mclk_event(uint32_t st, uint32_t src)  /* a realtime message; src 1 
     if (!song.g[G_SYNC] || src != (uint32_t)song.g[G_SYNC])
         return;
     if (st == 0xFAu || st == 0xFBu) {              /* START: from the top; CONTINUE: on from where it stopped */
-        mclk.pos = mclk.done = 0;
-        mclk.have = 0;
-        if (st == 0xFAu)
+        if (st == 0xFAu) {
+            mclk.pos = mclk.done = 0;
+            mclk.have = 0;
             transport_req = 3;                     /* (not 1: the master counts, never a count-in) */
-        else if (!song.playing)
+        } else if (!song.playing) {
             song.playing = 1;
+        }
         return;
     }
     if (st == 0xFCu) {                             /* STOP */
