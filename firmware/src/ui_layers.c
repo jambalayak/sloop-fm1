@@ -102,8 +102,9 @@ UI_SMALL static void pattern_transpose(track_t *t, int32_t d)    /* every note a
      layer_undo_mark(t);
     fm1_irq_off();
     for (i = 0; i < NSTEP; i++)
-        for (j = 0; j < t->step[i].n && j < 4u; j++)
-            t->step[i].note[j] = (uint8_t)clamp(t->step[i].note[j] + (d > 0 ? 1 : -1), 0, 127);
+        if (t->step[i].time == ST_NOTE || t->step[i].time == ST_TIE)
+            for (j = 0; j < t->step[i].n && j < 4u; j++)
+                t->step[i].note[j] = (uint8_t)clamp(t->step[i].note[j] + (d > 0 ? 1 : -1), 0, 127);
     fm1_irq_on();
 }
 
