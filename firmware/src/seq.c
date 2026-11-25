@@ -40,6 +40,9 @@ static const uint16_t SCALE_MASK[] = {
 #define NSCALES (sizeof SCALE_MASK / sizeof SCALE_MASK[0])
 #define SEQ_NONE 0xFFFFFFFFu
 
+/* Defined by ui.c; sequencer edits request an editor reload. */
+static uint8_t sync_reload;
+
 #define KB_SILENT 255u
 static uint32_t kb_prev;
 /* per key: what its press started, so its release ends the same (whatever the layer or track is now) */
