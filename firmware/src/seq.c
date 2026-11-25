@@ -146,6 +146,55 @@ static uint32_t scale_mask(const track_t *t)
     return SCALE_MASK[clamp(t->p[P_SCALE], 0, NSCALES - 1)];
 }
 
+/* Pure sequence scale-remap primitive. The source note is first assigned to its
+ * nearest source-scale degree (ties downward), then that degree is rendered in
+ * the destination scale. No track state or sequencer metadata is touched. */
+static uint8_t scale_remap_note(uint8_t note, uint8_t src_root, uint8_t src_scale,
+                               uint8_t dst_root, uint8_t dst_scale, uint8_t *clipped)
+{
+    uint32_t sm = SCALE_MASK[src_scale % NSCALES];
+    uint32_t dm = SCALE_MASK[dst_scale % NSCALES];
+    int32_t sc = 0, dc = 0, oct, i, best_degree = 0, best_pitch = 0;
+    int32_t best_dist = 0x7fffffff, degree, cycle, index, pitch;
+    uint8_t out;
+    for (i = 0; i < 12; i++) {
+        sc += (sm >> i) & 1u;
+        dc += (dm >> i) & 1u;
+    }
+    /* Search a wider-than-MIDI octave range so boundary notes retain their
+     * theoretical register before the final, explicitly reported clipping. */
+    for (oct = -12; oct <= 12; oct++) {
+        int32_t d = 0;
+        for (i = 0; i < 12; i++) {
+            if (sm & (1u << i)) {
+                pitch = (int32_t)src_root + 12 * oct + i;
+                degree = oct * sc + d++;
+                if (pitch < -160 || pitch > 287)
+                    continue;
+                int32_t dist = pitch - (int32_t)note;
+                if (dist < 0) dist = -dist;
+                if (dist < best_dist || (dist == best_dist && pitch < best_pitch)) {
+                    best_dist = dist;
+                    best_pitch = pitch;
+                    best_degree = degree;
+                }
+            }
+        }
+    }
+    cycle = best_degree / dc;
+    index = best_degree % dc;
+    if (index < 0) { index += dc; cycle--; }
+    i = 0;
+    while (index > 0) {
+        i++;
+        if (dm & (1u << i)) index--;
+    }
+    pitch = (int32_t)dst_root + 12 * cycle + i;
+    if (clipped) *clipped = (uint8_t)(pitch < 0 || pitch > 127);
+    out = (uint8_t)clamp(pitch, 0, 127);
+    return out;
+}
+
 /* ---------------------------------------------------------- layers --- */
 enum { LY_PLAY, LY_FX, LY_ERASE, LY_ROLL, LY_STEP, LY_SCALE, LY_MIX, LY_SONG, LY_COUNT };
 static uint32_t ly_bit[LY_COUNT];        /* the button (fm1_in.buttons bit) of each layer: the UI sets them */
