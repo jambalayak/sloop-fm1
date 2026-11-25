@@ -63,14 +63,23 @@ static void sequence_transform_test(void)
         for (k = 0; k < 4u; k++)
             src[i].note[k] = (uint8_t)(48u + i % 24u + k * 3u);
     }
-    /* Transpose changes only active NOTE pitches; ties and all other bytes survive. */
+    /* A REST may retain stale note bytes; they are not active pitches and must stay untouched. */
+    src[2].time = ST_REST;
+    src[2].n = 2;
+    src[2].note[0] = 17;
+    src[2].note[1] = 93;
+    /* Transpose changes only active NOTE and TIE pitches; all other bytes survive. */
     sequence_transform_steps(src, dst, NSTEP, SEQ_XFORM_TRANSPOSE, 7, 0, 1, 2, 2, &clipped);
     assert(clipped == 0u);
     memcpy(meta_src, src, sizeof src);
     memcpy(meta_dst, dst, sizeof dst);
     for (i = 0; i < NSTEP; i++) {
-        for (k = 0; k < src[i].n; k++)
-            assert(dst[i].note[k] == (uint8_t)(src[i].note[k] + 7u));
+        for (k = 0; k < src[i].n; k++) {
+            if (src[i].time == ST_NOTE || src[i].time == ST_TIE)
+                assert(dst[i].note[k] == (uint8_t)(src[i].note[k] + 7u));
+            else
+                assert(dst[i].note[k] == src[i].note[k]);
+        }
         memset(meta_src[i].note, 0, sizeof meta_src[i].note);
         memset(meta_dst[i].note, 0, sizeof meta_dst[i].note);
     }
