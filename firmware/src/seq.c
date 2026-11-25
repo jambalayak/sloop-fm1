@@ -196,6 +196,44 @@ static uint8_t scale_remap_note(uint8_t note, uint8_t src_root, uint8_t src_scal
     return out;
 }
 
+/* Build a complete, non-destructive sequence preview. Only NOTE pitches change:
+ * the complete source pattern is copied first, then active note slots are transformed.
+ * mode 0 = semitone transpose; mode 1 = source-to-destination scale remap.
+ * clipped receives the number of note slots clamped at MIDI 0/127. */
+enum { SEQ_XFORM_TRANSPOSE, SEQ_XFORM_REMAP };
+static void sequence_transform_steps(const step_t *src, step_t *dst, uint32_t count,
+                                     uint8_t mode, int8_t semitones,
+                                     uint8_t src_root, uint8_t src_scale,
+                                     uint8_t dst_root, uint8_t dst_scale,
+                                     uint16_t *clipped)
+{
+    uint32_t i, k, nclip = 0;
+    memcpy(dst, src, sizeof(step_t) * NSTEP);
+    if (count > NSTEP)
+        count = NSTEP;
+    for (i = 0; i < count; i++) {
+        step_t *s = &dst[i];
+        uint32_t n = s->n > 4u ? 4u : s->n;
+        if (s->time != ST_NOTE)
+            continue;
+        for (k = 0; k < n; k++) {
+            int32_t pitch;
+            uint8_t was_clipped = 0;
+            if (mode == SEQ_XFORM_REMAP) {
+                s->note[k] = scale_remap_note(s->note[k], src_root, src_scale,
+                                              dst_root, dst_scale, &was_clipped);
+            } else {
+                pitch = (int32_t)s->note[k] + semitones;
+                was_clipped = (uint8_t)(pitch < 0 || pitch > 127);
+                s->note[k] = (uint8_t)clamp(pitch, 0, 127);
+            }
+            nclip += was_clipped;
+        }
+    }
+    if (clipped)
+        *clipped = (uint16_t)nclip;
+}
+
 /* ---------------------------------------------------------- layers --- */
 enum { LY_PLAY, LY_FX, LY_ERASE, LY_ROLL, LY_STEP, LY_SCALE, LY_MIX, LY_SONG, LY_COUNT };
 static uint32_t ly_bit[LY_COUNT];        /* the button (fm1_in.buttons bit) of each layer: the UI sets them */
