@@ -3025,6 +3025,7 @@ static struct {
     uint32_t beat_ms;            /* when pulse 0 of the last 24 came: the tempo */
     uint8_t have, n24;           /* a pulse since START; pulses towards the next tempo reading */
     uint8_t alive;               /* pulses are coming (from the SYNC source) */
+    uint8_t restart;              /* START: the first new pulse is the downbeat, not a fallback relock */
     uint8_t nb, bi;              /* (2.7.2) the last beats' lengths (bdt[], up to MCLK_NB, bi the next) */
     uint16_t bdt[MCLK_NB];
 } mclk;
@@ -3065,6 +3066,10 @@ static void mclk_event(uint32_t st, uint32_t src)  /* a realtime message; src 1 
         if (st == 0xFAu) {
             mclk.pos = mclk.done = 0;
             mclk.have = 0;
+            mclk.alive = 0;                     /* discard timing from the previous clock run */
+            mclk.iv_ms = 0;
+            mclk.n24 = mclk.nb = 0;
+            mclk.restart = 1;
             transport_req = 3;                     /* (not 1: the master counts, never a count-in) */
         } else if (!song.playing) {
             song.playing = 1;
@@ -3087,7 +3092,7 @@ static void mclk_event(uint32_t st, uint32_t src)  /* a realtime message; src 1 
         mclk.nb = 0;
         mclk.iv_ms = 0;                            /* never interpolate a restarted clock from its old tempo */
         mclk.beat_ms = now;
-        if (lost && song.playing) {                /* the internal clock kept moving during the fallback */
+        if (lost && song.playing && !mclk.restart) { /* fallback relock, not the first pulse after START */
             uint32_t pos = clk_beat * BEAT_U + clk_pos;
             mclk.pos = mclk.done = pos;            /* rejoin at the sequencer's live phase; no catch-up stall */
             mclk.have = 1;
@@ -3101,6 +3106,7 @@ static void mclk_event(uint32_t st, uint32_t src)  /* a realtime message; src 1 
     }
     mclk.alive = 1;
     mclk.last_ms = now;
+    mclk.restart = 0;
     if (song.playing || transport_req == 1u || transport_req == 3u) {   /* (a START queued with it: the next block starts) */
         if (mclk.have)
             mclk.pos += MCLK_PULSE_U;
