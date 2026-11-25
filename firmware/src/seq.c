@@ -196,7 +196,7 @@ static uint8_t scale_remap_note(uint8_t note, uint8_t src_root, uint8_t src_scal
     return out;
 }
 
-/* Build a complete, non-destructive sequence preview. Only NOTE pitches change:
+/* Build a complete, non-destructive sequence preview. Only pitches in NOTE and TIE steps change:
  * the complete source pattern is copied first, then active note slots are transformed.
  * mode 0 = semitone transpose; mode 1 = source-to-destination scale remap.
  * clipped receives the number of note slots clamped at MIDI 0/127. */
