@@ -94,6 +94,9 @@ jobs:
       - name: Check HORATIO per-preset octave and LED feedback
         run: python3 tools/check_horatio_preset_octave.py
 
+      - name: Check HORATIO Beads audio integration
+        run: python3 tools/check_horatio_beads_integration.py
+
       - name: Run Plaits audio smoke test
         run: |
           g++ -O1 -g -fsanitize=address -fno-omit-frame-pointer -std=gnu++11 -DTEST -D_GNU_SOURCE \
