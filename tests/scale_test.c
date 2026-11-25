@@ -165,10 +165,18 @@ static void sequence_transform_test(void)
         int8_t micro_saved[NSTEP];
         int16_t len_saved = t->p[P_SLEN];
         uint32_t fingerprint;
+        int16_t root_saved = t->p[P_ROOT], scale_saved = t->p[P_SCALE];
         memcpy(saved, t->step, sizeof saved);
         memcpy(micro_saved, t->micro, sizeof micro_saved);
         fingerprint = sequence_pattern_fingerprint(t);
         assert(fingerprint == sequence_pattern_fingerprint(t));
+        assert(!sequence_transform_stale(t, fingerprint, (uint8_t)root_saved, (uint8_t)scale_saved));
+        t->p[P_ROOT] = (int16_t)((root_saved + 1) % 12);
+        assert(sequence_transform_stale(t, fingerprint, (uint8_t)root_saved, (uint8_t)scale_saved));
+        t->p[P_ROOT] = root_saved;
+        t->p[P_SCALE] = (int16_t)((scale_saved + 1) % NSCALES);
+        assert(sequence_transform_stale(t, fingerprint, (uint8_t)root_saved, (uint8_t)scale_saved));
+        t->p[P_SCALE] = scale_saved;
         t->step[0].note[0] ^= 1u;
         assert(fingerprint != sequence_pattern_fingerprint(t));
         t->step[0].note[0] ^= 1u;
