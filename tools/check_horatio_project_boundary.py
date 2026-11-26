@@ -53,6 +53,11 @@ require("FUN7 import initializes the legacy staging drum record safely",
         "memset(q->t[TRK_DRUM].dstep, 0" in from_v7)
 require("HORATIO loads force Plaits rather than legacy engine IDs",
         "#ifdef HORATIO_PLAITS\n        uint32_t e = ENGI_PLAITS;\n#else" in apply)
+require("HORATIO warm-boot comparison checks the compact FUN7 image",
+        "n != (int)sizeof proj_tmp.v7 || !proj_v7_matches(&proj_tmp.v7, &proj_slot[i])" in project)
+require("FUN7 match validation checks checksum and only the three serialized tracks",
+        "v7->sum == proj_hash(v7, sizeof *v7 - 4u)" in project and
+        "!memcmp(v7->t, p->t, sizeof v7->t)" in project)
 require("project application writes only active runtime tracks",
         "for (k = 0; k < NTRK; k++)" in apply and
         "track_t *t = &trk[k];" in apply)
