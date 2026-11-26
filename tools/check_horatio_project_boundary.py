@@ -58,6 +58,8 @@ require("HORATIO writes compact FUN7 while SLOOP preserves four-track FUN6 saves
         "#ifdef HORATIO_PLAITS" in store and
         "st_save(obj, &proj_tmp.v7, sizeof proj_tmp.v7);" in store and
         "#else\n    return st_save(obj, p, sizeof *p);" in store)
+require("SLOOP warm-boot comparison retains its original FUN6 working image",
+        "n != (int)sizeof proj_slot[i] || memcmp(&proj_tmp.v6, &proj_slot[i], sizeof proj_slot[i])" in project)
 require("HORATIO warm-boot comparison checks the compact FUN7 image",
         "n != (int)sizeof proj_tmp.v7 || !proj_v7_matches(&proj_tmp.v7, &proj_slot[i])" in project)
 require("FUN7 match validation checks checksum and only the three serialized tracks",
