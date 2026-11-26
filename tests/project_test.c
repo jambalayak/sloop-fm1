@@ -324,6 +324,16 @@ int main(void)
          offsetof(project_v7_t, sum) - (offsetof(project_v7_t, t) + NPART * sizeof(proj_trk_t)) < sizeof(uint32_t) && v7.sel == NPART - 1u &&
          !memcmp(v7.t, q.t, sizeof v7.t);
     bad += check("FUN7: exact three-track image, valid checksum, selected drum track clamped to synth track 3", ok);
+    bad += check("FUN7 flash image matches its live three-track project", proj_v7_matches(&v7, &q));
+    q.t[1].step[0].note ^= 1u;
+    ok = !proj_v7_matches(&v7, &q);
+    q.t[1].step[0].note ^= 1u;
+    bad += check("FUN7 flash comparison detects a changed live synth track", ok);
+    v7.sum ^= 1u;
+    ok = !proj_v7_matches(&v7, &q);
+    v7.sum ^= 1u;
+    bad += check("FUN7 flash comparison rejects a damaged checksum", ok);
+
     ok = proj_import(&q2, &v7, (int)sizeof v7) && proj_ok(&q2) && q2.sel == NPART - 1u &&
          !memcmp(q2.t, v7.t, sizeof v7.t) && dstep_mask(&q2.t[TRK_DRUM].dstep[0]) == 0u &&
          q2.t[TRK_DRUM].engine == 0u && q2.t[TRK_DRUM].preset == 0u;
