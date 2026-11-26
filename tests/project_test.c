@@ -332,6 +332,12 @@ int main(void)
     bad += check("FUN7 with a bad checksum: refused", !proj_import(&q2, &v7, (int)sizeof v7));
     v7.sum ^= 1u;
     bad += check("FUN7 with a wrong length: refused", !proj_import(&q2, &v7, (int)sizeof v7 - 1));
+    v7.magic ^= 1u;
+    bad += check("FUN7 with a wrong magic: refused", !proj_import(&q2, &v7, (int)sizeof v7));
+    v7.magic ^= 1u;
+    v7.size--;
+    bad += check("FUN7 with a wrong declared size: refused", !proj_import(&q2, &v7, (int)sizeof v7));
+    v7.size++;
 
     /* damaged / wrong size */
     v2.t[1].p[3]++;
