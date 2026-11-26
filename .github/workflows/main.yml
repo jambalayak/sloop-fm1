@@ -35,12 +35,28 @@ jobs:
           sh tools/get_toolchain.sh "$HOME/.jieli"
           echo "JIELI_TOOLCHAIN=$HOME/.jieli/toolchain" >> "$GITHUB_ENV"
 
-      - name: Download JieLi SDK
+      - name: Download JieLi SDK (retry transient Gitee failures)
         run: |
-          git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 \
-            https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git \
-            "$HOME/fw-AC79_AIoT_SDK"
-          echo "AC79_SDK=$HOME/fw-AC79_AIoT_SDK" >> "$GITHUB_ENV"
+          set -e
+          sdk_url="https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git"
+          sdk_dir="$HOME/fw-AC79_AIoT_SDK"
+          for attempt in 1 2 3 4; do
+            rm -rf "$sdk_dir"
+            if git -c http.version=HTTP/1.1 clone --depth 1 \\
+              --branch AC79NN_SDK_V1.2.1_2023-12-13 \\
+              "$sdk_url" "$sdk_dir"; then
+              break
+            fi
+            if [ "$attempt" -eq 4 ]; then
+              echo "JieLi SDK clone failed after $attempt attempts" >&2
+              exit 1
+            fi
+            delay=$((attempt * 15))
+            echo "Gitee clone failed (attempt $attempt); retrying in ${delay}s"
+            sleep "$delay"
+          done
+          test -d "$sdk_dir/.git"
+          echo "AC79_SDK=$sdk_dir" >> "$GITHUB_ENV"
 
       - name: Verify Plaits C++ toolchain
         run: python3 tools/build.py --check-plaits-cxx
