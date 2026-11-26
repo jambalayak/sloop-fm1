@@ -297,6 +297,19 @@ UI_SMALL static void proj_to_v7(project_v7_t *v7, const project_t *p)
     v7->sum = proj_hash(v7, sizeof *v7 - 4u);
 }
 
+/* Compare a flash FUN7 image with a live working project without allocating a
+ * second project-sized buffer. The legacy working model has a fourth staging
+ * track, which is deliberately absent from the on-flash HORATIO image. */
+UI_SMALL static int proj_v7_matches(const project_v7_t *v7, const project_t *p)
+{
+    return v7->magic == PROJ_MAGIC_V7 && v7->size == sizeof *v7 &&
+           v7->sum == proj_hash(v7, sizeof *v7 - 4u) &&
+           !memcmp(v7->g, p->g, sizeof v7->g) &&
+           v7->sel == (p->sel < NPART ? p->sel : (NPART - 1u)) &&
+           v7->drdly == p->drdly && !memcmp(v7->rsv, p->rsv, sizeof v7->rsv) &&
+           !memcmp(v7->t, p->t, sizeof v7->t);
+}
+
 /* a format 4 project (n bytes in *v4) -> slot q as format 6: the same, no nudge, no lock, no condition, no FILTER */
 UI_SMALL static int proj_from_v4(project_t *q, const project_v4_t *v4, int n)
 {
@@ -920,7 +933,11 @@ UI_SMALL static void persist_boot(void)                    /* before settings_in
                 proj_fetch(i);
             } else {
                 int n = st_load(OBJ_PROJECT0 + i, &proj_tmp, sizeof proj_tmp);
+#ifdef HORATIO_PLAITS
+                if (n != (int)sizeof proj_tmp.v7 || !proj_v7_matches(&proj_tmp.v7, &proj_slot[i]))
+#else
                 if (n != (int)sizeof proj_slot[i] || memcmp(&proj_tmp.v6, &proj_slot[i], sizeof proj_slot[i]))
+#endif
                     sec_dirty |= (uint8_t)(1u << i);
             }
     }
