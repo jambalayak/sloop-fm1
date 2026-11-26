@@ -299,7 +299,36 @@ def synthwave_splash():
     im = Image.frombytes("P", (240, 188), zlib.decompress(base64.b64decode(_HORATIO_SPLASH_Z)))
     flat = [channel for colour in _HORATIO_SPLASH_PALETTE for channel in colour]
     im.putpalette(flat + [0] * (768 - len(flat)))
-    return im.convert("RGB"), _HORATIO_SPLASH_PALETTE
+    rgb = im.convert("RGB")
+    # Add an original high-contrast serif wordmark over a restrained lower
+    # title plaque.  Stroke geometry is hand-drawn so CI needs no system font.
+    d = ImageDraw.Draw(rgb)
+    gold = _HORATIO_SPLASH_PALETTE[12]
+    edge = _HORATIO_SPLASH_PALETTE[8]
+    dark = _HORATIO_SPLASH_PALETTE[1]
+    d.rectangle((25, 151, 215, 179), fill=dark)
+    d.line((29, 152, 211, 152), fill=edge, width=1)
+    d.line((29, 178, 211, 178), fill=edge, width=1)
+    glyphs = {
+        "H": [((0,0),(0,18)),((0,9),(10,9)),((10,0),(10,18)),((0,0),(3,0)),((7,0),(10,0)),((0,18),(3,18)),((7,18),(10,18))],
+        "O": [((0,2),(0,16)),((10,2),(10,16)),((0,2),(3,0)),((3,0),(7,0)),((7,0),(10,2)),((0,16),(3,18)),((3,18),(7,18)),((7,18),(10,16))],
+        "R": [((0,18),(0,0)),((0,0),(8,0)),((8,0),(10,3)),((10,3),(10,7)),((10,7),(8,9)),((0,9),(8,9)),((5,9),(10,18)),((0,0),(3,0)),((7,0),(10,0)),((0,18),(3,18))],
+        "A": [((0,18),(3,0)),((3,0),(7,0)),((7,0),(10,18)),((1,12),(9,12)),((0,18),(3,18)),((7,18),(10,18))],
+        "T": [((0,0),(10,0)),((5,0),(5,18)),((0,0),(0,3)),((10,0),(10,3)),((2,18),(8,18))],
+        "I": [((1,0),(9,0)),((5,0),(5,18)),((1,18),(9,18)),((1,0),(1,3)),((9,0),(9,3)),((1,15),(1,18)),((9,15),(9,18))],
+    }
+    word = "HORATIO"
+    advance, scale = 17, 1
+    x0 = (240 - (len(word) * advance - 4)) // 2
+    for n, ch in enumerate(word):
+        ox = x0 + n * advance
+        for (x1, y1), (x2, y2) in glyphs[ch]:
+            d.line((ox+x1*scale, 155+y1*scale, ox+x2*scale, 155+y2*scale),
+                   fill=gold, width=2)
+        # Fine inner highlight gives the gold strokes a restrained engraved edge.
+        d.line((ox+2, 156, ox+2, 171), fill=_HORATIO_SPLASH_PALETTE[11], width=1)
+    d.line((40, 174, 200, 174), fill=edge, width=1)
+    return rgb, _HORATIO_SPLASH_PALETTE
 
 
 def splash_header(path):
