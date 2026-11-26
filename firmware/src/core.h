@@ -8,8 +8,12 @@
 #define NVOICE 4                 /* voice slots per track; four sounding voices shared across all synth parts */
 #define NPOLY 4                  /* maximum POLY/UNISON allocation per synth part */
 #define NPART 3                  /* active synth parts: tracks 1..3 */
-#define NTRK 4                   /* NPART plus the retired legacy compatibility slot */
-#define TRK_DRUM 3                /* legacy on-disk track index only; no live drum engine */
+#ifdef HORATIO_PLAITS
+#define NTRK NPART                /* HORATIO live runtime: three synth tracks only */
+#else
+#define NTRK 4                    /* SLOOP reference runtime: three synth tracks + drum track */
+#endif
+#define TRK_DRUM 3                /* legacy project-format track index; HORATIO has no live slot 3 */
 enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
 #define NSTEP 64
 #define HALF_FRAMES 256          /* I2S half buffer: 5.8 ms at 44.1 kHz */
@@ -352,7 +356,7 @@ typedef struct {
     int32_t batt_raw;            /* smoothed ADC ch3 (battery divider), 0 = not read yet */
 } song_t;
 
-static track_t trk[NTRK];        /* the instrument: three parts and the drum track */
+static track_t trk[NTRK];        /* live tracks: three HORATIO parts, or four SLOOP tracks */
 static song_t song;
 
 /* The transport clock (seq.c runs it). One unit = one sample at 1 BPM: a beat is BEAT_U units at any
