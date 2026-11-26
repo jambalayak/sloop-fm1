@@ -53,6 +53,11 @@ require("FUN7 import initializes the legacy staging drum record safely",
         "memset(q->t[TRK_DRUM].dstep, 0" in from_v7)
 require("HORATIO loads force Plaits rather than legacy engine IDs",
         "#ifdef HORATIO_PLAITS\n        uint32_t e = ENGI_PLAITS;\n#else" in apply)
+store = section(project, "UI_SMALL static int proj_store(", "UI_SMALL static void *up_stage")
+require("HORATIO writes compact FUN7 while SLOOP preserves four-track FUN6 saves",
+        "#ifdef HORATIO_PLAITS" in store and
+        "st_save(obj, &proj_tmp.v7, sizeof proj_tmp.v7);" in store and
+        "#else\\n    return st_save(obj, p, sizeof *p);" in store)
 require("HORATIO warm-boot comparison checks the compact FUN7 image",
         "n != (int)sizeof proj_tmp.v7 || !proj_v7_matches(&proj_tmp.v7, &proj_slot[i])" in project)
 require("FUN7 match validation checks checksum and only the three serialized tracks",
