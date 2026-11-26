@@ -42,8 +42,8 @@ jobs:
           sdk_dir="$HOME/fw-AC79_AIoT_SDK"
           for attempt in 1 2 3 4; do
             rm -rf "$sdk_dir"
-            if git -c http.version=HTTP/1.1 clone --depth 1 \\
-              --branch AC79NN_SDK_V1.2.1_2023-12-13 \\
+            if git -c http.version=HTTP/1.1 clone --depth 1 \
+              --branch AC79NN_SDK_V1.2.1_2023-12-13 \
               "$sdk_url" "$sdk_dir"; then
               break
             fi
