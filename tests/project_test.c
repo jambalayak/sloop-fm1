@@ -114,7 +114,7 @@ int main(void)
     static project_v2_t v2;
     static project_v1_t v1;
     static project_v4_t v4;
-    static project_t q, q2;
+    static project_t q, q2, q_before;
     static project_v5_t v5;
     static project_v7_t v7;
     static union {
@@ -328,15 +328,20 @@ int main(void)
          !memcmp(q2.t, v7.t, sizeof v7.t) && dstep_mask(&q2.t[TRK_DRUM].dstep[0]) == 0u &&
          q2.t[TRK_DRUM].engine == 0u && q2.t[TRK_DRUM].preset == 0u;
     bad += check("FUN7 -> working project: all three synth tracks preserved, legacy drum slot empty", ok);
+    q_before = q2;
     v7.sum ^= 1u;
-    bad += check("FUN7 with a bad checksum: refused", !proj_import(&q2, &v7, (int)sizeof v7));
+    ok = !proj_import(&q2, &v7, (int)sizeof v7) && !memcmp(&q2, &q_before, sizeof q2);
+    bad += check("FUN7 with a bad checksum: refused without changing the loaded project", ok);
     v7.sum ^= 1u;
-    bad += check("FUN7 with a wrong length: refused", !proj_import(&q2, &v7, (int)sizeof v7 - 1));
+    ok = !proj_import(&q2, &v7, (int)sizeof v7 - 1) && !memcmp(&q2, &q_before, sizeof q2);
+    bad += check("FUN7 with a wrong length: refused without changing the loaded project", ok);
     v7.magic ^= 1u;
-    bad += check("FUN7 with a wrong magic: refused", !proj_import(&q2, &v7, (int)sizeof v7));
+    ok = !proj_import(&q2, &v7, (int)sizeof v7) && !memcmp(&q2, &q_before, sizeof q2);
+    bad += check("FUN7 with a wrong magic: refused without changing the loaded project", ok);
     v7.magic ^= 1u;
     v7.size--;
-    bad += check("FUN7 with a wrong declared size: refused", !proj_import(&q2, &v7, (int)sizeof v7));
+    ok = !proj_import(&q2, &v7, (int)sizeof v7) && !memcmp(&q2, &q_before, sizeof q2);
+    bad += check("FUN7 with a wrong declared size: refused without changing the loaded project", ok);
     v7.size++;
 
     /* damaged / wrong size */
