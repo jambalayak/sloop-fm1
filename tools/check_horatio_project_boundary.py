@@ -75,4 +75,21 @@ require("legacy SLOOP drum and FM6 boot code remains guarded",
         "#ifndef HORATIO_PLAITS" in project and
         "dsu_boot();" in project and "fm6_bank_boot();" in project)
 
+
+project_save = section(project, "UI_SMALL static void project_save(", "/* SAVE > PROJECT > ERASE")
+autosave_tick = section(project, "UI_SMALL static void autosave_tick(", "static uint8_t drch_seed")
+restore = section(project, "UI_SMALL static uint32_t project_restore(", "#endif")
+sections_write = section(project, "UI_SMALL static void sections_write(", "/* before an intentional reset")
+require("named project slots use the format-aware project_store wrapper",
+        "proj_store(OBJ_PROJECT0 + (slot & 3u), p)" in project_save)
+require("working-project autosave uses the format-aware project_store wrapper",
+        "proj_store(OBJ_AUTOSAVE, &autosave_buf)" in autosave_tick)
+require("restored project files use the format-aware project_store wrapper",
+        "proj_store(OBJ_PROJECT0 + slot, &autosave_buf)" in restore)
+require("deferred section saves use the format-aware project_store wrapper",
+        "proj_store(OBJ_PROJECT0 + i, &proj_slot[i])" in sections_write)
+require("direct project-slot writes are limited to zero-length erase operations",
+        project.count("st_save(OBJ_PROJECT0 +") == 1 and
+        "st_save(OBJ_PROJECT0 + slot, raw, 0)" in restore)
+
 print("HORATIO project/FUN7 boundary contract passed.")
