@@ -70,6 +70,7 @@ jobs:
 
       - name: Test project migration and FUN7 compatibility
         run: |
+          python3 tools/gen_drumkits.py build/gen/felucca_drumkits.h
           cc -O1 -Wall -Wno-unused-function -Ibuild/gen -Ifirmware/src -Ifirmware/hal \
             -o build/project_test tests/project_test.c -lm
           build/project_test
