@@ -325,9 +325,9 @@ int main(void)
          !memcmp(v7.t, q.t, sizeof v7.t);
     bad += check("FUN7: exact three-track image, valid checksum, selected drum track clamped to synth track 3", ok);
     bad += check("FUN7 flash image matches its live three-track project", proj_v7_matches(&v7, &q));
-    q.t[1].step[0].note ^= 1u;
+    q.t[1].step[0].note[0] ^= 1u;
     ok = !proj_v7_matches(&v7, &q);
-    q.t[1].step[0].note ^= 1u;
+    q.t[1].step[0].note[0] ^= 1u;
     bad += check("FUN7 flash comparison detects a changed live synth track", ok);
     v7.sum ^= 1u;
     ok = !proj_v7_matches(&v7, &q);
