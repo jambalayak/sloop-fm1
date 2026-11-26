@@ -316,6 +316,7 @@ int main(void)
                  pt_get(&q2.t[0], P_LSYNC) == 5 && pt_get(&q2.t[0], P_ESYNC) == 1 && pt_get(&q2.t[0], P_FTYPE) == 2);
 
     /* FUN7: three-track disk image, with the legacy fourth track omitted. */
+    q.sel = TRK_DRUM;                         /* exercise the clamp from the retired fourth track */
     proj_to_v7(&v7, &q);
     ok = v7.magic == PROJ_MAGIC_V7 && v7.size == sizeof v7 && v7.sum == proj_hash(&v7, sizeof v7 - 4u) &&
          offsetof(project_v7_t, t) == offsetof(project_t, t) &&
