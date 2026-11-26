@@ -68,6 +68,12 @@ jobs:
           rm -rf build
           HORATIO_PLAITS=1 ./build.sh
 
+      - name: Test project migration and FUN7 compatibility
+        run: |
+          cc -O1 -Wall -Wno-unused-function -Ibuild/gen -Ifirmware/src -Ifirmware/hal \\
+            -o build/project_test tests/project_test.c -lm
+          build/project_test
+
       - name: Test USB and TRS MIDI realtime input
         run: |
           cc -O1 -Wall -Wno-unused-function -o build/midi_uart_test tests/midi_uart_test.c
