@@ -89,7 +89,8 @@ require("restored project files use the format-aware project_store wrapper",
 require("deferred section saves use the format-aware project_store wrapper",
         "proj_store(OBJ_PROJECT0 + i, &proj_slot[i])" in sections_write)
 require("direct project-slot writes are limited to zero-length erase operations",
-        project.count("st_save(OBJ_PROJECT0 +") == 1 and
+        project.count("st_save(OBJ_PROJECT0 +") == 2 and
+        "st_save(OBJ_PROJECT0 + slot, &proj_slot[slot], 0)" in project and
         "st_save(OBJ_PROJECT0 + slot, raw, 0)" in restore)
 
 print("HORATIO project/FUN7 boundary contract passed.")
