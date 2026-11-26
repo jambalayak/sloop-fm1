@@ -61,6 +61,10 @@ UI_SMALL static void sloop_splash(void)
         v += 6;                                         /* "SLOOP 1.0" -> "1.0" under the wordmark */
     cv_begin(240, 36, C_BLACK);
     cv_text(120 - text_w(&FONT_S, v) / 2, 0, &FONT_S, v, RGB(196, 196, 204));
+    #if defined(HORATIO_PLAITS) && HORATIO_PLAITS
+    cv_text(120 - text_w(&FONT_S, "FM-1 POLYPHONIC SYNTH") / 2, 18, &FONT_S, "FM-1 POLYPHONIC SYNTH", RGB(96, 96, 104));
+#else
     cv_text(120 - text_w(&FONT_S, "based on felucca") / 2, 18, &FONT_S, "based on felucca", RGB(96, 96, 104));
+#endif
     cv_blit(0, 202);
 }
