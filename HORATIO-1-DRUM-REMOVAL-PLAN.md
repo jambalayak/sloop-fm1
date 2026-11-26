@@ -113,3 +113,22 @@ A proposed reduction of `CV_MAX` from `240 * 124` to `240 * 32` was audited and 
 The shared slicer recording buffer was sl_buf[NTRK][SL_LEN]: four 4,096-sample int16_t recordings (32,768 B total). HORATIO's audio mixer calls slicer_track() only for the three active synth parts (mix_part() iterates NPART); the fourth track is legacy project compatibility, not a live drum part. slicer_start() now sizes its state loop to SL_TRACKS, which is NPART under HORATIO_PLAITS and NTRK in SLOOP. The drum-only slicer_drums() path and its scratch buffer are excluded from HORATIO, while remaining intact for SLOOP.
 
 **Estimated HORATIO POOL saving: 8,192 B** (one 4,096 × 16-bit recording slot). Synth-track SLICER GATE/STUT behavior is retained. This depends on the confirmed call graph: HORATIO's mix_part() uses only tracks 0–2, and the only drum-track caller was slicer_drums(), now compiled only for SLOOP. The next HORATIO build must confirm the reduced .pool size and run all existing regression, SLOOP-reference, keyboard, preset, and package checks. No build success is claimed yet.
+
+
+### 2026-11-26 — Live four-slot runtime dependency audit
+
+A source-level audit traced the remaining HORATIO references to the fourth in-memory track. The fourth slot is not an active Plaits part, but it is still part of the current working model; it is therefore not safe to change `NTRK` globally from 4 to 3.
+
+Confirmed dependencies that still assume four working slots:
+
+- `core.h`: `track_t trk[NTRK]`, the selected-track comment/range, expression state, and the legacy `TDRUM` alias.
+- `seq.c`: four-slot program-change queues (`pc_req`, `pc_bank`), MIDI-out note ownership (`mo_set`, `mo_ch`), sustain and KBD HOLD state, live/MIDI-held-note bitsets, selected-track MIDI note-on ownership, panic masks, and per-track sequencer ticking. Lost-MIDI-note cleanup also scans all four slots.
+- `voice.c`: the strum queue stores a track index resolved through `NTRK`; envelope-sync coefficients and note-visualisation state are also sized by the working-track count.
+- `main.c` and `ui_input.c`: startup and NEW initialise/reset all four working slots, while engine setup is limited to `NPART`.
+- `project.c`: the internal FUN6 working/staging representation remains four tracks so the historical readers and FUN7 bridge can coexist. The on-flash FUN7 structure is already exactly `NPART` (three) tracks; `proj_from_v7` fills the fourth staging record with an empty legacy drum record, and `proj_to_v7` writes only the first three.
+
+Confirmed active boundaries remain three parts: audio mixing, Plaits engine switching, arp ticking, track selection, dedicated MIDI channel ownership, and FUN7 serialization all use `NPART`. Incoming note handling rejects the retired fourth slot as a drum path.
+
+**Safe migration direction:** introduce a distinct three-track live runtime array and keep four-track legacy import/staging structures local to project conversion. Make project application copy only the first three converted records into live tracks. Then audit and resize each per-track runtime state array to `NPART`, replacing modulo-`NTRK` indexing with checked three-part indices where appropriate. Keep the SLOOP build's four-track behavior unchanged behind its existing build configuration. Do not attempt this as a one-line macro change.
+
+No firmware source was changed in this audit and no new build is claimed. The current successful build remains the safety baseline.
