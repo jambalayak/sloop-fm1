@@ -333,6 +333,15 @@ int main(void)
     ok = !proj_v7_matches(&v7, &q);
     v7.sum ^= 1u;
     bad += check("FUN7 flash comparison rejects a damaged checksum", ok);
+    q.g[0] ^= 1;
+    ok = !proj_v7_matches(&v7, &q);
+    q.g[0] ^= 1;
+    bad += check("FUN7 flash comparison detects changed project globals", ok);
+    q.t[TRK_DRUM].e[0] ^= 1;
+    ok = proj_v7_matches(&v7, &q);
+    q.t[TRK_DRUM].e[0] ^= 1;
+    bad += check("FUN7 flash comparison ignores the retired staging drum track", ok);
+
 
     ok = proj_import(&q2, &v7, (int)sizeof v7) && proj_ok(&q2) && q2.sel == NPART - 1u &&
          !memcmp(q2.t, v7.t, sizeof v7.t) && dstep_mask(&q2.t[TRK_DRUM].dstep[0]) == 0u &&
