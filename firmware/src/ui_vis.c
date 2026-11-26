@@ -766,6 +766,17 @@ static void vis_media98(void)
     int32_t treble = vis_band_energy(21u, 32u);
     /* Three independent frequency voices: bass drives the slow orbital body,
        mids bend the ribbons, and treble adds quick, bright filaments. */
+#ifdef HORATIO_PLAITS
+    /* A restrained late-90s media-player glass field, drawn in the same two
+       clipped bands as the visualiser so it never needs a second framebuffer. */
+    for (k = 0; k < 20u; ++k)
+        cv_rect(0, (int32_t)k * 12, 240, 12,
+                mix565(RGB(4, 8, 26), RGB(24, 12, 50), (int32_t)k * 256 / 19));
+    for (k = 0; k < 240u; k += 6u)
+        cv_rect(0, (int32_t)k, 240, 1, RGB(15, 24, 48));
+    cv_rect(5, 22, 230, 1, RGB(35, 54, 92));
+    cv_rect(5, 217, 230, 1, RGB(35, 54, 92));
+#endif
     for (i = 0; i < 3u; ++i) {
         int32_t px = 120, py = 120;
         int32_t radius = 22 + (int32_t)i * 18 + bass / 24;
@@ -803,7 +814,12 @@ static void vis_media98(void)
         }
     }
     cv_rect(0, 0, 240, 16, RGB(8, 13, 34));
+#ifdef HORATIO_PLAITS
+    cv_text(7, 2, &FONT_S, "HORATIO  /  MEDIA PLAYER 98", C_WHITE);
+    cv_text(202, 2, &FONT_S, "FM-1", RGB(112, 202, 232));
+#else
     cv_text(7, 2, &FONT_S, "MEDIA PLAYER 98  /  NOW PLAYING", C_WHITE);
+#endif
 }
 static void vis_fireworks(void)
 {
