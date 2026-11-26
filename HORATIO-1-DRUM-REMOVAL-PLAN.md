@@ -132,3 +132,16 @@ Confirmed active boundaries remain three parts: audio mixing, Plaits engine swit
 **Safe migration direction:** introduce a distinct three-track live runtime array and keep four-track legacy import/staging structures local to project conversion. Make project application copy only the first three converted records into live tracks. Then audit and resize each per-track runtime state array to `NPART`, replacing modulo-`NTRK` indexing with checked three-part indices where appropriate. Keep the SLOOP build's four-track behavior unchanged behind its existing build configuration. Do not attempt this as a one-line macro change.
 
 No firmware source was changed in this audit and no new build is claimed. The current successful build remains the safety baseline.
+
+
+### 2026-11-26 — HORATIO live track count split (implementation in progress)
+
+The first runtime boundary change is now in `firmware/src/core.h`:
+
+- With `HORATIO_PLAITS`, `NTRK` is now `NPART` (three). The live `trk[]` array and the generic sequencer/MIDI/editor state arrays therefore have three entries.
+- In the SLOOP reference build, `NTRK` remains four and the original drum track remains present.
+- `TRK_DRUM` remains the historical fourth-track index for project-format conversion; it is not a valid HORATIO live-track index.
+- Historical project record types in `project.c` continue to use the explicit `PROJ_NTRK_LEGACY == 4`. FUN1..FUN6 readers retain their four-record layouts, and FUN7 remains a three-record on-flash format.
+- The existing project capture/apply loops use the build-specific live `NTRK`: HORATIO captures/applies only three live tracks, while the fourth staging record stays zeroed by project capture. Legacy import conversion still processes all four historical records before applying only the three live synth tracks.
+
+This is the first compile-time separation only. The HORATIO build and all regression tests must pass before the runtime boundary is considered validated; no build success is claimed here.
