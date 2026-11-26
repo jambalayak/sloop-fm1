@@ -91,6 +91,9 @@ jobs:
             -o build/project_test tests/project_test.c -lm
           build/project_test
 
+      - name: Check HORATIO three-track project and FUN7 boundary
+        run: python3 tools/check_horatio_project_boundary.py
+
       - name: Test USB and TRS MIDI realtime input
         run: |
           cc -O1 -Wall -Wno-unused-function -o build/midi_uart_test tests/midi_uart_test.c
