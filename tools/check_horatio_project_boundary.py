@@ -78,7 +78,7 @@ require("legacy SLOOP drum and FM6 boot code remains guarded",
 
 project_save = section(project, "UI_SMALL static void project_save(", "/* SAVE > PROJECT > ERASE")
 autosave_tick = section(project, "UI_SMALL static void autosave_tick(", "static uint8_t drch_seed")
-restore = section(project, "UI_SMALL static uint32_t project_restore(", "#endif")
+restore = section(project, "UI_SMALL static uint32_t project_restore(", "\n#if FELUCCA_ARRANGER\nUI_SMALL static void arrangement_save")
 sections_write = section(project, "UI_SMALL static void sections_write(", "/* before an intentional reset")
 require("named project slots use the format-aware project_store wrapper",
         "proj_store(OBJ_PROJECT0 + (slot & 3u), p)" in project_save)
