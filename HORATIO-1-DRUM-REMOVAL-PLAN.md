@@ -1,6 +1,6 @@
 # HORATIO-1: dedicated drum-system removal plan
 
-Status: approved scope; implementation not yet complete.
+Status: approved scope; staged implementation in progress. HORATIO's three-track runtime boundary is now built and Harbor-validated; the remaining drum-system removal stages are still outstanding.
 
 ## User-approved target
 
@@ -145,3 +145,10 @@ The first runtime boundary change is now in `firmware/src/core.h`:
 - The existing project capture/apply loops use the build-specific live `NTRK`: HORATIO captures/applies only three live tracks, while the fourth staging record stays zeroed by project capture. Legacy import conversion still processes all four historical records before applying only the three live synth tracks.
 
 This is the first compile-time separation only. The HORATIO build and all regression tests must pass before the runtime boundary is considered validated; no build success is claimed here.
+
+
+### 2026-11-26 — Three-track runtime build and Harbor validation
+
+The live-track split described above has now passed the full SLOOP-reference and HORATIO-1 CI workflow (run 45758878743, commit 9563ea8f6d7ef623e6061f175fe115843396ac9b). Both firmware packages were generated, project migration/FUN7 compatibility tests passed, and the HORATIO Plaits/Beads audio smoke tests passed. The user has also confirmed that the resulting HORATIO-1 firmware package loads successfully in Harbor and that all three synth tracks work.
+
+The runtime boundary is therefore validated at the build/package and Harbor-emulator level. This does not complete dedicated drum-system removal: legacy drum conversion code and SLOOP's drum implementation remain intentionally preserved. Next implementation work should continue with a narrow HORATIO-only separation of drum runtime dependencies, keeping the independent metronome, three synth tracks, global FX, MIDI behavior, pitched sample playback, and historical project readers intact. Each removal step must be measured and regression-tested before proceeding.
