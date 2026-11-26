@@ -318,7 +318,8 @@ int main(void)
     /* FUN7: three-track disk image, with the legacy fourth track omitted. */
     proj_to_v7(&v7, &q);
     ok = v7.magic == PROJ_MAGIC_V7 && v7.size == sizeof v7 && v7.sum == proj_hash(&v7, sizeof v7 - 4u) &&
-         sizeof v7 == sizeof(project_t) - sizeof(proj_trk_t) && v7.sel == NPART - 1u &&
+         offsetof(project_v7_t, t) == offsetof(project_t, t) &&
+         offsetof(project_v7_t, sum) == offsetof(project_v7_t, t) + NPART * sizeof(proj_trk_t) && v7.sel == NPART - 1u &&
          !memcmp(v7.t, q.t, sizeof v7.t);
     bad += check("FUN7: exact three-track image, valid checksum, selected drum track clamped to synth track 3", ok);
     ok = proj_import(&q2, &v7, (int)sizeof v7) && proj_ok(&q2) && q2.sel == NPART - 1u &&
