@@ -646,8 +646,12 @@ static union {
 } proj_tmp;
 UI_SMALL static int proj_store(uint32_t obj, const project_t *p)
 {
+#ifdef HORATIO_PLAITS
     proj_to_v7(&proj_tmp.v7, p);
     return st_save(obj, &proj_tmp.v7, sizeof proj_tmp.v7);
+#else
+    return st_save(obj, p, sizeof *p);
+#endif
 }
 UI_SMALL static void *up_stage(void) { return &proj_tmp; }   /* upreset.c: a user preset bank staged for a write (sloop-lab) */
 UI_SMALL static void proj_fetch(uint32_t slot)
