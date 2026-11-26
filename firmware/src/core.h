@@ -1,9 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* HORATIO-1/SLOOP core types: tracks, voices, engines, parameters.
- * Tracks 1..3 are the active synth parts. Track 4 remains only as a legacy
- * compatibility slot so old project layouts can still be imported safely.
- * The synth parts share one budget of NVOICE sounding voices (voice.c). */
+ * HORATIO's live runtime has only the three synth parts; four-track legacy
+ * project layouts are staged separately by project.c for import compatibility.
+ * SLOOP retains its three synth parts plus the drum track. The synth parts
+ * share one budget of NVOICE sounding voices (voice.c). */
 #include <stdint.h>
 #define NVOICE 4                 /* voice slots per track; four sounding voices shared across all synth parts */
 #define NPOLY 4                  /* maximum POLY/UNISON allocation per synth part */
