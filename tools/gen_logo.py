@@ -6,8 +6,11 @@ mast of a 270-degree dial (the knobs of the UI), a hull, and a geometric monolin
   tools/gen_logo.py OUT.h          firmware boot splash (RLE, 16-colour palette, RGB565)
   tools/gen_logo.py --assets DIR   sloop-logo.svg, sloop-logo.png, sloop-icon.svg/png, sloop-splash.png
 """
+import base64
 import math
+import os
 import sys
+import zlib
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -178,7 +181,7 @@ def rgb565(c):
     return ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
 
 
-def synthwave_splash():
+def synthwave_splash_legacy():
     """Compact 240x188 HORATIO boot art: outrun ship, striped sun and neon sea."""
     W, H = 240, 188
     im = Image.new("RGB", (W, H), (4, 3, 24))
@@ -277,6 +280,26 @@ def synthwave_splash():
     d.rounded_rectangle((43,184,197,187), radius=2, outline=pal[14], width=1)
     d.rectangle((46,185,133,186), fill=pal[7])
     return im, pal
+
+
+
+# A compact, hand-finished 16-colour HORATIO frigate image.  The indexed pixels
+# are zlib-compressed here so the build still emits the normal RGB565/RLE header.
+_HORATIO_SPLASH_Z = """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"""
+_HORATIO_SPLASH_PALETTE = [
+    (3, 2, 20), (10, 7, 39), (24, 12, 65), (44, 17, 91),
+    (73, 23, 119), (111, 29, 145), (154, 31, 157), (205, 35, 159),
+    (244, 56, 151), (255, 105, 151), (255, 151, 139), (255, 194, 147),
+    (255, 226, 183), (14, 67, 130), (27, 145, 188), (104, 220, 222),
+]
+
+def synthwave_splash():
+    if os.environ.get("HORATIO_PLAITS", "0") != "1":
+        return synthwave_splash_legacy()
+    im = Image.frombytes("P", (240, 188), zlib.decompress(base64.b64decode(_HORATIO_SPLASH_Z)))
+    flat = [channel for colour in _HORATIO_SPLASH_PALETTE for channel in colour]
+    im.putpalette(flat + [0] * (768 - len(flat)))
+    return im.convert("RGB"), _HORATIO_SPLASH_PALETTE
 
 
 def splash_header(path):
